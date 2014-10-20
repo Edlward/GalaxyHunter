@@ -1,0 +1,52 @@
+#!/bin/bash
+# dslr-shoot - marco@gulinux.net - 2014
+# http://gulinux.net - inspired from the shell script found here:
+# http://debianletters.blogspot.it/2007/12/long-time-remote-shooting-with-canon.html
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Library General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Library General Public License for more details.
+#
+# You should have received a copy of the GNU Library General Public
+# License along with this program; if not, write to the
+# Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+SERIAL_DEVICE="/dev/ttyUSB0"
+if [ -b "$1" ]; then
+  SERIAL_DEVICE="$1"
+  shift
+fi
+
+if [ "$1" != "0" ] && [ "$1" != "1" ]; then
+  echo "Usage: $0 [device] <opening-delay> <exposure_time> <shots> <delay_between_shots>"
+  exit 1
+fi
+
+
+cleanup() {
+  # CTRL+C pressed: release reflex shutter
+  ./set-serial-signal "$SERIAL_DEVICE" 0 0
+  ./set-serial-signal "$SERIAL_DEVICE" 1 1
+}
+
+# 1 0: DTR (shoot)
+# 0 0: Clear DTR
+# 0 1: RTS (stop shooting)
+# 1 1: Clear RTS
+
+trap cleanup SIGINT SIGTERM
+
+for i in $( seq $3 ); do
+  ./set-serial-signal /dev/ttyUSB0 0 0
+  sleep "$1" && "./set-serial-signal"  "$SERIAL_DEVICE" 0 1
+  sleep "0.3" && "./set-serial-signal" "$SERIAL_DEVICE" 0 0
+  sleep "$2" && "./set-serial-signal"  "$SERIAL_DEVICE" 1 1
+  sleep "$4"
+done
