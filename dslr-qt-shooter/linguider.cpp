@@ -23,8 +23,9 @@ LinGuider::LinGuider(QObject *parent) :
     socket.write(data);
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
-    QByteArray answer = socket.read(1024);
-
-    std::copy(answer.begin(), answer.begin() + sizeof(command_header), header_data);
+    QByteArray answer = socket.read(sizeof(header));
+    std::copy(answer.begin(), answer.end(), header_data);
+    answer = socket.read(header.data_length);
     qDebug() << "Answer: signature=" << header.signature << ", command=" << header.command << ", data_length=" << header.data_length;
+    qDebug() << "answer: " << answer;
 }
