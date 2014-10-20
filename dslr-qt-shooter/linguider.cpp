@@ -2,6 +2,7 @@
 #include <QtNetwork/QLocalSocket>
 #include <stdint.h>
 #include <QDebug>
+#include <algorithm>
 
 struct command_header {
     uint16_t signature;
@@ -18,18 +19,12 @@ LinGuider::LinGuider(QObject *parent) :
     command_header header{2, 1, 0 };
     QByteArray data;
     char *header_data = reinterpret_cast<char*>(&header);
-    for(int i=0; i<sizeof(command_header); i++) {
-        qDebug() << "header_data[" << i << "]: " << int(header_data[i]);
-        data.push_back(header_data[i]);
-    }
-
-    qDebug() << "data: " << data;
-    qDebug() << "write: " << socket.write(data);
-    socket.flush();
+    std::copy(header_data, header_data+sizeof(header), std::back_inserter(data));
+    socket.write(data);
+    socket.waitForBytesWritten();
     socket.waitForReadyRead();
     QByteArray answer = socket.read(1024);
-    qDebug() << "Answer: size=" << answer.size() << "; " << answer;
-    for(int i=0; i<answer.size(); i++) {
-        qDebug() << "answer[" << i << "]: " << int(answer[i]);
-    }
+
+    std::copy(answer.begin(), answer.begin() + sizeof(command_header), header_data);
+    qDebug() << "Answer: signature=" << header.signature << ", command=" << header.command << ", data_length=" << header.data_length;
 }
