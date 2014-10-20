@@ -44,7 +44,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 for i in $( seq $3 ); do
-  ./set-serial-signal /dev/ttyUSB0 0 0
+  set-serial-signal /dev/ttyUSB0 0 0
   sleep "$1"  && set-serial-signal "$SERIAL_DEVICE" 0 1
   sleep "0.3" && set-serial-signal "$SERIAL_DEVICE" 0 0
   sleep "$2"  && set-serial-signal "$SERIAL_DEVICE" 1 1
