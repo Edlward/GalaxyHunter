@@ -1,0 +1,6 @@
+#!/bin/bash
+
+gphoto2 --auto-detect -B 22 --capture-image-and-download &
+# Usage: ./dslr-shoot [device] <opening-delay> <exposure_time> <shots> <delay_between_shots>
+
+dslr-shoot $device $opening_delay $exposure_time 1
