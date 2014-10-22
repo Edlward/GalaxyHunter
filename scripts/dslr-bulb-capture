@@ -21,6 +21,7 @@ delay_between_shots="5"
 exposure_time="30"
 shots="1"
 hook_script="true"
+set -o monitor
 
 show_help() {
   cat <<EOF
