@@ -5,7 +5,7 @@ gphoto_cmd() {
 }
 
 gphoto_grab_image() {
-  gphoto_cmd --capture-image-and-download
+  gphoto_cmd --capture-tethered
 }
 
 shoot_ctl() {
@@ -76,16 +76,18 @@ done
 [ -c "$shutter_device" ] || error_message "Wrong shutter device."
 
 echo "Initial delay of $initial_delay seconds..." >&2
+gphoto_grab_image &
 sleep "$initial_delay"
 for run in $( seq "$shots"); do
   "$hook_script" "$(( $run - 1))" "$shots"
   echo "running shoot $run of $shots" >&2
-    gphoto_grab_image &
     shoot_ctl "$shutter_device" "$exposure_time"
-    fg
   echo "Delay between shots of $delay_between_shots seconds..." >&2
   sleep "$delay_between_shots"
 done
 "$hook_script" "$shots" "$shots"
+
+read -p "Press enter to terminate..."
+fg
 
 
