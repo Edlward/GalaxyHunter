@@ -21,6 +21,7 @@ delay_between_shots="5"
 exposure_time="30"
 shots="1"
 hook_script="true"
+wait_after="30"
 set -o monitor
 
 show_help() {
@@ -33,6 +34,7 @@ Options:
   -b|--between-shots-delay seconds     - delay between shots (default: 5 seconds)
   -i|--initial-delay seconds           - initial delay (default: 2 seconds)
   -h|--hook script                     - execute this script between images (default: none)
+  -a|--wait-after seconds              - wait after the shooting has finished (default: 30 seconds)
   
 Hook script will receive the following parameters: 
   1. current run number (0: before first run, 1...shots_number-1: between shots, shots_number: after last run)
@@ -66,6 +68,9 @@ while [ "$1" != "" ]; do
     -h|--hook)
     hook_script="$2"; shift
     ;;
+    -a|--wait-after)
+    wait_after="$2"; shift
+    ;;
     *)
     error_message "Unrecognized command."
     ;;
@@ -85,6 +90,7 @@ for run in $( seq "$shots"); do
   echo "Delay between shots of $delay_between_shots seconds..." >&2
   sleep "$delay_between_shots"
 done
+sleep "$wait_after"
 "$hook_script" "$shots" "$shots"
 cat <<EOF
 ******************************* Shooting sequence terminated **********************************************
