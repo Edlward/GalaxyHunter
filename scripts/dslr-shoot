@@ -19,7 +19,7 @@
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 SERIAL_DEVICE="/dev/ttyUSB0"
-if [ -b "$1" ]; then
+if [ -c "$1" ]; then
   SERIAL_DEVICE="$1"
   shift
 fi

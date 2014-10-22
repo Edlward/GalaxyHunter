@@ -72,8 +72,7 @@ while [ "$1" != "" ]; do
   shift
 done
 
-# TODO: verify with proper hardware
-# [ -b "$shutter_device" ] || error_message "Wrong shutter device."
+[ -c "$shutter_device" ] || error_message "Wrong shutter device."
 
 echo "Initial delay of $initial_delay seconds..." >&2
 sleep "$initial_delay"
