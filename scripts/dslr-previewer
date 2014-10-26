@@ -1,0 +1,85 @@
+#!/bin/bash
+
+PREVIEWER="${PREVIEWER-okular}"
+PREVIEWEROPTS="${PREVIEWEROPTS---unique --presentation}"
+tmpfile_prefix="tempfile"
+workdir="/tmp/$( basename "$0" ).$$"
+delay=5
+mode=gphoto
+
+while [ "$1" != "" ]; do
+  case "$1" in
+    -t|--test)
+      mode="test"
+      ;;
+  esac
+  shift
+done
+
+grab_preview_test() {
+  wget http://lorempixel.com/g/400/200 -O ${tmpfile_prefix}${RANDOM}
+}
+
+grab_preview_gphoto() {
+  DISPLAY= gphoto2 --quiet --capture-preview >/dev/null
+}
+
+shoot() {
+  # DISPLAY= gphoto2 --quiet --capture-preview >/dev/null
+  grab_preview_$mode
+  new_file="$( ls -t "$tmpfile_prefix"* | head -n 1 )"
+  echo "$new_file"
+}
+
+preview() {
+  $PREVIEWER $PREVIEWEROPTS $@ 
+}
+
+mkdir -p "$workdir"
+cd "$workdir"
+
+action=""
+
+while [ "$action" != "q" ]; do
+  if [ "$timed_out" == "true" ]; then
+    read -N 1 -t $delay action
+    timed_out="false"
+  else
+    read -N 1 -p "Enter action ('?' shows available actions): " -t $delay action
+  fi
+  [ "$action" != "" ] && echo
+  case "$action" in
+    "?")
+      echo "Available actions: "
+      echo -e "\t?: shows this help message"
+      echo -e "\tq: exits this program"
+      echo -e "\t+: increase shooting interval"
+      echo -e "\t-: decrease shooting interval"
+      ;;
+    "+")
+      (( delay++ )); echo "Interval increased to $delay"
+      ;;
+    "-")
+      if [ $delay -gt 1 ]; then
+       (( delay-- )); echo "Interval decreased to $delay"
+      else
+       echo "Interval already at $delay; skipping"
+      fi
+      ;;
+    "")
+      timed_out="true"
+      file="$( shoot)"
+      preview "$file" &
+      ;;
+    q)
+      ;;
+    *)
+      echo "Unknown action."
+      ;;
+  esac
+done
+
+echo ""
+cd -
+rm -rf "$workdir"
+
