@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PREVIEWER="${PREVIEWER-okular}"
-PREVIEWEROPTS="${PREVIEWEROPTS---unique --presentation}"
+PREVIEWEROPTS="${PREVIEWEROPTS---unique}"
 tmpfile_prefix="tempfile"
 workdir="/tmp/$( basename "$0" ).$$"
 delay=5
@@ -11,6 +11,10 @@ while [ "$1" != "" ]; do
   case "$1" in
     -t|--test)
       mode="test"
+      ;;
+    *)
+      echo "Usage: $0 [-t|--test]"
+      exit
       ;;
   esac
   shift
@@ -22,13 +26,19 @@ grab_preview_test() {
 
 grab_preview_gphoto() {
   DISPLAY= gphoto2 --quiet --capture-preview >/dev/null
+
 }
 
 shoot() {
   # DISPLAY= gphoto2 --quiet --capture-preview >/dev/null
   grab_preview_$mode
+  if [ "$?" != "0" ]; then
+    echo "Error grabbing preview image"
+    return 1
+  fi
   new_file="$( ls -t "$tmpfile_prefix"* | head -n 1 )"
   echo "$new_file"
+  return 0
 }
 
 preview() {
@@ -69,7 +79,7 @@ while [ "$action" != "q" ]; do
     "")
       timed_out="true"
       file="$( shoot)"
-      preview "$file" &
+      [ "$?" == "0" ] && preview "$file" &
       ;;
     q)
       ;;
