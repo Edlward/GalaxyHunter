@@ -2,7 +2,6 @@
 
 PREVIEWER="${PREVIEWER-okular}"
 PREVIEWEROPTS="${PREVIEWEROPTS---unique}"
-tmpfile_prefix="tempfile"
 workdir="/tmp/$( basename "$0" ).$$"
 delay=5
 mode=gphoto
@@ -21,12 +20,11 @@ while [ "$1" != "" ]; do
 done
 
 grab_preview_test() {
-  wget http://lorempixel.com/g/400/200 -O ${tmpfile_prefix}${RANDOM}
+  wget http://lorempixel.com/g/400/200 -O lorempixel_${RANDOM}
 }
 
 grab_preview_gphoto() {
-  DISPLAY= gphoto2 --quiet --capture-preview >/dev/null
-
+  gphoto2 --capture-preview --quiet
 }
 
 shoot() {
@@ -36,12 +34,13 @@ shoot() {
     echo "Error grabbing preview image"
     return 1
   fi
-  new_file="$( ls -t "$tmpfile_prefix"* | head -n 1 )"
+  new_file="$( ls -t * | head -n 1 )"
   echo "$new_file"
   return 0
 }
 
 preview() {
+  echo "Opening file $@" >&2
   $PREVIEWER $PREVIEWEROPTS $@ 
 }
 
@@ -52,10 +51,10 @@ action=""
 
 while [ "$action" != "q" ]; do
   if [ "$timed_out" == "true" ]; then
-    read -N 1 -t $delay action
+    read -n 1 -t $delay action
     timed_out="false"
   else
-    read -N 1 -p "Enter action ('?' shows available actions): " -t $delay action
+    read -n 1 -p "Enter action ('?' shows available actions): " -t $delay action
   fi
   [ "$action" != "" ] && echo
   case "$action" in
