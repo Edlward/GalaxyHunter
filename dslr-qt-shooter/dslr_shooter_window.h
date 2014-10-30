@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QtCore/QDateTime>
 
+class GPhoto;
 class LinGuider;
 
 namespace Ui {
@@ -23,15 +24,15 @@ public slots:
 
 private slots:
   void on_connectLinGuider_clicked();
-
   void on_setupShoots_clicked();
-
   void on_startShooting_clicked();
-
   void on_dither_clicked();
-
   void update_log();
 
+  void got_error(const QString &error);
+  void got_message(const QString &message);
+  void camera_connected();
+  void got_preview(const QImage &image);
 private:
     Ui::DSLR_Shooter_Window *ui;
     LinGuider *guider;
@@ -42,6 +43,7 @@ private:
 
     QList<LogEntry> logEntries;
     QStringList log;
+    GPhoto *gphoto;
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H
