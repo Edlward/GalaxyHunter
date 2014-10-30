@@ -19,8 +19,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   gphoto = new GPhoto();
   gphoto->moveToThread(gphoto_thread);
   gphoto_thread->start();
-  connect(gphoto, SIGNAL(gphoto_error(QString)), this, SLOT(got_error(QString)));
-  connect(gphoto, SIGNAL(gphoto_message(QString)), this, SLOT(got_message(QString)));
+  connect(gphoto, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)));
+  connect(gphoto, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)));
   connect(gphoto, SIGNAL(camera_connected()), this, SLOT(camera_connected()));
   connect(gphoto, SIGNAL(camera_preview(QImage)), this, SLOT(got_preview(QImage)));
 }
@@ -95,8 +95,8 @@ void DSLR_Shooter_Window::camera_connected()
   qDebug() << __PRETTY_FUNCTION__;
   ui->camera_infos->clear();
   QString camera_infos = QString("Model: %1\nSummary: %2")
-    .arg(gphoto->camera()->model())
-    .arg(gphoto->camera()->summary());
+    .arg(gphoto->imager()->model())
+    .arg(gphoto->imager()->summary());
   ui->camera_infos->setText(camera_infos);
 }
 

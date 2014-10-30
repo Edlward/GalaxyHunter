@@ -22,9 +22,10 @@
 
 #include <memory>
 #include <QObject>
+#include "imager_driver.h"
 
 class QImage;
-class GPhoto : public QObject
+class GPhoto : public ImagerDriver
 {
   Q_OBJECT
 private:
@@ -33,28 +34,24 @@ private:
   std::shared_ptr<Private> const d;
   
 public:
-  class Camera {
+  class Camera : public Imager {
   public:
     Camera(const std::shared_ptr<Private> &d);
     ~Camera();
-    QString summary() const;
-    QString model() const;
-    QString about() const;
+    virtual QString summary() const;
+    virtual QString model() const;
+    virtual QString about() const;
   private:
     std::shared_ptr<Private> const d;
   };
   friend class Camera;
     GPhoto(QObject *parent = 0);
     ~GPhoto();
-    std::shared_ptr<Camera> camera() const;
+    virtual std::shared_ptr<Imager> imager() const;
 public slots:
-  void findCamera();
-  void preview();
-signals:
-  void gphoto_message(const QString &);
-  void gphoto_error(const QString &);
-  void camera_connected();
-  void camera_preview(const QImage &);
+  virtual void findCamera();
+  virtual void preview();
+
 };
 
 #endif // GULINUX_GPHOTO_H

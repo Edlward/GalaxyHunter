@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QtCore/QDateTime>
 
-class GPhoto;
+class ImagerDriver;
 class LinGuider;
 
 namespace Ui {
@@ -43,7 +43,7 @@ private:
 
     QList<LogEntry> logEntries;
     QStringList log;
-    GPhoto *gphoto;
+    ImagerDriver *gphoto;
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H

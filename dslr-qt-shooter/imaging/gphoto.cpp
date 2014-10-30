@@ -47,7 +47,7 @@ public:
   CameraText camera_text;
 };
 
-GPhoto::GPhoto(QObject *parent) : QObject(parent), d(new Private)
+GPhoto::GPhoto(QObject *parent) : ImagerDriver(parent), d(new Private)
 {
   d->context = gp_context_new();
   gp_context_set_error_func(d->context, reinterpret_cast<GPContextErrorFunc>(&Private::gphotoErrorMessage), d.get());
@@ -60,7 +60,7 @@ GPhoto::~GPhoto()
   gp_context_unref(d->context);
 }
 
-shared_ptr< GPhoto::Camera > GPhoto::camera() const
+std::shared_ptr<ImagerDriver::Imager> GPhoto::imager() const
 {
   return d->camera;
 }
@@ -70,10 +70,10 @@ void GPhoto::findCamera()
   d->reset_messages();
   try {
     d->camera = make_shared<Camera>(d);
-    emit gphoto_message(tr("Camera connected"));
+    emit imager_message(tr("Camera connected"));
     emit camera_connected();
   } catch(runtime_error &e) {
-    emit gphoto_error(QString::fromLocal8Bit(e.what()));
+    emit imager_error(QString::fromLocal8Bit(e.what()));
   }
 }
 
