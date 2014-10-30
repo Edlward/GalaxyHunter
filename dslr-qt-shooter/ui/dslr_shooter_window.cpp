@@ -1,8 +1,8 @@
 #include "dslr_shooter_window.h"
 #include "ui_dslr_shooter_window.h"
-#include "linguider.h"
+#include "guider/linguider.h"
 #include <QtCore/QTimer>
-#include "gphoto.h"
+#include "imaging/gphoto.h"
 #include <QDebug>
 #include <QThread>
 

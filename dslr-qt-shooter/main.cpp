@@ -1,6 +1,6 @@
 #include <iostream>
 #include <QApplication>
-#include "dslr_shooter_window.h"
+#include "ui/dslr_shooter_window.h"
 
 using namespace std;
 
