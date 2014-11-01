@@ -9,4 +9,4 @@ add_subdirectory(guider)
 add_subdirectory(imaging)
 
 ADD_EXECUTABLE(dslr-qt4-shooter main.cpp )
-TARGET_LINK_LIBRARIES(dslr-qt4-shooter ${dslr-static_LIBS} ${QT_LIBRARIES} ${dslr-dependencies}  )
+TARGET_LINK_LIBRARIES(dslr-qt4-shooter ${dslr_static_LIBS} ${QT_LIBRARIES} ${dslr_dependencies}  )
