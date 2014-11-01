@@ -1,11 +1,23 @@
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GPHOTO2 libgphoto2)
-include_directories(${GPHOTO2_INCLUDE_DIRS})
-set(dslr_imaging_HEADERS imager_driver.h)
+set(dslr_imaging_HEADERS imaging_driver.h)
+set(dslr_imaging_SOURCES imaging_driver.cpp)
 
+set(DEFAULT_IMAGING_BACKEND gphoto2)
+set(IMAGING_BACKEND ${DEFAULT_IMAGING_BACKEND} CACHE STRING "Imaging backend to use (Default: $DEFAULT_IMAGING_BACKEND)")
+add_definitions(-DIMAGING_${IMAGING_BACKEND})
 
-set(dslr_imaging_SOURCES gphoto.cpp)
-set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS} gphoto.h)
+if(IMAGING_BACKEND STREQUAL "gphoto2")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GPHOTO2 libgphoto2)
+    include_directories(${GPHOTO2_INCLUDE_DIRS})
+    set(dslr_imaging_SOURCES ${dslr_imaging_SOURCES} gphoto.cpp)
+    set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS} gphoto.h)
+elseif(IMAGING_BACKEND STREQUAL "testing")
+else(IMAGING_BACKEND STREQUAL "gphoto2")
+    message(FATAL_ERROR "Backend ${IMAGING_BACKEND} not recognized.
+Supported values:
+  gphoto2
+  testing")
+endif(IMAGING_BACKEND STREQUAL "gphoto2")
 
 QT4_WRAP_CPP(dslr_imaging_HEADERS_MOC ${dslr_imaging_HEADERS})
 

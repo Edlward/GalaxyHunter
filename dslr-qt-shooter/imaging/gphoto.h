@@ -22,10 +22,10 @@
 
 #include <memory>
 #include <QObject>
-#include "imager_driver.h"
+#include "imaging_driver.h"
 
 class QImage;
-class GPhoto : public ImagerDriver
+class GPhoto : public ImagingDriver
 {
   Q_OBJECT
 private:

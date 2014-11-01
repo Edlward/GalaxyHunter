@@ -4,12 +4,13 @@
 #include <QObject>
 #include <memory>
 
+
 class QImage;
 
-class ImagerDriver : public QObject {
+class ImagingDriver : public QObject {
     Q_OBJECT
 public:
-    ImagerDriver(QObject *parent = 0) : QObject(parent) {}
+    ImagingDriver(QObject *parent = 0);
     class Imager {
     public:
         virtual QString summary() const = 0;
@@ -17,7 +18,7 @@ public:
         virtual QString about() const = 0;
     };
     virtual std::shared_ptr<Imager> imager() const = 0;
-
+    static ImagingDriver *imagingDriver(QObject *parent = 0);
 public slots:
   virtual void findCamera() = 0;
   virtual void preview() = 0;
