@@ -12,6 +12,8 @@ if(IMAGING_BACKEND STREQUAL "gphoto2")
     set(dslr_imaging_SOURCES ${dslr_imaging_SOURCES} gphoto.cpp)
     set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS} gphoto.h)
 elseif(IMAGING_BACKEND STREQUAL "testing")
+    set(dslr_imaging_SOURCES ${dslr_imaging_SOURCES} testingimager.cpp)
+    set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS} testingimager.h)
 else(IMAGING_BACKEND STREQUAL "gphoto2")
     message(FATAL_ERROR "Backend ${IMAGING_BACKEND} not recognized.
 Supported values:
