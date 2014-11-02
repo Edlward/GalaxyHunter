@@ -20,11 +20,8 @@ public slots:
   virtual void preview();
 signals:
 
-private slots:
-  void imageDownloaded(QNetworkReply *reply);
 private:
   std::shared_ptr<TestingImager> _imager;
-  QNetworkAccessManager *_network = nullptr;
 };
 
 #endif // TESTINGIMAGER_H

@@ -4,6 +4,7 @@
 #include <QNetworkReply>
 #include <QImage>
 #include <QDebug>
+#include <QPixmap>
 
 using namespace std;
 
@@ -21,30 +22,12 @@ void TestingImagerDriver::findCamera()
 {
   _imager = make_shared<TestingImager>();
   emit camera_connected();
-  _network = new QNetworkAccessManager(this);
-  connect(_network, SIGNAL(finished(QNetworkReply*)), this, SLOT(imageDownloaded(QNetworkReply*)));
 }
 
 void TestingImagerDriver::preview()
 {
-  QUrl imageUrl("http://lorempixel.com/400/200/");
-  _network->get(QNetworkRequest{imageUrl});
+  QImage image(1280, 1024, QImage::Format_RGB32);
+  image.fill(QColor(qrand() % 256, qrand() % 256, qrand() % 256));
+  emit camera_preview(image);
 }
 
-void TestingImagerDriver::imageDownloaded(QNetworkReply* reply)
-{
-  if(reply->error() != QNetworkReply::NoError) {
-    qDebug() << __PRETTY_FUNCTION__ << ", reply response: " << reply->errorString();
-    qDebug() << reply->readAll();
-    return;
-  }
-  qDebug() << "Download finished, loading image...";
-  auto data = reply->readAll();
-  for(auto header: reply->rawHeaderPairs()) {
-    qDebug() << header.first << ": " << header.second;
-  }
-  qDebug() << data;
-  QImage image;
-  if(image.loadFromData(data))
-    emit camera_preview(image);
-}
