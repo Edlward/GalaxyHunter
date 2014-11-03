@@ -26,8 +26,9 @@ void TestingImagerDriver::findCamera()
 
 void TestingImagerDriver::preview()
 {
-  QImage image(1280, 1024, QImage::Format_RGB32);
-  image.fill(QColor(qrand() % 256, qrand() % 256, qrand() % 256));
+  QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 4) + 1);
+  qDebug() << "loading image: " << imageFile;
+  QImage image(imageFile);
   emit camera_preview(image);
 }
 

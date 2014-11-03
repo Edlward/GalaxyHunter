@@ -1,1 +1,9 @@
-<RCC/>
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/imager/testing">
+      <file alias="1.jpg">files/testing/1.jpg</file>
+      <file alias="2.jpg">files/testing/2.jpg</file>
+      <file alias="3.jpg">files/testing/3.jpg</file>
+      <file alias="4.jpg">files/testing/4.jpg</file>
+  </qresource>
+</RCC>

@@ -21,7 +21,6 @@ Supported values:
   testing")
 endif(IMAGING_BACKEND STREQUAL "gphoto2")
 
-QT4_WRAP_CPP(dslr_imaging_HEADERS_MOC ${dslr_imaging_HEADERS})
 
 add_library(dslr_imaging STATIC ${dslr_imaging_SOURCES} ${dslr_imaging_HEADERS_MOC})
 
