@@ -5,6 +5,7 @@
 #include "imaging/imaging_driver.h"
 #include <QDebug>
 #include <QThread>
+#include <QScrollBar>
 
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent),
@@ -23,7 +24,30 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)));
   connect(imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()));
   connect(imagingDriver, SIGNAL(camera_preview(QImage)), this, SLOT(got_preview(QImage)));
+  connect(ui->setupShoots, &QPushButton::clicked, imagingDriver, &ImagingDriver::findCamera, Qt::QueuedConnection);
+  connect(ui->startShooting, &QPushButton::clicked, imagingDriver, &ImagingDriver::preview, Qt::QueuedConnection);
+  connect(ui->zoomFit, &QPushButton::clicked, [=](){
+    ui->scrollArea->setWidgetResizable(true);
+  });
+  connect(ui->zoomIn, &QPushButton::clicked, [=]() { scaleImage(1.2); });
+  connect(ui->zoomOut, &QPushButton::clicked, [=]() { scaleImage(0.8); });
+  ui->logWindow->resize(ui->logWindow->width(), 0);
 }
+
+void DSLR_Shooter_Window::scaleImage(double zoomFactor)
+{
+  ui->scrollArea->setWidgetResizable(true);
+  Q_ASSERT(ui->image->pixmap());
+  scaleFactor *= zoomFactor;
+  ui->image->resize(scaleFactor * ui->image->pixmap()->size());
+  auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
+    scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
+  };
+  adjustScrollBar(ui->scrollArea->horizontalScrollBar(), zoomFactor);
+  adjustScrollBar(ui->scrollArea->verticalScrollBar(), zoomFactor);
+
+}
+
 
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
 {
@@ -44,19 +68,6 @@ void DSLR_Shooter_Window::on_connectLinGuider_clicked()
 {
     guider->connect();
     update_infos();
-}
-
-void DSLR_Shooter_Window::on_setupShoots_clicked()
-{
-  qDebug() << __PRETTY_FUNCTION__;
-  QMetaObject::invokeMethod(imagingDriver, "findCamera", Qt::QueuedConnection);
-}
-
-void DSLR_Shooter_Window::on_startShooting_clicked()
-{
-  qDebug() << __PRETTY_FUNCTION__;
-  QMetaObject::invokeMethod(imagingDriver, "preview", Qt::QueuedConnection);
-
 }
 
 void DSLR_Shooter_Window::on_dither_clicked()

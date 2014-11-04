@@ -24,8 +24,6 @@ public slots:
 
 private slots:
   void on_connectLinGuider_clicked();
-  void on_setupShoots_clicked();
-  void on_startShooting_clicked();
   void on_dither_clicked();
   void update_log();
 
@@ -33,6 +31,7 @@ private slots:
   void got_message(const QString &message);
   void camera_connected();
   void got_preview(const QImage &image);
+  void scaleImage(double zoomFactor);
 private:
     Ui::DSLR_Shooter_Window *ui;
     LinGuider *guider;
@@ -44,6 +43,7 @@ private:
     QList<LogEntry> logEntries;
     QStringList log;
     ImagingDriver *imagingDriver;
+    double scaleFactor = 1;
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H
