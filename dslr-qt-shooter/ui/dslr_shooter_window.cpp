@@ -7,10 +7,12 @@
 #include <QThread>
 #include <QScrollBar>
 #include <QScreen>
+#include <QSettings>
 
 class DSLR_Shooter_Window::Private {
 public:
-  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver) : q(q), ui(ui), imagingDriver(imagingDriver) {}
+  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver) : q(q), ui(ui), imagingDriver(imagingDriver),
+    settings("GuLinux", "DSLR-Shooter") {}
     std::unique_ptr<Ui::DSLR_Shooter_Window> ui;
     LinGuider *guider;
     struct LogEntry {
@@ -21,6 +23,7 @@ public:
     QList<LogEntry> logEntries;
     ImagingDriver *imagingDriver;
     std::shared_ptr<Imager> imager;
+    QSettings settings;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -133,6 +136,10 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->camera_infos->setText(camera_infos);
   d->ui->preview->setEnabled(true);
   connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
+  connect(d->imager.get(), &Imager::preview, this, [=]{
+    for(auto widget: std::vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
+      widget->setEnabled(true);
+  });
   connect(d->ui->preview, &QPushButton::clicked, d->imager.get(), &Imager::shootPreview, Qt::QueuedConnection);
 }
 
