@@ -21,7 +21,6 @@ public:
     explicit TestingImagerDriver(QObject *parent = 0);
 public slots:
   virtual void scan();
-  virtual void preview();
 signals:
 
 };

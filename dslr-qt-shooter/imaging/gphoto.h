@@ -25,33 +25,39 @@
 #include "imaging_driver.h"
 
 class QImage;
-class GPhoto : public ImagingDriver
-{
+class GPhotoCameraInformation;
+
+class GPhotoCamera : public Imager {
   Q_OBJECT
+public:
+  GPhotoCamera(const std::shared_ptr<GPhotoCameraInformation> &gphotoCameraInformation);
+  ~GPhotoCamera();
+  virtual QString summary() const;
+  virtual QString model() const;
+  virtual QString about() const;
+public slots:
+  virtual void connect();
+  virtual void disconnect();
+  virtual void shootPreview();
 private:
   class Private;
   friend class Private;
-  std::shared_ptr<Private> const d;
-  
+  std::unique_ptr<Private> const d;
+};
+
+class GPhoto : public ImagingDriver
+{
+  Q_OBJECT
 public:
-  class Camera : public Imager {
-  public:
-    Camera(const std::shared_ptr<Private> &d);
-    ~Camera();
-    virtual QString summary() const;
-    virtual QString model() const;
-    virtual QString about() const;
-  private:
-    std::shared_ptr<Private> const d;
-  };
-  friend class Camera;
     GPhoto(QObject *parent = 0);
     ~GPhoto();
-    virtual std::shared_ptr<Imager> imager() const;
 public slots:
   virtual void scan();
-  virtual void preview();
 
+private:
+  class Private;
+  friend class Private;
+  std::unique_ptr<Private> const d;
 };
 
 #endif // GULINUX_GPHOTO_H

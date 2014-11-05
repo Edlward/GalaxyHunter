@@ -27,25 +27,44 @@
 
 using namespace std;
 
+
+
 class GPhoto::Private {
 public:
   Private() {}
-  shared_ptr<Camera> camera;
   GPContext* context;
   string last_error;
   string last_message;
   static void gphotoMessage(GPContext *context, const char *, void *);
   static void gphotoErrorMessage(GPContext *context, const char *, void *);
   void reset_messages();
-  
-  // Camera members
-  ::Camera *gphoto_camera;
+};
+
+class GPhotoCamera::Private {
+public:
   QString model;
   QString about;
   QString summary;
-  CameraAbilities abilities;
-  CameraText camera_text;
 };
+
+class GPhotoCameraInformation {
+public:
+  Camera *camera;
+};
+
+struct CameraTempFile {
+  CameraTempFile();
+  ~CameraTempFile();
+  void save();
+  CameraFile *camera_file;
+  QTemporaryFile temp_file;
+  operator CameraFile *() const { return camera_file; }
+  operator QString() const { return path(); }
+  QString mimeType() const;
+  QString path() const { return temp_file.fileName(); }
+};
+
+
 
 GPhoto::GPhoto(QObject *parent) : ImagingDriver(parent), d(new Private)
 {
@@ -60,61 +79,10 @@ GPhoto::~GPhoto()
   gp_context_unref(d->context);
 }
 
-std::shared_ptr<ImagingDriver::Imager> GPhoto::imager() const
-{
-  return d->camera;
-}
 
 void GPhoto::scan()
 {
-  /*
-  d->reset_messages();
-  try {
-    d->camera = make_shared<Camera>(d);
-    emit imager_message(tr("Camera connected"));
-    emit camera_connected();
-  } catch(runtime_error &e) {
-    emit imager_error(QString::fromLocal8Bit(e.what()));
-  }
-  */
 }
-
-
-GPhoto::Camera::Camera(const shared_ptr< GPhoto::Private > &d) : d(d)
-{
-  gp_camera_new(&d->gphoto_camera);
-  if(gp_camera_init(d->gphoto_camera, d->context) != GP_OK)
-    throw runtime_error(d->last_error);
-  
-  gp_camera_get_abilities (d->gphoto_camera, &d->abilities);
-  d->model = QString::fromLocal8Bit(d->abilities.model);
-  gp_camera_get_summary(d->gphoto_camera, &d->camera_text, d->context);
-  d->summary = QString::fromLocal8Bit(d->camera_text.text);
-  gp_camera_get_about(d->gphoto_camera, &d->camera_text, d->context);
-  d->about = QString::fromLocal8Bit(d->camera_text.text);
-}
-
-QString GPhoto::Camera::about() const
-{
-  return d->about;
-}
-
-QString GPhoto::Camera::model() const
-{
-  return d->model;
-}
-
-QString GPhoto::Camera::summary() const
-{
-  return d->summary;
-}
-
-
-GPhoto::Camera::~Camera()
-{
-  gp_camera_free(d->gphoto_camera);
-}
-
 
 void GPhoto::Private::gphotoMessage(GPContext* context, const char* m, void* data)
 {
@@ -135,17 +103,63 @@ void GPhoto::Private::reset_messages()
   last_message.clear();
 }
 
-struct CameraTempFile {
-  CameraTempFile();
-  ~CameraTempFile();
-  void save();
-  CameraFile *camera_file;
-  QTemporaryFile temp_file;
-  operator CameraFile *() const { return camera_file; }
-  operator QString() const { return path(); }
-  QString mimeType() const;
-  QString path() const { return temp_file.fileName(); }
-};
+
+
+GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
+{
+  /*
+  gp_camera_new(&d->gphoto_camera);
+  if(gp_camera_init(d->gphoto_camera, d->context) != GP_OK)
+    throw runtime_error(d->last_error);
+  
+  gp_camera_get_abilities (d->gphoto_camera, &d->abilities);
+  d->model = QString::fromLocal8Bit(d->abilities.model);
+  gp_camera_get_summary(d->gphoto_camera, &d->camera_text, d->context);
+  d->summary = QString::fromLocal8Bit(d->camera_text.text);
+  gp_camera_get_about(d->gphoto_camera, &d->camera_text, d->context);
+  d->about = QString::fromLocal8Bit(d->camera_text.text);
+  */
+}
+
+void GPhotoCamera::connect()
+{
+
+}
+
+void GPhotoCamera::disconnect()
+{
+
+}
+
+void GPhotoCamera::shootPreview()
+{
+
+}
+
+
+QString GPhotoCamera::about() const
+{
+  return d->about;
+}
+
+QString GPhotoCamera::model() const
+{
+  return d->model;
+}
+
+QString GPhotoCamera::summary() const
+{
+  return d->summary;
+}
+
+
+GPhotoCamera::~GPhotoCamera()
+{
+  //gp_camera_free(d->gphoto_camera);
+}
+
+
+
 
 CameraTempFile::CameraTempFile()
 {
@@ -173,7 +187,7 @@ QString CameraTempFile::mimeType() const
   return QString(mime);
 }
 
-
+/*
 void GPhoto::preview()
 {
   CameraTempFile camera_file;
@@ -186,3 +200,4 @@ void GPhoto::preview()
   emit camera_preview(image);
 }
 
+*/

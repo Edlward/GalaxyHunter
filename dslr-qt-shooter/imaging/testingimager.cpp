@@ -30,9 +30,6 @@ void TestingImagerDriver::scan()
   emit scan_finished();
 }
 
-void TestingImagerDriver::preview()
-{
-}
 
 void TestingImager::shootPreview()
 {
