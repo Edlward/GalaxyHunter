@@ -30,8 +30,6 @@ private slots:
   void got_error(const QString &error);
   void got_message(const QString &message);
   void camera_connected();
-  void got_preview(const QImage &image);
-  void scaleImage(double zoomFactor);
 private:
     Ui::DSLR_Shooter_Window *ui;
     LinGuider *guider;
@@ -43,8 +41,6 @@ private:
     QList<LogEntry> logEntries;
     QStringList log;
     ImagingDriver *imagingDriver;
-    QLabel *image;
-    double scaleFactor = 1;
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H

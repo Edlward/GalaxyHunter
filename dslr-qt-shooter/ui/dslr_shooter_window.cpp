@@ -33,43 +33,17 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)));
   connect(imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)));
   connect(imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()));
-  connect(imagingDriver, SIGNAL(camera_preview(QImage)), this, SLOT(got_preview(QImage)));
+  connect(imagingDriver, SIGNAL(camera_preview(QImage)), ui->imageContainer, SLOT(setImage(QImage)));
   connect(ui->findCamera, &QPushButton::clicked, imagingDriver, &ImagingDriver::findCamera, Qt::QueuedConnection);
   connect(ui->preview, &QPushButton::clicked, imagingDriver, &ImagingDriver::preview, Qt::QueuedConnection);
-  connect(ui->zoomIn, &QPushButton::clicked, [=] { scaleImage(1.2); });
-  connect(ui->zoomOut, &QPushButton::clicked, [=] { scaleImage(0.8); });
-  connect(ui->zoomActualSize, &QPushButton::clicked, [=] {
-    ui->imageContainer->setWidgetResizable(false);
-    image->adjustSize();
-    scaleFactor = 1;
-  });
-  connect(ui->zoomFit, &QPushButton::clicked, [=] {
-    ui->imageContainer->setWidgetResizable(true);
-    image->adjustSize();
-  });
-  image = new QLabel;
-  image->setBackgroundRole(QPalette::Base);
-  image->setScaledContents(true);
-  image->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-  ui->imageContainer->setWidget(image);
+  connect(ui->zoomIn, &QPushButton::clicked, [=] { ui->imageContainer->scale(1.2); });
+  connect(ui->zoomOut, &QPushButton::clicked, [=] { ui->imageContainer->scale(0.8); });
+  connect(ui->zoomActualSize, &QPushButton::clicked, [=] { ui->imageContainer->normalSize(); });
+  connect(ui->zoomFit, &QPushButton::clicked, [=] { ui->imageContainer->fitToWindow(); });
+
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
   ui->imageContainer->setWidgetResizable(true);
   ui->splitter->setSizes({height()/10*8, height()/10*2});
-}
-
-void DSLR_Shooter_Window::scaleImage(double zoomFactor)
-{
-  Q_ASSERT(image->pixmap());
-  ui->imageContainer->setWidgetResizable(false);
-
-  scaleFactor *= zoomFactor;
-  image->resize(scaleFactor * image->pixmap()->size());
-  auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
-    scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
-  };
-  adjustScrollBar(ui->imageContainer->horizontalScrollBar(), zoomFactor);
-  adjustScrollBar(ui->imageContainer->verticalScrollBar(), zoomFactor);
-
 }
 
 
@@ -134,10 +108,3 @@ void DSLR_Shooter_Window::camera_connected()
     .arg(imagingDriver->imager()->summary());
   ui->camera_infos->setText(camera_infos);
 }
-
-void DSLR_Shooter_Window::got_preview(const QImage& preview)
-{
-  image->clear();
-  image->setPixmap(QPixmap::fromImage(preview));
-}
-
