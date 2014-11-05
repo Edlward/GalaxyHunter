@@ -70,30 +70,16 @@
         <item row="0" column="1" rowspan="2">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QPushButton" name="connectLinGuider">
+           <widget class="QPushButton" name="findCamera">
             <property name="text">
-             <string>Connect Guider</string>
+             <string>Find Camera</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="setupShoots">
+           <widget class="QPushButton" name="preview">
             <property name="text">
-             <string>Setup Shooting</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="startShooting">
-            <property name="text">
-             <string>Shoot</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="dither">
-            <property name="text">
-             <string>Dither</string>
+             <string>Preview</string>
             </property>
            </widget>
           </item>
@@ -104,12 +90,26 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="connectLinGuider">
+            <property name="text">
+             <string>Connect Guider</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="dither">
+            <property name="text">
+             <string>Dither</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
         <item row="1" column="0">
-         <widget class="QScrollArea" name="scrollArea">
+         <widget class="QScrollArea" name="imageContainer">
           <property name="widgetResizable">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <widget class="QWidget" name="scrollAreaWidgetContents">
            <property name="geometry">
@@ -117,27 +117,10 @@
              <x>0</x>
              <y>0</y>
              <width>665</width>
-             <height>194</height>
+             <height>190</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="image">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="scaledContents">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <layout class="QGridLayout" name="gridLayout"/>
           </widget>
          </widget>
         </item>

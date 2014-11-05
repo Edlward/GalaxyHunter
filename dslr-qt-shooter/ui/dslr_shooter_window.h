@@ -6,7 +6,7 @@
 
 class ImagingDriver;
 class LinGuider;
-
+class QLabel;
 namespace Ui {
 class DSLR_Shooter_Window;
 }
@@ -43,6 +43,7 @@ private:
     QList<LogEntry> logEntries;
     QStringList log;
     ImagingDriver *imagingDriver;
+    QLabel *image;
     double scaleFactor = 1;
 };
 

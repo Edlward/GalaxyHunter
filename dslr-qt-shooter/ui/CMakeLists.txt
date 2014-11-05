@@ -5,5 +5,5 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 qt5_wrap_ui(dslr_ui_FORMS_HEADERS ${dslr_ui_FORMS})
 
-add_library(dslr_ui STATIC dslr_shooter_window.cpp ${dslr_ui_FORMS_HEADERS} ${dslr_ui_HEADERS_MOC})
+add_library(dslr_ui STATIC ${dslr_ui_FORMS_HEADERS} ${dslr_ui_HEADERS_MOC} dslr_shooter_window.cpp)
 set(dslr_static_LIBS ${dslr_static_LIBS} dslr_ui PARENT_SCOPE)
