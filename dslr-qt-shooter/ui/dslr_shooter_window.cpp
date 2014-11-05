@@ -66,7 +66,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     setCamera->clear();
       qDebug() << __PRETTY_FUNCTION__ << ": cameras size: " << d->imagingDriver->imagers().size();
     for(auto camera: d->imagingDriver->imagers()) {
-      connect(setCamera->addAction(camera->summary()), &QAction::triggered, [=] {
+      connect(setCamera->addAction(camera->name()), &QAction::triggered, [=] {
         set_imager(camera);
       });
     }

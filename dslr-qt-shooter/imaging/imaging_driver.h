@@ -10,9 +10,10 @@ class QImage;
 class Imager : public QObject {
   Q_OBJECT
 public:
-    virtual QString summary() const = 0;
-    virtual QString model() const = 0;
-    virtual QString about() const = 0;
+    virtual QString name() const = 0; // short name, useful for menus
+    virtual QString summary() const = 0; // TODO: documentation
+    virtual QString model() const = 0;  // TODO: documentation
+    virtual QString about() const = 0; // TODO: documentation
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;

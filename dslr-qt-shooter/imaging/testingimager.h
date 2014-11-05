@@ -6,7 +6,8 @@
 class TestingImager : public Imager {
   Q_OBJECT
 public:
-    virtual QString summary() const { return "Testing Imager"; }
+    virtual QString name() const { return "Testing Imager"; }
+    virtual QString summary() const { return "---- Testing Imager ----"; }
     virtual QString model() const { return "no model information available"; }
     virtual QString about() const { return ""; }
 public slots:

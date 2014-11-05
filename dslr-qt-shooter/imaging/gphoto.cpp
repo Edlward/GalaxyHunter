@@ -24,10 +24,12 @@
 #include <QDebug>
 #include <QTemporaryFile>
 #include <QImage>
+#include "utils/scope.h"
 
 using namespace std;
 
-
+// sample application: http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/sample-multi-detect.c#l38
+//                     http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/autodetect.c
 
 class GPhoto::Private {
 public:
@@ -40,17 +42,28 @@ public:
   void reset_messages();
 };
 
-class GPhotoCamera::Private {
-public:
-  QString model;
-  QString about;
-  QString summary;
-};
 
 class GPhotoCameraInformation {
 public:
-  Camera *camera;
+  GPhotoCameraInformation(const std::string &name, const std::string &port, GPContext *context) 
+    : name(name), port(port), context(context) {}
+  string name;
+  string port;
+  GPContext *context;
 };
+
+class GPhotoCamera::Private {
+public:
+  Private(const std::shared_ptr<GPhotoCameraInformation> &info)
+    : name(QString::fromStdString(info->name)), port(info->port), context(info->context) {}
+  QString name;
+  string port;
+  QString model;
+  QString about;
+  QString summary;
+  GPContext* context;
+};
+
 
 struct CameraTempFile {
   CameraTempFile();
@@ -82,6 +95,21 @@ GPhoto::~GPhoto()
 
 void GPhoto::scan()
 {
+  _imagers.clear();
+  CameraList *cameras;
+  gp_list_new(&cameras);
+  scope cleanup{[=]{ gp_list_unref(cameras); }};
+  int result = gp_camera_autodetect(cameras, d->context);
+  size_t cameras_size = gp_list_count(cameras);
+  qDebug() << "result: " << result << ", list size: " << cameras_size;
+  for(int i=0; i<cameras_size; i++) {
+    const char *name, *port;
+    gp_list_get_name(cameras, i, &name);
+    gp_list_get_value(cameras, i, &port);
+    qDebug() << "found camera " << i << ": " << name << ", port " << port;
+    _imagers.push_back(make_shared<GPhotoCamera>(make_shared<GPhotoCameraInformation>(name, port, d->context)));
+  }
+  emit scan_finished();
 }
 
 void GPhoto::Private::gphotoMessage(GPContext* context, const char* m, void* data)
@@ -106,6 +134,7 @@ void GPhoto::Private::reset_messages()
 
 
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
+  : d(new Private{gphotoCameraInformation})
 {
   /*
   gp_camera_new(&d->gphoto_camera);
@@ -134,6 +163,11 @@ void GPhotoCamera::disconnect()
 void GPhotoCamera::shootPreview()
 {
 
+}
+
+QString GPhotoCamera::name() const
+{
+  return d->name;
 }
 
 
