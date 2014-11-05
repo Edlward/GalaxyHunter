@@ -30,6 +30,7 @@ private slots:
   void got_error(const QString &error);
   void got_message(const QString &message);
   void camera_connected();
+  void camera_disconnected();
 private:
   class Private;
   friend class Private;

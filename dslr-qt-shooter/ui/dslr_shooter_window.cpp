@@ -20,7 +20,7 @@ public:
 
     QList<LogEntry> logEntries;
     ImagingDriver *imagingDriver;
-    std::shared_ptr<ImagingDriver::Imager> imager;
+    std::shared_ptr<Imager> imager;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -44,15 +44,16 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->imageContainer->setWidgetResizable(true);
   d->ui->splitter->setSizes({height()/10*8, height()/10*2});
   
-  auto set_imager = [=](const std::shared_ptr<ImagingDriver::Imager> &imager) {
+  auto set_imager = [=](const std::shared_ptr<Imager> &imager) {
     d->imager = imager;
+    connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
+    connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
+    d->imager->connect();
   };
 
   connect(d->imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)));
   connect(d->imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)));
   connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()));
-  connect(d->imagingDriver, SIGNAL(camera_preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
-  connect(d->ui->preview, &QPushButton::clicked, d->imagingDriver, &ImagingDriver::preview, Qt::QueuedConnection);
   connect(d->ui->zoomIn, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(1.2); });
   connect(d->ui->zoomOut, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(0.8); });
   connect(d->ui->zoomActualSize, &QPushButton::clicked, [=] { d->ui->imageContainer->normalSize(); });
@@ -124,11 +125,21 @@ void DSLR_Shooter_Window::got_message(const QString& message)
 void DSLR_Shooter_Window::camera_connected()
 {
   qDebug() << __PRETTY_FUNCTION__;
-  /*
   d->ui->camera_infos->clear();
   QString camera_infos = QString("Model: %1\nSummary: %2")
-    .arg(imagingDriver->imager()->model())
-    .arg(imagingDriver->imager()->summary());
+    .arg(d->imager->model())
+    .arg(d->imager->summary());
+  got_message(QString("Camera connected: %1").arg(camera_infos));
   d->ui->camera_infos->setText(camera_infos);
-  */
+  d->ui->preview->setEnabled(true);
+  connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
+  connect(d->ui->preview, &QPushButton::clicked, d->imager.get(), &Imager::shootPreview, Qt::QueuedConnection);
 }
+
+void DSLR_Shooter_Window::camera_disconnected()
+{
+  d->ui->preview->setDisabled(true);
+  disconnect(d->ui->preview, SIGNAL(clicked()));
+  disconnect(d->ui->imageContainer, SLOT(setImage(const QImage &)));
+}
+

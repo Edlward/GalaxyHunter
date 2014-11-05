@@ -9,23 +9,35 @@
 using namespace std;
 
 TestingImagerDriver::TestingImagerDriver(QObject *parent) :
-    ImagingDriver(parent), _imager(new TestingImager)
+    ImagingDriver(parent)
 {
+}
+
+
+void TestingImager::connect()
+{
+  emit connected();
+}
+
+void TestingImager::disconnect()
+{
+
 }
 
 void TestingImagerDriver::scan()
 {
-  qDebug() << __PRETTY_FUNCTION__;
-  _imager = make_shared<TestingImager>();
-  _imagers = {_imager};
+  _imagers = {make_shared<TestingImager>()};
   emit scan_finished();
 }
 
 void TestingImagerDriver::preview()
 {
+}
+
+void TestingImager::shootPreview()
+{
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 4) + 1);
   qDebug() << "loading image: " << imageFile;
   QImage image(imageFile);
-  emit camera_preview(image);
+  emit preview(image);
 }
-

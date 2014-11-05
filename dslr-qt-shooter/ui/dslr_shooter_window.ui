@@ -71,6 +71,9 @@
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
            <widget class="QPushButton" name="preview">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Preview</string>
             </property>
@@ -136,7 +139,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>19</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
