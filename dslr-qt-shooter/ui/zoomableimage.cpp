@@ -23,6 +23,7 @@
 #include <QDragMoveEvent>
 #include <QDrag>
 #include <QScrollBar>
+#include <QApplication>
 #include <QDebug>
 #include <QMimeData>
 
@@ -38,6 +39,7 @@ ZoomableImage::ZoomableImage(QWidget* parent)
   image->setScaledContents(true);
   image->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
   setWidgetResizable(true);
+  setCursor(Qt::OpenHandCursor);
 }
 
 void ZoomableImage::fitToWindow()
@@ -59,6 +61,7 @@ void ZoomableImage::mousePressEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton) {
       dragging = true;
       point = event->pos();
+      QApplication::setOverrideCursor(Qt::ClosedHandCursor);
     }
 }
 
@@ -67,7 +70,6 @@ void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
   if(!dragging) return;
     QAbstractScrollArea::mouseMoveEvent(e);
   auto delta = point - e->pos();
-  qDebug() << "delta: " << delta;
   horizontalScrollBar()->setValue( horizontalScrollBar()->value() + delta.x());
   verticalScrollBar()->setValue(verticalScrollBar()->value() + delta.y());
   point = e->pos();
@@ -77,6 +79,7 @@ void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 {
     QAbstractScrollArea::mouseReleaseEvent(e);
     dragging = false;
+    QApplication::restoreOverrideCursor();
 }
 
 
