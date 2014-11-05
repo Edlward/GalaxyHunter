@@ -107,7 +107,13 @@
          </layout>
         </item>
         <item row="1" column="0">
-         <widget class="ZoomableImage" name="imageContainer">
+         <widget class="ZoomableImage" name="imageContainer" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
          </widget>
         </item>
        </layout>
@@ -147,6 +153,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ZoomableImage</class>
+   <extends>QWidget</extends>
+   <header>zoomableimage.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

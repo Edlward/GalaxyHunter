@@ -20,7 +20,11 @@
 #include "zoomableimage.h"
 #include <QLabel>
 #include <QImage>
+#include <QDragMoveEvent>
+#include <QDrag>
 #include <QScrollBar>
+#include <QDebug>
+#include <QMimeData>
 
 ZoomableImage::~ZoomableImage()
 {
@@ -48,6 +52,35 @@ void ZoomableImage::normalSize()
     image->adjustSize();
     ratio = 1;
 }
+
+void ZoomableImage::mousePressEvent(QMouseEvent* event)
+{
+    QAbstractScrollArea::mousePressEvent(event);
+    if (event->button() == Qt::LeftButton) {
+      dragging = true;
+      point = event->pos();
+    }
+}
+
+void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
+{
+  if(!dragging) return;
+    QAbstractScrollArea::mouseMoveEvent(e);
+  auto delta = point - e->pos();
+  qDebug() << "delta: " << delta;
+  horizontalScrollBar()->setValue( horizontalScrollBar()->value() + delta.x());
+  verticalScrollBar()->setValue(verticalScrollBar()->value() + delta.y());
+  point = e->pos();
+}
+
+void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
+{
+    QAbstractScrollArea::mouseReleaseEvent(e);
+    dragging = false;
+}
+
+
+
 
 void ZoomableImage::scale(double factor)
 {

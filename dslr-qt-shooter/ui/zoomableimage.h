@@ -35,9 +35,15 @@ public slots:
   void scale(double factor);
   void fitToWindow();
   void normalSize();
+protected:
+    virtual void mousePressEvent(QMouseEvent*e);
+    virtual void mouseMoveEvent(QMouseEvent* e);
+    virtual void mouseReleaseEvent(QMouseEvent*e);
 private:
+  QPoint point;
   QLabel *image;
   double ratio = 1;
+  bool dragging = false;
 };
 
 #endif // ZOOMABLEIMAGE_H
