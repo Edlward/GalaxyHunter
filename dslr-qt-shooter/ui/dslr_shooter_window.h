@@ -2,7 +2,7 @@
 #define DSLR_SHOOTER_WINDOW_H
 
 #include <QMainWindow>
-#include <QtCore/QDateTime>
+#include <QDateTime>
 #include <imaging/imaging_driver.h>
 
 class LinGuider;
@@ -31,17 +31,9 @@ private slots:
   void got_message(const QString &message);
   void camera_connected();
 private:
-    Ui::DSLR_Shooter_Window *ui;
-    LinGuider *guider;
-    struct LogEntry {
-       QString message;
-       QDateTime when;
-    };
-
-    QList<LogEntry> logEntries;
-    QStringList log;
-    ImagingDriver *imagingDriver;
-    std::shared_ptr<ImagingDriver::Imager> imager;
+  class Private;
+  friend class Private;
+  std::unique_ptr<Private> const d;
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H
