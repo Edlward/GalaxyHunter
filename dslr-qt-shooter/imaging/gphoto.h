@@ -49,7 +49,7 @@ public:
     ~GPhoto();
     virtual std::shared_ptr<Imager> imager() const;
 public slots:
-  virtual void findCamera();
+  virtual void scan();
   virtual void preview();
 
 };

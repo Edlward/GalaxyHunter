@@ -70,13 +70,6 @@
         <item row="0" column="1" rowspan="2">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QPushButton" name="findCamera">
-            <property name="text">
-             <string>Find Camera</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="preview">
             <property name="text">
              <string>Preview</string>
@@ -137,6 +130,31 @@
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuCamera">
+    <property name="title">
+     <string>Camera</string>
+    </property>
+    <addaction name="actionScan"/>
+    <addaction name="actionSet_Camera"/>
+    <addaction name="actionSet_Preview_Interval"/>
+   </widget>
+   <widget class="QMenu" name="menuGuider">
+    <property name="title">
+     <string>Guider</string>
+    </property>
+   </widget>
+   <addaction name="menuCamera"/>
+   <addaction name="menuGuider"/>
+  </widget>
   <action name="actionConnect_LinGuider">
    <property name="text">
     <string>Connect LinGuider</string>
@@ -150,6 +168,21 @@
   <action name="actionDither">
    <property name="text">
     <string>Dither</string>
+   </property>
+  </action>
+  <action name="actionScan">
+   <property name="text">
+    <string>Scan</string>
+   </property>
+  </action>
+  <action name="actionSet_Camera">
+   <property name="text">
+    <string>Set Camera</string>
+   </property>
+  </action>
+  <action name="actionSet_Preview_Interval">
+   <property name="text">
+    <string>Set Preview Interval...</string>
    </property>
   </action>
  </widget>

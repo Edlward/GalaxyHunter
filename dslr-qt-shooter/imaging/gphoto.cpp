@@ -65,8 +65,9 @@ std::shared_ptr<ImagingDriver::Imager> GPhoto::imager() const
   return d->camera;
 }
 
-void GPhoto::findCamera()
+void GPhoto::scan()
 {
+  /*
   d->reset_messages();
   try {
     d->camera = make_shared<Camera>(d);
@@ -75,6 +76,7 @@ void GPhoto::findCamera()
   } catch(runtime_error &e) {
     emit imager_error(QString::fromLocal8Bit(e.what()));
   }
+  */
 }
 
 

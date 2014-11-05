@@ -22,6 +22,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   ui(new Ui::DSLR_Shooter_Window)
 {
   ui->setupUi(this);
+  QMenu *setCamera = new QMenu("Available Cameras", this);
+  ui->actionSet_Camera->setMenu(setCamera);
   guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(update_infos()));
@@ -30,20 +32,34 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   imagingDriver = ImagingDriver::imagingDriver();
   imagingDriver->moveToThread(imaging_thread);
   imaging_thread->start();
+  
+  resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
+  ui->imageContainer->setWidgetResizable(true);
+  ui->splitter->setSizes({height()/10*8, height()/10*2});
+  
+  auto set_imager = [=](const std::shared_ptr<ImagingDriver::Imager> &imager) {
+    this->imager = imager;
+  };
+
   connect(imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)));
   connect(imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)));
   connect(imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()));
   connect(imagingDriver, SIGNAL(camera_preview(QImage)), ui->imageContainer, SLOT(setImage(QImage)));
-  connect(ui->findCamera, &QPushButton::clicked, imagingDriver, &ImagingDriver::findCamera, Qt::QueuedConnection);
   connect(ui->preview, &QPushButton::clicked, imagingDriver, &ImagingDriver::preview, Qt::QueuedConnection);
   connect(ui->zoomIn, &QPushButton::clicked, [=] { ui->imageContainer->scale(1.2); });
   connect(ui->zoomOut, &QPushButton::clicked, [=] { ui->imageContainer->scale(0.8); });
   connect(ui->zoomActualSize, &QPushButton::clicked, [=] { ui->imageContainer->normalSize(); });
   connect(ui->zoomFit, &QPushButton::clicked, [=] { ui->imageContainer->fitToWindow(); });
-
-  resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
-  ui->imageContainer->setWidgetResizable(true);
-  ui->splitter->setSizes({height()/10*8, height()/10*2});
+  connect(ui->actionScan, SIGNAL(triggered(bool)), imagingDriver, SLOT(scan()), Qt::QueuedConnection);
+  connect(imagingDriver, &ImagingDriver::scan_finished, this, [=]{
+    setCamera->clear();
+      qDebug() << __PRETTY_FUNCTION__ << ": cameras size: " << imagingDriver->imagers().size();
+    for(auto camera: imagingDriver->imagers()) {
+      connect(setCamera->addAction(camera->summary()), &QAction::triggered, [=] {
+        set_imager(camera);
+      });
+    }
+  }, Qt::QueuedConnection);
 }
 
 
@@ -102,9 +118,11 @@ void DSLR_Shooter_Window::got_message(const QString& message)
 void DSLR_Shooter_Window::camera_connected()
 {
   qDebug() << __PRETTY_FUNCTION__;
+  /*
   ui->camera_infos->clear();
   QString camera_infos = QString("Model: %1\nSummary: %2")
     .arg(imagingDriver->imager()->model())
     .arg(imagingDriver->imager()->summary());
   ui->camera_infos->setText(camera_infos);
+  */
 }

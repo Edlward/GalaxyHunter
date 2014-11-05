@@ -13,15 +13,12 @@ TestingImagerDriver::TestingImagerDriver(QObject *parent) :
 {
 }
 
-shared_ptr<ImagingDriver::Imager> TestingImagerDriver::imager() const
+void TestingImagerDriver::scan()
 {
-    return _imager;
-}
-
-void TestingImagerDriver::findCamera()
-{
+  qDebug() << __PRETTY_FUNCTION__;
   _imager = make_shared<TestingImager>();
-  emit camera_connected();
+  _imagers = {_imager};
+  emit scan_finished();
 }
 
 void TestingImagerDriver::preview()

@@ -14,9 +14,8 @@ public:
         virtual QString model() const { return "no model information available"; }
         virtual QString about() const { return ""; }
     };
-    virtual std::shared_ptr<Imager> imager() const;
 public slots:
-  virtual void findCamera();
+  virtual void scan();
   virtual void preview();
 signals:
 

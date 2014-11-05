@@ -3,8 +3,8 @@
 
 #include <QMainWindow>
 #include <QtCore/QDateTime>
+#include <imaging/imaging_driver.h>
 
-class ImagingDriver;
 class LinGuider;
 class QLabel;
 namespace Ui {
@@ -41,6 +41,7 @@ private:
     QList<LogEntry> logEntries;
     QStringList log;
     ImagingDriver *imagingDriver;
+    std::shared_ptr<ImagingDriver::Imager> imager;
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H
