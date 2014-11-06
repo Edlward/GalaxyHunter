@@ -16,6 +16,19 @@ BOOST_AUTO_TEST_CASE(TestSequenceRunningAllExecutions)
   BOOST_REQUIRE_EQUAL(3, executions);
 }
 
+BOOST_AUTO_TEST_CASE(TestRunLast)
+{
+  int executions = 0;
+  bool run_last = false;
+  sequence<int, 0>{{
+    { [&executions]{ executions++; return 0; }},
+    { [&executions]{ executions++; return 0; }},
+    { [&executions]{ executions++; return 0; }},
+  }}.run_last([&run_last] { run_last=true; } );
+  BOOST_REQUIRE_EQUAL(3, executions);
+  BOOST_REQUIRE(run_last);
+}
+
 BOOST_AUTO_TEST_CASE(TestSequenceHaltingAtFirstError)
 {
   int executions = 0;

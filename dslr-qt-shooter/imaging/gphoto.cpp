@@ -166,18 +166,18 @@ void GPhotoCamera::connect()
   GPPortInfoList *portInfoList = nullptr;
   int model, port;
   gp_api{{
-    {[&]{ return gp_abilities_list_new (&abilities_list); }, "gp_abilities_list_new"},
-    {[&]{ return gp_abilities_list_load(abilities_list, d->context); }, "gp_abilities_list_load" },
-    {[&]{ model = gp_abilities_list_lookup_model(abilities_list, d->model.toLocal8Bit()); return model; }, "gp_abilities_list_lookup_model" },
-    {[&]{ return gp_abilities_list_get_abilities(abilities_list, model, &abilities); }, "gp_abilities_list_get_abilities" },
-    {[&]{ return gp_camera_set_abilities(d->camera, abilities); }, "gp_camera_set_abilities" },
-    {[&]{ return gp_port_info_list_new(&portInfoList); }, "gp_port_info_list_new" },
-    {[&]{ return gp_port_info_list_load(portInfoList); }, "gp_port_info_list_load" },
-    {[&]{ return gp_port_info_list_count(portInfoList); }, "gp_port_info_list_count" },
-    {[&]{ port = gp_port_info_list_lookup_path(portInfoList, d->port.c_str()); return port; }, "gp_port_info_list_lookup_path" },
-    {[&]{ return gp_port_info_list_get_info(portInfoList, port, &portInfo); return port; }, "gp_port_info_list_get_info" },
-    {[&]{ return gp_camera_set_port_info(d->camera, portInfo); }, "gp_camera_set_port_info" },
-    {[&]{ emit connected(); return GP_OK; }, "finished" },
+    sequence_run( [&]{ return gp_abilities_list_new (&abilities_list); } ),
+    sequence_run( [&]{ return gp_abilities_list_load(abilities_list, d->context); } ),
+    sequence_run( [&]{ model = gp_abilities_list_lookup_model(abilities_list, d->model.toLocal8Bit()); return model; } ),
+    sequence_run( [&]{ return gp_abilities_list_get_abilities(abilities_list, model, &abilities); } ),
+    sequence_run( [&]{ return gp_camera_set_abilities(d->camera, abilities); } ),
+    sequence_run( [&]{ return gp_port_info_list_new(&portInfoList); } ),
+    sequence_run( [&]{ return gp_port_info_list_load(portInfoList); } ),
+    sequence_run( [&]{ return gp_port_info_list_count(portInfoList); } ),
+    sequence_run( [&]{ port = gp_port_info_list_lookup_path(portInfoList, d->port.c_str()); return port; } ),
+    sequence_run( [&]{ return gp_port_info_list_get_info(portInfoList, port, &portInfo); return port; } ),
+    sequence_run( [&]{ return gp_camera_set_port_info(d->camera, portInfo); } ),
+    sequence_run( [&]{ emit connected(); return GP_OK; } ),
   }}.on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
@@ -196,11 +196,12 @@ void GPhotoCamera::shootPreview()
   CameraTempFile camera_file;
   QImage image;
   gp_api{{
-    { [&]{ return gp_camera_capture_preview(d->camera, camera_file, d->context);}, "gp_camera_capture_preview" },
-    { [&]{ return camera_file.save();}, "camera_file_save" },
-    { [&]{ return image.load(camera_file);}, "load_image", true },
-    { [&]{ emit preview(image); return GP_OK; }, "preview_ok" },
-  }}.on_error([=](int errorCode, const std::string &label) {
+    sequence_run( [&]{ return gp_camera_capture_preview(d->camera, camera_file, d->context);} ),
+    sequence_run( [&]{ return camera_file.save();} ),
+  }}.run_last([&]{
+    if(image.load(camera_file))
+      emit preview(image);
+  }).on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
     // TODO: error signal? exception?
