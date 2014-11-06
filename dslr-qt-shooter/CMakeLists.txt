@@ -14,3 +14,4 @@ ADD_EXECUTABLE(dslr-qt-shooter main.cpp ${dslr_qt_shooter_RESOURCES_RCC} )
 TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network ${dslr_dependencies}  )
 
 add_subdirectory(utils)
+add_subdirectory(tests)

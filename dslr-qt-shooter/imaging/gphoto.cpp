@@ -25,6 +25,7 @@
 #include <QTemporaryFile>
 #include <QImage>
 #include "utils/scope.h"
+#include "utils/sequence.h"
 
 using namespace std;
 
@@ -62,6 +63,7 @@ public:
   QString about;
   QString summary;
   GPContext* context;
+  Camera *camera = nullptr;
 };
 
 
@@ -136,8 +138,8 @@ void GPhoto::Private::reset_messages()
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
   : d(new Private{gphotoCameraInformation})
 {
+  gp_camera_new(&d->camera);
   /*
-  gp_camera_new(&d->gphoto_camera);
   if(gp_camera_init(d->gphoto_camera, d->context) != GP_OK)
     throw runtime_error(d->last_error);
   
@@ -152,12 +154,12 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
 
 void GPhotoCamera::connect()
 {
-
+  sequence<int, 0> sequence{{}};
+  gp_camera_init(d->camera, d->context);
 }
 
 void GPhotoCamera::disconnect()
 {
-
 }
 
 void GPhotoCamera::shootPreview()
@@ -189,7 +191,7 @@ QString GPhotoCamera::summary() const
 
 GPhotoCamera::~GPhotoCamera()
 {
-  //gp_camera_free(d->gphoto_camera);
+  gp_camera_free(d->camera);
 }
 
 
