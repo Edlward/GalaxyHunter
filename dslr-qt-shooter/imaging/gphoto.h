@@ -32,7 +32,6 @@ class GPhotoCamera : public Imager {
 public:
   GPhotoCamera(const std::shared_ptr<GPhotoCameraInformation> &gphotoCameraInformation);
   ~GPhotoCamera();
-  virtual QString name() const;
   virtual QString summary() const;
   virtual QString model() const;
   virtual QString about() const;

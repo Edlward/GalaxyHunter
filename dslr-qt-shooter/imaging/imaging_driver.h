@@ -10,7 +10,6 @@ class QImage;
 class Imager : public QObject {
   Q_OBJECT
 public:
-    virtual QString name() const = 0; // short name, useful for menus
     virtual QString summary() const = 0; // TODO: documentation
     virtual QString model() const = 0;  // TODO: documentation
     virtual QString about() const = 0; // TODO: documentation

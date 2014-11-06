@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(TestDontRunErrorFunctionOnNoErrors)
       { [&executions]{ executions++; return 0; }},
       { [&executions]{ executions++; return 0; }},
     }};
-    s.run_on_error([&errorCode](int){ errorCode = 10; });
+    s.on_error([&errorCode](int, std::string){ errorCode = 10; });
   }
   BOOST_REQUIRE_EQUAL(4, executions);
   BOOST_REQUIRE_EQUAL(0, errorCode);
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(TestRunErrorfunction)
     { [&executions]{ executions++; return 3; }},
     { [&executions]{ executions++; return 0; }},
     { [&executions]{ executions++; return 0; }},
-  }}.run_on_error([&errorCode](int e){ errorCode = e+1; });
+  }}.on_error([&errorCode](int e, std::string){ errorCode = e+1; });
   BOOST_REQUIRE_EQUAL(2, executions);
   BOOST_REQUIRE_EQUAL(4, errorCode);
 }
@@ -75,10 +75,22 @@ BOOST_AUTO_TEST_CASE(TestWithDifferentReturnValueInitialization)
 {
   int executions = 0;
   sequence<int, 10>{{
-    { [&executions]{ executions++; return 10; }, 0},
+    { [&executions]{ executions++; return 10; }, "", 0},
     { [&executions]{ executions++; return 3; }},
     { [&executions]{ executions++; return 10; }},
     { [&executions]{ executions++; return 10; }},
   }};
   BOOST_REQUIRE_EQUAL(1, executions);
+}
+BOOST_AUTO_TEST_CASE(TestWithDifferentComparison)
+{
+  int executions = 0;
+  sequence<int, 0, std::greater_equal<int>>{{
+    { [&executions]{ executions++; return 10; }, "", 0},
+    { [&executions]{ executions++; return 3; }},
+    { [&executions]{ executions++; return 10; }},
+    { [&executions]{ executions++; return -1; }},
+    { [&executions]{ executions++; return 10; }},
+  }};
+  BOOST_REQUIRE_EQUAL(4, executions);
 }

@@ -31,6 +31,7 @@ using namespace std;
 
 // sample application: http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/sample-multi-detect.c#l38
 //                     http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/autodetect.c
+typedef sequence<int, GP_OK, std::greater_equal<int>> gp_api;
 
 class GPhoto::Private {
 public:
@@ -56,8 +57,7 @@ public:
 class GPhotoCamera::Private {
 public:
   Private(const std::shared_ptr<GPhotoCameraInformation> &info)
-    : name(QString::fromStdString(info->name)), port(info->port), context(info->context) {}
-  QString name;
+    : model(QString::fromStdString(info->name)), port(info->port), context(info->context) {}
   string port;
   QString model;
   QString about;
@@ -138,7 +138,13 @@ void GPhoto::Private::reset_messages()
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
   : d(new Private{gphotoCameraInformation})
 {
-  gp_camera_new(&d->camera);
+  gp_api{{
+    { [=] { return gp_camera_new(&d->camera); } },
+  }}.on_error([=](int errorCode, const std::string &label) {
+    const char *errorMessage = gp_result_as_string(errorCode);
+    qDebug() << errorMessage;
+    // TODO: error signal? exception?
+  });
   /*
   if(gp_camera_init(d->gphoto_camera, d->context) != GP_OK)
     throw runtime_error(d->last_error);
@@ -154,8 +160,31 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
 
 void GPhotoCamera::connect()
 {
-  sequence<int, 0> sequence{{}};
-  gp_camera_init(d->camera, d->context);
+  CameraAbilities abilities;
+  GPPortInfo portInfo;
+  CameraAbilitiesList *abilities_list = nullptr;
+  GPPortInfoList *portInfoList = nullptr;
+  int model, port;
+  gp_api{{
+    {[&]{ return gp_abilities_list_new (&abilities_list); }, "gp_abilities_list_new"},
+    {[&]{ return gp_abilities_list_load(abilities_list, d->context); }, "gp_abilities_list_load" },
+    {[&]{ model = gp_abilities_list_lookup_model(abilities_list, d->model.toLocal8Bit()); return model; }, "gp_abilities_list_lookup_model" },
+    {[&]{ return gp_abilities_list_get_abilities(abilities_list, model, &abilities); }, "gp_abilities_list_get_abilities" },
+    {[&]{ return gp_camera_set_abilities(d->camera, abilities); }, "gp_camera_set_abilities" },
+    {[&]{ return gp_port_info_list_new(&portInfoList); }, "gp_port_info_list_new" },
+    {[&]{ return gp_port_info_list_load(portInfoList); }, "gp_port_info_list_load" },
+    {[&]{ return gp_port_info_list_count(portInfoList); }, "gp_port_info_list_count" },
+    {[&]{ port = gp_port_info_list_lookup_path(portInfoList, d->port.c_str()); return port; }, "gp_port_info_list_lookup_path" },
+    {[&]{ return gp_port_info_list_get_info(portInfoList, port, &portInfo); return port; }, "gp_port_info_list_get_info" },
+    {[&]{ return gp_camera_set_port_info(d->camera, portInfo); }, "gp_camera_set_port_info" },
+  }}.on_error([=](int errorCode, const std::string &label) {
+    const char *errorMessage = gp_result_as_string(errorCode);
+    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
+    // TODO: error signal? exception?
+  });
+  gp_port_info_list_free(portInfoList);
+  gp_abilities_list_free(abilities_list);
+  emit connected();
 }
 
 void GPhotoCamera::disconnect()
@@ -166,12 +195,6 @@ void GPhotoCamera::shootPreview()
 {
 
 }
-
-QString GPhotoCamera::name() const
-{
-  return d->name;
-}
-
 
 QString GPhotoCamera::about() const
 {
