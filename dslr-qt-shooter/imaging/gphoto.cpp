@@ -70,7 +70,7 @@ public:
 struct CameraTempFile {
   CameraTempFile();
   ~CameraTempFile();
-  void save();
+  int save();
   CameraFile *camera_file;
   QTemporaryFile temp_file;
   operator CameraFile *() const { return camera_file; }
@@ -177,6 +177,7 @@ void GPhotoCamera::connect()
     {[&]{ port = gp_port_info_list_lookup_path(portInfoList, d->port.c_str()); return port; }, "gp_port_info_list_lookup_path" },
     {[&]{ return gp_port_info_list_get_info(portInfoList, port, &portInfo); return port; }, "gp_port_info_list_get_info" },
     {[&]{ return gp_camera_set_port_info(d->camera, portInfo); }, "gp_camera_set_port_info" },
+    {[&]{ emit connected(); return GP_OK; }, "finished" },
   }}.on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
@@ -184,7 +185,6 @@ void GPhotoCamera::connect()
   });
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
-  emit connected();
 }
 
 void GPhotoCamera::disconnect()
@@ -193,7 +193,18 @@ void GPhotoCamera::disconnect()
 
 void GPhotoCamera::shootPreview()
 {
-
+  CameraTempFile camera_file;
+  QImage image;
+  gp_api{{
+    { [&]{ return gp_camera_capture_preview(d->camera, camera_file, d->context);}, "gp_camera_capture_preview" },
+    { [&]{ return camera_file.save();}, "camera_file_save" },
+    { [&]{ return image.load(camera_file);}, "load_image", true },
+    { [&]{ emit preview(image); return GP_OK; }, "preview_ok" },
+  }}.on_error([=](int errorCode, const std::string &label) {
+    const char *errorMessage = gp_result_as_string(errorCode);
+    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
+    // TODO: error signal? exception?
+  });
 }
 
 QString GPhotoCamera::about() const
@@ -228,9 +239,9 @@ CameraTempFile::CameraTempFile()
   temp_file.setAutoRemove(false);
 }
 
-void CameraTempFile::save()
+int CameraTempFile::save()
 {
-  gp_file_save(camera_file, temp_file.fileName().toLocal8Bit());
+  return gp_file_save(camera_file, temp_file.fileName().toLocal8Bit());
 }
 
 CameraTempFile::~CameraTempFile()
