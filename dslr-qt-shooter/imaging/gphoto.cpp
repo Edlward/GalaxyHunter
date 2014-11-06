@@ -189,6 +189,7 @@ void GPhotoCamera::connect()
 
 void GPhotoCamera::disconnect()
 {
+  gp_camera_exit(d->camera, d->context);
 }
 
 void GPhotoCamera::shootPreview()
@@ -226,6 +227,7 @@ QString GPhotoCamera::summary() const
 
 GPhotoCamera::~GPhotoCamera()
 {
+  disconnect(); // TODO: check if connected
   gp_camera_free(d->camera);
 }
 
