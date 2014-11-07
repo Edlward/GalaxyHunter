@@ -208,7 +208,9 @@ void GPhotoCamera::shootPreview()
       return;
     }
     qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
-    Magick::Image m_image(camera_file.path().toStdString());
+    Magick::Image m_image;
+    m_image.magick("CR2");
+    m_image.read(camera_file.path().toStdString());
     Magick::Blob blob;
     m_image.write(&blob, "PNG");
     QByteArray data(static_cast<int>(blob.length()), 0);
