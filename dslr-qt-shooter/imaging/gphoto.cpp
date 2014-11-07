@@ -200,11 +200,12 @@ void GPhotoCamera::shootPreview()
     sequence_run( [&]{ return gp_camera_capture_preview(d->camera, camera_file, d->context);} ),
     sequence_run( [&]{ return camera_file.save();} ),
   }}.run_last([&]{
+    qDebug() << __PRETTY_FUNCTION__ << ": camera file: " << camera_file.path();
     if(image.load(camera_file))
       emit preview(image);
   }).on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
+    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage << "(" << errorCode << ")";
     // TODO: error signal? exception?
   });
 }
@@ -236,7 +237,8 @@ GPhotoCamera::~GPhotoCamera()
 
 CameraTempFile::CameraTempFile()
 {
-  gp_file_new(&camera_file);
+  int r = gp_file_new(&camera_file);
+  qDebug() << __PRETTY_FUNCTION__ << ": gp_file_new=" << r;
   temp_file.open();
   temp_file.close();
   temp_file.setAutoRemove(false);
@@ -244,6 +246,7 @@ CameraTempFile::CameraTempFile()
 
 int CameraTempFile::save()
 {
+  qDebug() << __PRETTY_FUNCTION__;
   return gp_file_save(camera_file, temp_file.fileName().toLocal8Bit());
 }
 
@@ -254,9 +257,11 @@ CameraTempFile::~CameraTempFile()
 
 QString CameraTempFile::mimeType() const
 {
-  gp_file_detect_mime_type(camera_file);
+  int r = gp_file_detect_mime_type(camera_file);
+  qDebug() << __PRETTY_FUNCTION__ << ": gp_file_detect_mime_type=" << r;
   const char *mime;
-  gp_file_get_mime_type(camera_file, &mime);
+  r = gp_file_get_mime_type(camera_file, &mime);
+  qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
   return QString(mime);
 }
 
