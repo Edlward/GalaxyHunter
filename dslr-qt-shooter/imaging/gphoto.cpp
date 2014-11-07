@@ -27,6 +27,8 @@
 #include "utils/scope.h"
 #include "utils/sequence.h"
 
+#include <GraphicsMagick/Magick++.h>
+
 using namespace std;
 
 // sample application: http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/sample-multi-detect.c#l38
@@ -201,8 +203,21 @@ void GPhotoCamera::shootPreview()
     sequence_run( [&]{ return camera_file.save();} ),
   }}.run_last([&]{
     qDebug() << __PRETTY_FUNCTION__ << ": camera file: " << camera_file.path();
-    if(image.load(camera_file))
+    if(image.load(camera_file)) {
       emit preview(image);
+      return;
+    }
+    qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
+    Magick::Image m_image(camera_file.path().toStdString());
+    Magick::Blob blob;
+    m_image.write(&blob, "PNG");
+    QByteArray data(static_cast<int>(blob.length()), 0);
+    std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
+    if(image.loadFromData(data)) {
+      emit preview(image);
+      return;
+    }
+    qDebug() << "Error loading image.";
   }).on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage << "(" << errorCode << ")";
