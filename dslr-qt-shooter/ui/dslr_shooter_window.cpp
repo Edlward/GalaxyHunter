@@ -45,7 +45,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
   d->ui->imageContainer->setWidgetResizable(true);
-  d->ui->splitter->setSizes({height()/10*8, height()/10*2});
+  d->ui->camera_splitter->setSizes({height()/10*8, height()/10*2});
+  d->ui->log_splitter->setSizes({height()/10*8, height()/10*2});
   
   auto set_imager = [=](const std::shared_ptr<Imager> &imager) {
     d->imager = imager;
@@ -54,13 +55,14 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imager->connect();
   };
 
-  connect(d->imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)));
-  connect(d->imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)));
-  connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()));
+  connect(d->imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)), Qt::QueuedConnection);
+  connect(d->imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)), Qt::QueuedConnection);
+  connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
   connect(d->ui->zoomIn, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(1.2); });
   connect(d->ui->zoomOut, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(0.8); });
   connect(d->ui->zoomActualSize, &QPushButton::clicked, [=] { d->ui->imageContainer->normalSize(); });
   connect(d->ui->zoomFit, &QPushButton::clicked, [=] { d->ui->imageContainer->fitToWindow(); });
+  connect(d->ui->shoot, SIGNAL(clicked(bool)), this, SLOT(start_shooting()));
   connect(d->ui->actionScan, SIGNAL(triggered(bool)), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
   connect(d->imagingDriver, &ImagingDriver::scan_finished, this, [=]{
     setCamera->clear();
@@ -134,19 +136,36 @@ void DSLR_Shooter_Window::camera_connected()
     .arg(d->imager->summary());
   got_message(QString("Camera connected: %1").arg(camera_infos));
   d->ui->camera_infos->setText(camera_infos);
-  d->ui->preview->setEnabled(true);
+  d->ui->shoot->setEnabled(true);
   connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
   connect(d->imager.get(), &Imager::preview, this, [=]{
     for(auto widget: std::vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
       widget->setEnabled(true);
   });
-  connect(d->ui->preview, &QPushButton::clicked, d->imager.get(), &Imager::shootPreview, Qt::QueuedConnection);
+}
+
+void DSLR_Shooter_Window::start_shooting()
+{
+  if(d->ui->shoot_mode->currentIndex() == 0) {
+    QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
+    return;
+  }
+  static std::map<int, int> multipliers {
+    {0, 1},
+    {1, 60},
+    {2, 60*60},
+  };
+  long seconds_interval = d->ui->shoot_interval->value() * multipliers[d->ui->shoot_interval_unit->currentIndex()];
+  QTimer *shootTimer = new QTimer(this);
+  connect(shootTimer, SIGNAL(timeout()), d->imager.get(), SLOT(shoot()), Qt::QueuedConnection);
+  shootTimer->start(seconds_interval * 1000);
+  QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
 }
 
 void DSLR_Shooter_Window::camera_disconnected()
 {
-  d->ui->preview->setDisabled(true);
-  disconnect(d->ui->preview, SIGNAL(clicked()));
+  d->ui->shoot->setDisabled(true);
+  disconnect(d->ui->shoot, SIGNAL(clicked()));
   disconnect(d->ui->imageContainer, SLOT(setImage(const QImage &)));
 }
 

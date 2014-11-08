@@ -28,6 +28,7 @@
 #include "utils/sequence.h"
 
 #include <GraphicsMagick/Magick++.h>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 
@@ -97,9 +98,8 @@ GPhoto::~GPhoto()
 }
 
 
-void GPhoto::scan()
+void GPhoto::scan_imagers()
 {
-  _imagers.clear();
   CameraList *cameras;
   gp_list_new(&cameras);
   scope cleanup{[=]{ gp_list_unref(cameras); }};
@@ -113,7 +113,6 @@ void GPhoto::scan()
     qDebug() << "found camera " << i << ": " << name << ", port " << port;
     _imagers.push_back(make_shared<GPhotoCamera>(make_shared<GPhotoCameraInformation>(name, port, d->context)));
   }
-  emit scan_finished();
 }
 
 void GPhoto::Private::gphotoMessage(GPContext* context, const char* m, void* data)
@@ -183,7 +182,7 @@ void GPhotoCamera::connect()
   }}.on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
-    // TODO: error signal? exception?
+    emit error(this, QString::fromLocal8Bit(errorMessage));
   });
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
@@ -194,22 +193,26 @@ void GPhotoCamera::disconnect()
   gp_camera_exit(d->camera, d->context);
 }
 
-void GPhotoCamera::shootPreview()
+void GPhotoCamera::shoot()
 {
+  bool delete_file = true;
   CameraTempFile camera_file;
+  CameraFilePath camera_remote_file;
+  auto fixed_filename = [](const std::string &filename) { return boost::replace_all_copy(filename, "*", ""); };
   QImage image;
   gp_api{{
-    sequence_run( [&]{ return gp_camera_capture_preview(d->camera, camera_file, d->context);} ),
+    sequence_run( [&]{ return gp_camera_capture(d->camera, GP_CAPTURE_IMAGE, &camera_remote_file, d->context);} ),
+    sequence_run( [&]{ return gp_camera_file_get(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, d->context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
+    sequence_run( [&]{ if(!delete_file) return GP_OK; return gp_camera_file_delete(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), d->context);} ),
   }}.run_last([&]{
-    qDebug() << __PRETTY_FUNCTION__ << ": camera file: " << camera_file.path();
+    qDebug() << "shoot completed: camera file " << camera_file.path();
     if(image.load(camera_file)) {
       emit preview(image);
       return;
     }
     qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
     Magick::Image m_image;
-    m_image.magick("CR2");
     m_image.read(camera_file.path().toStdString());
     Magick::Blob blob;
     m_image.write(&blob, "PNG");
@@ -217,13 +220,15 @@ void GPhotoCamera::shootPreview()
     std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
     if(image.loadFromData(data)) {
       emit preview(image);
+      emit message(this, "image captured correctly");
       return;
     }
     qDebug() << "Error loading image.";
+    emit error(this, "Error loading image");
   }).on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage << "(" << errorCode << ")";
-    // TODO: error signal? exception?
+    emit error(this, QString::fromLocal8Bit(errorMessage));
   });
 }
 

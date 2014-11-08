@@ -1,6 +1,6 @@
 #include <iostream>
 #include <QApplication>
-#include <GraphicsMagick/Magick++.h>
+#include <Magick++.h>
 #include "ui/dslr_shooter_window.h"
 
 using namespace std;

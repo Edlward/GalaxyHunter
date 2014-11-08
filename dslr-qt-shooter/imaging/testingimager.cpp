@@ -31,7 +31,7 @@ void TestingImagerDriver::scan()
 }
 
 
-void TestingImager::shootPreview()
+void TestingImager::shoot()
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 4) + 1);
   qDebug() << "loading image: " << imageFile;

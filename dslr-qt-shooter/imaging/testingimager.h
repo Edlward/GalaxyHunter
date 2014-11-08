@@ -12,7 +12,7 @@ public:
 public slots:
   virtual void connect();
   virtual void disconnect();
-  virtual void shootPreview();
+  virtual void shoot();
 };
 class TestingImagerDriver : public ImagingDriver
 {

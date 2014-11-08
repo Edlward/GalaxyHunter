@@ -16,10 +16,12 @@ public:
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
-  virtual void shootPreview() = 0;
+  virtual void shoot() = 0;
 signals:
   void connected();
   void disconnected();
+  void message(Imager *, const QString &);
+  void error(Imager *,const QString &);
   void preview(const QImage &);
 };
 
@@ -31,8 +33,11 @@ public:
     static ImagingDriver *imagingDriver(QObject *parent = 0);
 protected:
   std::vector<std::shared_ptr<Imager>> _imagers;
+  virtual void scan_imagers() = 0;
 public slots:
-  virtual void scan() = 0;
+  void scan();
+  void camera_message(Imager* camera, const QString& message);
+  void camera_error(Imager *camera, const QString &message);
 signals:
   void imager_message(const QString &);
   void imager_error(const QString &);

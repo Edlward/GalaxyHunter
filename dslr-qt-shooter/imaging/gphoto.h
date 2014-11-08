@@ -38,7 +38,7 @@ public:
 public slots:
   virtual void connect();
   virtual void disconnect();
-  virtual void shootPreview();
+  virtual void shoot();
 private:
   class Private;
   friend class Private;
@@ -52,7 +52,8 @@ public:
     GPhoto(QObject *parent = 0);
     ~GPhoto();
 public slots:
-  virtual void scan();
+protected:
+  virtual void scan_imagers();
 
 private:
   class Private;

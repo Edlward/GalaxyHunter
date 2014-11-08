@@ -31,6 +31,7 @@ private slots:
   void got_message(const QString &message);
   void camera_connected();
   void camera_disconnected();
+  void start_shooting();
 private:
   class Private;
   friend class Private;
