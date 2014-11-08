@@ -24,10 +24,9 @@ void TestingImager::disconnect()
 
 }
 
-void TestingImagerDriver::scan()
+void TestingImagerDriver::scan_imagers()
 {
   _imagers = {make_shared<TestingImager>()};
-  emit scan_finished();
 }
 
 

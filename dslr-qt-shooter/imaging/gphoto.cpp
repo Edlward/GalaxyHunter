@@ -144,19 +144,8 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
   }}.on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << errorMessage;
-    // TODO: error signal? exception?
+    emit error(this, QString::fromLocal8Bit(errorMessage));
   });
-  /*
-  if(gp_camera_init(d->gphoto_camera, d->context) != GP_OK)
-    throw runtime_error(d->last_error);
-  
-  gp_camera_get_abilities (d->gphoto_camera, &d->abilities);
-  d->model = QString::fromLocal8Bit(d->abilities.model);
-  gp_camera_get_summary(d->gphoto_camera, &d->camera_text, d->context);
-  d->summary = QString::fromLocal8Bit(d->camera_text.text);
-  gp_camera_get_about(d->gphoto_camera, &d->camera_text, d->context);
-  d->about = QString::fromLocal8Bit(d->camera_text.text);
-  */
 }
 
 void GPhotoCamera::connect()
@@ -204,8 +193,8 @@ void GPhotoCamera::shoot()
     sequence_run( [&]{ return gp_camera_capture(d->camera, GP_CAPTURE_IMAGE, &camera_remote_file, d->context);} ),
     sequence_run( [&]{ return gp_camera_file_get(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, d->context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
-    sequence_run( [&]{ if(!delete_file) return GP_OK; return gp_camera_file_delete(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), d->context);} ),
   }}.run_last([&]{
+    gp_camera_file_delete(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), d->context); // TODO: optional error checking
     qDebug() << "shoot completed: camera file " << camera_file.path();
     if(image.load(camera_file)) {
       emit preview(image);
@@ -219,8 +208,8 @@ void GPhotoCamera::shoot()
     QByteArray data(static_cast<int>(blob.length()), 0);
     std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
     if(image.loadFromData(data)) {
-      emit preview(image);
       emit message(this, "image captured correctly");
+      emit preview(image);
       return;
     }
     qDebug() << "Error loading image.";
@@ -286,18 +275,3 @@ QString CameraTempFile::mimeType() const
   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
   return QString(mime);
 }
-
-/*
-void GPhoto::preview()
-{
-  CameraTempFile camera_file;
-  int result = gp_camera_capture_preview(d->gphoto_camera, camera_file, d->context);
-  camera_file.save();
-  qDebug() << "result: " << result << ", file: " << camera_file.path() << ", mime: " << camera_file.mimeType();
-
-  QImage image;
-  qDebug() << "preview loaded: " << image.load(camera_file);
-  emit camera_preview(image);
-}
-
-*/

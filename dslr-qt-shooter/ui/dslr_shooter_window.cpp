@@ -134,7 +134,7 @@ void DSLR_Shooter_Window::camera_connected()
   QString camera_infos = QString("Model: %1\nSummary: %2")
     .arg(d->imager->model())
     .arg(d->imager->summary());
-  got_message(QString("Camera connected: %1").arg(camera_infos));
+  got_message(QString("Camera connected: %1").arg(d->imager->model()));
   d->ui->camera_infos->setText(camera_infos);
   d->ui->shoot->setEnabled(true);
   connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
@@ -146,8 +146,14 @@ void DSLR_Shooter_Window::camera_connected()
 
 void DSLR_Shooter_Window::start_shooting()
 {
-  if(d->ui->shoot_mode->currentIndex() == 0) {
+  std::shared_ptr<long> shots = std::make_shared<long>(0);
+  auto shoot = [=](){
+    qDebug() << "Shot #" << *shots;
     QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
+      ++(*shots);
+  };
+  if(d->ui->shoot_mode->currentIndex() == 0) {
+    shoot();
     return;
   }
   static std::map<int, int> multipliers {
@@ -155,17 +161,46 @@ void DSLR_Shooter_Window::start_shooting()
     {1, 60},
     {2, 60*60},
   };
-  long seconds_interval = d->ui->shoot_interval->value() * multipliers[d->ui->shoot_interval_unit->currentIndex()];
+  disconnect(d->ui->shoot, 0, 0, 0);
+  d->ui->shoot->setText("Stop Shooting");
   QTimer *shootTimer = new QTimer(this);
-  connect(shootTimer, SIGNAL(timeout()), d->imager.get(), SLOT(shoot()), Qt::QueuedConnection);
+  
+  auto setWidgetsEnabled = [=](bool enable) {
+    d->ui->shoot_mode->setEnabled(enable);
+    d->ui->shoot_interval->setEnabled(enable);
+    d->ui->images_count->setEnabled(enable);
+  };
+  
+  setWidgetsEnabled(false);
+  
+  auto stopShooting = [=]{
+    d->ui->shoot->disconnect();
+    connect(d->ui->shoot, SIGNAL(clicked(bool)), this, SLOT(start_shooting()));
+    d->ui->shoot->setText("Shoot");
+    setWidgetsEnabled(true);
+    delete shootTimer;
+  };
+  
+  long total_shots = d->ui->images_count->value() == 0 ? std::numeric_limits<long>::max() : d->ui->images_count->value();
+  
+  connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
+  long seconds_interval = d->ui->shoot_interval->value() * multipliers[d->ui->shoot_interval_unit->currentIndex()];
+  auto timer_shooting = [=]{
+    shoot();
+    d->ui->images_count->setValue(total_shots - *shots);
+    if( *shots >= total_shots) {
+      stopShooting();
+      return;
+    }
+  };
+  connect(shootTimer, &QTimer::timeout, timer_shooting);
   shootTimer->start(seconds_interval * 1000);
-  QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
+  timer_shooting();
 }
 
 void DSLR_Shooter_Window::camera_disconnected()
 {
   d->ui->shoot->setDisabled(true);
-  disconnect(d->ui->shoot, SIGNAL(clicked()));
   disconnect(d->ui->imageContainer, SLOT(setImage(const QImage &)));
 }
 

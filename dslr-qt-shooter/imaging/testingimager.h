@@ -19,8 +19,8 @@ class TestingImagerDriver : public ImagingDriver
     Q_OBJECT
 public:
     explicit TestingImagerDriver(QObject *parent = 0);
-public slots:
-  virtual void scan();
+protected:
+  virtual void scan_imagers();
 signals:
 
 };
