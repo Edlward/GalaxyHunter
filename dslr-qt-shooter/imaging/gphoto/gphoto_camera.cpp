@@ -70,7 +70,7 @@ ostream &operator<<(ostream &o, const CameraSetting &s) {
   enum_pair(GP_WIDGET_WINDOW), enum_pair(GP_WIDGET_SECTION), enum_pair(GP_WIDGET_TEXT), enum_pair(GP_WIDGET_RANGE),
   enum_pair(GP_WIDGET_TOGGLE), enum_pair(GP_WIDGET_RADIO), enum_pair(GP_WIDGET_MENU), enum_pair(GP_WIDGET_BUTTON), enum_pair(GP_WIDGET_DATE),
   };
-  o << s.path() << ": " << s.name << ", " << s.label << ", " << s.info << ", " << types[s.type] << endl;
+  o << s.path() << ": " << ", " << s.label << ", " << s.info << ", " << types[s.type] << endl;
   for(auto sub: s.children)
     o << *sub;
   return o;
@@ -84,8 +84,8 @@ QDebug &operator<<(QDebug &d, const std::string &s) {
 
 string CameraSetting::path() const
 {
-  boost::filesystem::path p;
   auto v = shared_from_this();
+  boost::filesystem::path p{v->name};
   while(v->parent) {
     p = boost::filesystem::path(v->parent->name) / p;
     v = v->parent;
