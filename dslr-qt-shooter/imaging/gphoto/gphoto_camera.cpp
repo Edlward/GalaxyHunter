@@ -74,16 +74,19 @@ void GPhotoCamera::connect()
     sequence_run( [&]{ return gp_camera_set_port_info(d->camera, portInfo); } ),
     sequence_run( [&]{ return gp_camera_get_summary(d->camera, &camera_summary, d->context); } ),
     sequence_run( [&]{ return gp_camera_get_about(d->camera, &camera_about, d->context); } ),
-    sequence_run( [&]{ emit connected(); return GP_OK; } ),
   }}.on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
     qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
     emit error(this, QString::fromLocal8Bit(errorMessage));
+  }).run_last([&]{
+    d->summary = QString(camera_summary.text);
+    d->about = QString(camera_about.text);
+    emit connected();    
   });
-  d->summary = QString(camera_summary.text);
-  d->about = QString(camera_about.text);
+  
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
+  
 }
 
 void GPhotoCamera::disconnect()
