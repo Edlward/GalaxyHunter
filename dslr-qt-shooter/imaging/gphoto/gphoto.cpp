@@ -23,6 +23,7 @@
 #include <iostream>
 #include <QDebug>
 #include <QTemporaryFile>
+#include <QThread>
 #include <QImage>
 #include "utils/scope.h"
 #include "utils/sequence.h"
@@ -194,7 +195,20 @@ void GPhotoCamera::shoot()
     sequence_run( [&]{ return gp_camera_file_get(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, d->context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
   }}.run_last([&]{
-    gp_camera_file_delete(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), d->context); // TODO: optional error checking
+    if(delete_file) {
+      int retry = 3;
+      for(int i=1; i<=3; i++) {
+	int result = gp_camera_file_delete(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), d->context);
+	if(result == GP_OK)
+	  break;
+	if(i<retry)
+	  QThread::currentThread()->msleep(500);
+	else
+	  emit error(this, QString("Error removing image on camera: %1/%2")
+	    .arg(camera_remote_file.folder)
+	    .arg(QString::fromStdString(fixed_filename(camera_remote_file.name))));
+      }
+    }
     qDebug() << "shoot completed: camera file " << camera_file.path();
     if(image.load(camera_file)) {
       emit preview(image);
