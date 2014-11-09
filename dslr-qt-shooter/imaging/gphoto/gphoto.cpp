@@ -24,17 +24,15 @@
 #include <QDebug>
 #include <QThread>
 #include "utils/scope.h"
-#include "utils/sequence.h"
 
 
-#include "gphoto_camera_information.h"
+#include "gphoto_commons.h"
 #include "gphoto_camera.h"
 
 using namespace std;
 
 // sample application: http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/sample-multi-detect.c#l38
 //                     http://sourceforge.net/p/gphoto/code/HEAD/tree/trunk/libgphoto2/examples/autodetect.c
-typedef sequence<int, GP_OK, std::greater_equal<int>> gp_api;
 
 class GPhoto::Private {
 public:

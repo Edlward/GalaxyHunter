@@ -1,16 +1,13 @@
 #include "gphoto_camera.h"
-#include "gphoto_camera_information.h"
+#include "gphoto_commons.h"
 #include <QTemporaryFile>
 #include "utils/scope.h"
-#include "utils/sequence.h"
-#include <QDebug>
 #include <QThread>
 #include <QImage>
+#include <QDebug>
 
 #include <GraphicsMagick/Magick++.h>
 #include <boost/algorithm/string.hpp>
-
-typedef sequence<int, GP_OK, std::greater_equal<int>> gp_api;
 
 using namespace std;
 class GPhotoCamera::Private {
