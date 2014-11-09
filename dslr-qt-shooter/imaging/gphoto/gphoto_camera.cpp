@@ -8,6 +8,7 @@
 
 #include <GraphicsMagick/Magick++.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem/path.hpp>
 
 using namespace std;
 class GPhotoCamera::Private {
@@ -51,6 +52,66 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
   });
 }
 
+struct CameraSetting : enable_shared_from_this<CameraSetting> {
+  int id;
+  string name;
+  string label;
+  string info;
+  CameraWidgetType type;
+  string path() const;
+  vector<shared_ptr<CameraSetting>> children;
+  shared_ptr<CameraSetting> parent;
+  static shared_ptr<CameraSetting> from(CameraWidget *widget, const shared_ptr<CameraSetting> &parent);
+};
+
+// TODO: move to utils?
+QDebug &operator<<(QDebug &d, const std::string &s) {
+  d << QString::fromStdString(s);
+  return d;
+}
+
+string CameraSetting::path() const
+{
+  boost::filesystem::path p;
+  auto v = shared_from_this();
+  while(v->parent) {
+    p = boost::filesystem::path(v->parent->name) / p;
+    v = v->parent;
+  }
+  return p.string();
+}
+
+
+shared_ptr< CameraSetting > CameraSetting::from(CameraWidget* widget, const shared_ptr< CameraSetting >& parent = {})
+{
+  const char *s;
+  auto setting = make_shared<CameraSetting>();
+  setting->parent = parent;
+  auto to_string = [&](string &dest, int error_code) {
+    if(error_code == GP_OK)
+      dest = {s};
+    return error_code;
+  };
+  gp_api{{
+    sequence_run( [&]{ return gp_widget_get_id(widget, &setting->id); }),
+    sequence_run( [&]{ return to_string(setting->info, gp_widget_get_info(widget, &s) ); }),
+    sequence_run( [&]{ return to_string(setting->label, gp_widget_get_label(widget, &s) ); }),
+    sequence_run( [&]{ return to_string(setting->name, gp_widget_get_name(widget, &s) ); }),
+    sequence_run( [&]{ return gp_widget_get_type(widget, &setting->type); }),
+  }}.on_error([&](int errorCode, const std::string &label) {
+    const char *errorMessage = gp_result_as_string(errorCode);
+    qDebug() << "Error decoding setting on " << label << ": " << errorMessage;
+  });
+  for(int i=0; i<gp_widget_count_children(widget); i++) {
+    CameraWidget *child;
+    // TODO scope cleanup_child{[&child]{gp_widget_unref(child);}};
+    if(gp_widget_get_child(widget, i, &child) == GP_OK)
+      setting->children.push_back(from(child, setting));
+  }
+  return setting;
+}
+
+
 void GPhotoCamera::connect()
 {
   CameraAbilities abilities;
@@ -76,13 +137,18 @@ void GPhotoCamera::connect()
     sequence_run( [&]{ return gp_camera_get_about(d->camera, &camera_about, d->context); } ),
   }}.on_error([=](int errorCode, const std::string &label) {
     const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage;
+    qDebug() << "on " << label << ": " << errorMessage;
     emit error(this, QString::fromLocal8Bit(errorMessage));
   }).run_last([&]{
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
     emit connected();    
   });
+  CameraWidget *settings;
+  if(gp_camera_get_config(d->camera, &settings, d->context) == GP_OK) {
+    scope cleanup_settings{[&]{ gp_widget_free(settings); } };
+    auto cameraSetting = CameraSetting::from(settings);
+  }
   
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);

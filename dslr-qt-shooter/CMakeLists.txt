@@ -3,6 +3,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Network REQUIRED)
 find_package(ImageMagick REQUIRED)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework system filesystem)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${Qt5Widgets_INCLUDE_DIRS})
@@ -14,7 +15,7 @@ add_subdirectory(imaging)
 qt5_add_resources(dslr_qt_shooter_RESOURCES_RCC resources.qrc )
 
 ADD_EXECUTABLE(dslr-qt-shooter main.cpp ${dslr_qt_shooter_RESOURCES_RCC} )
-TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network ${IMAGEMAGICK_LDFLAGS} ${dslr_dependencies}  )
+TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network ${IMAGEMAGICK_LDFLAGS} ${dslr_dependencies} ${Boost_LIBRARIES}  )
 
 add_subdirectory(utils)
 add_subdirectory(tests)
