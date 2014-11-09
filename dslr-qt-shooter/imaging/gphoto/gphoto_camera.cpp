@@ -64,6 +64,13 @@ struct CameraSetting : enable_shared_from_this<CameraSetting> {
   static shared_ptr<CameraSetting> from(CameraWidget *widget, const shared_ptr<CameraSetting> &parent);
 };
 
+ostream &operator<<(ostream &o, const CameraSetting &s) {
+  o << s.path() << ": " << s.name << ", " << s.label << ", " << s.info << ", " << s.type << endl;
+  for(auto sub: s.children)
+    o << *sub;
+  return o;
+}
+
 // TODO: move to utils?
 QDebug &operator<<(QDebug &d, const std::string &s) {
   d << QString::fromStdString(s);
@@ -148,6 +155,7 @@ void GPhotoCamera::connect()
   if(gp_camera_get_config(d->camera, &settings, d->context) == GP_OK) {
     scope cleanup_settings{[&]{ gp_widget_free(settings); } };
     auto cameraSetting = CameraSetting::from(settings);
+    cerr << *cameraSetting << endl;
   }
   
   gp_port_info_list_free(portInfoList);
