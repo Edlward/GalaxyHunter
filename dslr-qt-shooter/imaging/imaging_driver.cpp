@@ -1,11 +1,11 @@
 #include "imaging_driver.h"
 
 #ifdef IMAGING_gphoto2
-#include "gphoto.h"
+#include "gphoto/gphoto.h"
 #warning Using gphoto2 backend
 #endif
 #ifdef IMAGING_testing
-#include "testingimager.h"
+#include "testing/testingimager.h"
 #warning Using testing backend
 #endif
 

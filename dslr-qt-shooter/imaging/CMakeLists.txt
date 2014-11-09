@@ -6,21 +6,15 @@ set(IMAGING_BACKEND ${DEFAULT_IMAGING_BACKEND} CACHE STRING "Imaging backend to 
 add_definitions(-DIMAGING_${IMAGING_BACKEND})
 
 if(IMAGING_BACKEND STREQUAL "gphoto2")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GPHOTO2 libgphoto2)
-    include_directories(${GPHOTO2_INCLUDE_DIRS})
-    set(dslr_imaging_SOURCES ${dslr_imaging_SOURCES} gphoto.cpp)
-    set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS} gphoto.h)
+  add_subdirectory(gphoto)
 elseif(IMAGING_BACKEND STREQUAL "testing")
-    set(dslr_imaging_SOURCES ${dslr_imaging_SOURCES} testingimager.cpp)
-    set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS} testingimager.h)
+  add_subdirectory(testing)
 else(IMAGING_BACKEND STREQUAL "gphoto2")
     message(FATAL_ERROR "Backend ${IMAGING_BACKEND} not recognized.
 Supported values:
   gphoto2
   testing")
 endif(IMAGING_BACKEND STREQUAL "gphoto2")
-
 
 add_library(dslr_imaging STATIC ${dslr_imaging_SOURCES} ${dslr_imaging_HEADERS_MOC})
 
