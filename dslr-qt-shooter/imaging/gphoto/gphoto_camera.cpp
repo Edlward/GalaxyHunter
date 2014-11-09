@@ -64,8 +64,13 @@ struct CameraSetting : enable_shared_from_this<CameraSetting> {
   static shared_ptr<CameraSetting> from(CameraWidget *widget, const shared_ptr<CameraSetting> &parent);
 };
 
+#define enum_pair(Value) {Value, #Value}
 ostream &operator<<(ostream &o, const CameraSetting &s) {
-  o << s.path() << ": " << s.name << ", " << s.label << ", " << s.info << ", " << s.type << endl;
+  static map<CameraWidgetType, string> types {
+  enum_pair(GP_WIDGET_WINDOW), enum_pair(GP_WIDGET_SECTION), enum_pair(GP_WIDGET_TEXT), enum_pair(GP_WIDGET_RANGE),
+  enum_pair(GP_WIDGET_TOGGLE), enum_pair(GP_WIDGET_RADIO), enum_pair(GP_WIDGET_MENU), enum_pair(GP_WIDGET_BUTTON), enum_pair(GP_WIDGET_DATE),
+  };
+  o << s.path() << ": " << s.name << ", " << s.label << ", " << s.info << ", " << types[s.type] << endl;
   for(auto sub: s.children)
     o << *sub;
   return o;
