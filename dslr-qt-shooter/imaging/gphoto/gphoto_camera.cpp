@@ -1,43 +1,11 @@
-#include "gphoto_camera.h"
-#include "gphoto_commons.h"
-#include <QTemporaryFile>
-#include "utils/scope.h"
-#include <QThread>
-#include <QImage>
-#include <QDebug>
-
-#include <GraphicsMagick/Magick++.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem/path.hpp>
-
-using namespace std;
-class GPhotoCamera::Private {
-public:
-  Private(const std::shared_ptr<GPhotoCameraInformation> &info)
-    : model(QString::fromStdString(info->name)), port(info->port), context(info->context) {}
-  std::string port;
-  QString model;
-  QString about;
-  QString summary;
-  GPContext* context;
-  Camera *camera = nullptr;
-};
+#include "gphoto_camera_p.h"
 
 
-
-struct CameraTempFile {
-  CameraTempFile();
-  ~CameraTempFile();
-  int save();
-  CameraFile *camera_file;
-  QTemporaryFile temp_file;
-  operator CameraFile *() const { return camera_file; }
-  operator QString() const { return path(); }
-  QString mimeType() const;
-  QString path() const { return temp_file.fileName(); }
-};
-
-
+QString gphoto_error(int errorCode)
+{
+    const char *errorMessage = gp_result_as_string(errorCode);
+    return QString(errorMessage);
+}
 
 
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
@@ -46,23 +14,10 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
   gp_api{{
     { [=] { return gp_camera_new(&d->camera); } },
   }}.on_error([=](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << errorMessage;
-    emit error(this, QString::fromLocal8Bit(errorMessage));
+    qDebug() << gphoto_error(errorCode);
+    emit error(this, gphoto_error(errorCode));
   });
 }
-
-struct CameraSetting : enable_shared_from_this<CameraSetting> {
-  int id;
-  string name;
-  string label;
-  string info;
-  CameraWidgetType type;
-  string path() const;
-  vector<shared_ptr<CameraSetting>> children;
-  shared_ptr<CameraSetting> parent;
-  static shared_ptr<CameraSetting> from(CameraWidget *widget, const shared_ptr<CameraSetting> &parent);
-};
 
 #define enum_pair(Value) {Value, #Value}
 ostream &operator<<(ostream &o, const CameraSetting &s) {
@@ -111,8 +66,7 @@ shared_ptr< CameraSetting > CameraSetting::from(CameraWidget* widget, const shar
     sequence_run( [&]{ return to_string(setting->name, gp_widget_get_name(widget, &s) ); }),
     sequence_run( [&]{ return gp_widget_get_type(widget, &setting->type); }),
   }}.on_error([&](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "Error decoding setting on " << label << ": " << errorMessage;
+    qDebug() << "Error decoding setting on " << label << ": " << gphoto_error(errorCode);
   });
   for(int i=0; i<gp_widget_count_children(widget); i++) {
     CameraWidget *child;
@@ -148,9 +102,8 @@ void GPhotoCamera::connect()
     sequence_run( [&]{ return gp_camera_get_summary(d->camera, &camera_summary, d->context); } ),
     sequence_run( [&]{ return gp_camera_get_about(d->camera, &camera_about, d->context); } ),
   }}.on_error([=](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "on " << label << ": " << errorMessage;
-    emit error(this, QString::fromLocal8Bit(errorMessage));
+    qDebug() << "on " << label << ": " << gphoto_error(errorCode);
+    emit error(this, gphoto_error(errorCode));
   }).run_last([&]{
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
@@ -219,9 +172,8 @@ void GPhotoCamera::shoot()
     qDebug() << "Error loading image.";
     emit error(this, "Error loading image");
   }).on_error([=](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage << "(" << errorCode << ")";
-    emit error(this, QString::fromLocal8Bit(errorMessage));
+    qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
+    emit error(this, gphoto_error(errorCode));
   });
 }
 
