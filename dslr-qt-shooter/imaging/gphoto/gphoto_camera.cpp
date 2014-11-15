@@ -10,6 +10,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/path.hpp>
 
+#include <iostream>
 using namespace std;
 class GPhotoCamera::Private {
 public:
