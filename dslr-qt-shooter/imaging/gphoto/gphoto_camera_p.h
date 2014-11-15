@@ -40,8 +40,8 @@ struct CameraSetting : enable_shared_from_this<CameraSetting> {
 
 class GPhotoCamera::Private {
 public:
-  Private(const shared_ptr<GPhotoCameraInformation> &info)
-    : model(QString::fromStdString(info->name)), port(info->port), context(info->context) {}
+  Private(const shared_ptr<GPhotoCameraInformation> &info, GPhotoCamera *q)
+    : model(QString::fromStdString(info->name)), port(info->port), context(info->context), q(q) {}
   string port;
   QString model;
   QString about;
@@ -49,6 +49,9 @@ public:
   GPContext* context;
   Camera *camera = nullptr;
   shared_ptr<CameraSetting> settings;
+  void setting(const std::string &path, const QString &value);
+private:
+  GPhotoCamera *q;
 };
 
 

@@ -20,6 +20,9 @@ public slots:
   virtual void connect();
   virtual void disconnect();
   virtual void shoot();
+  virtual void setImageFormat(const QString&);
+  virtual void setISO(const QString&);
+  virtual void setShutterSpeed(const QString&);
 private:
   class Private;
   friend class Private;

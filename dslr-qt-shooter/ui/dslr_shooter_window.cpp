@@ -154,6 +154,9 @@ void DSLR_Shooter_Window::camera_connected()
   populateCombo(d->ui->imageFormat, d->imager->imageFormat());
   populateCombo(d->ui->iso, d->imager->iso());
   populateCombo(d->ui->shutterSpeed, d->imager->shutterSpeed());
+  connect(d->ui->shutterSpeed, SIGNAL(currentTextChanged(QString)), d->imager.get(), SLOT(setShutterSpeed(QString)), Qt::QueuedConnection);
+  connect(d->ui->iso, SIGNAL(currentTextChanged(QString)), d->imager.get(), SLOT(setISO(QString)), Qt::QueuedConnection);
+  connect(d->ui->imageFormat, SIGNAL(currentTextChanged(QString)), d->imager.get(), SLOT(setImageFormat(QString)), Qt::QueuedConnection);
 }
 
 void DSLR_Shooter_Window::start_shooting()

@@ -11,7 +11,7 @@ QString gphoto_error(int errorCode)
 
 
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
-  : d(new Private{gphotoCameraInformation})
+  : d(new Private{gphotoCameraInformation, this})
 {
   gp_api{{
     { [=] { return gp_camera_new(&d->camera); } },
@@ -45,27 +45,49 @@ ostream &operator<<(ostream &o, const CameraSetting &s) {
   return o;
 }
 
+#define IMAGE_FORMAT_SETTING "main/settings/imageformat"
+#define ISO_SETTING "main/settings/iso"
+#define SHUTTER_SPEED_SETTING "main/settings/shutterspeed"
+
 Imager::ComboSetting GPhotoCamera::imageFormat() const
 {
-  auto setting = d->settings->find("main/settings/imageformat");
+  auto setting = d->settings->find(IMAGE_FORMAT_SETTING);
+  if(!setting) return {};
   return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
 }
 
 Imager::ComboSetting GPhotoCamera::iso() const
 {
-  auto setting = d->settings->find("main/settings/iso");
+  auto setting = d->settings->find(ISO_SETTING);
+  if(!setting) return {};
   return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
 }
 
 Imager::ComboSetting GPhotoCamera::shutterSpeed() const
 {
-  auto setting = d->settings->find("main/settings/shutterspeed");
+  auto setting = d->settings->find(SHUTTER_SPEED_SETTING);
+  if(!setting) return {};
   return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
+}
+
+
+void GPhotoCamera::setImageFormat(const QString& imageFormat)
+{
+    d->setting(IMAGE_FORMAT_SETTING, imageFormat);
+}
+
+void GPhotoCamera::setISO(const QString& iso)
+{
+    d->setting(ISO_SETTING, iso);
+}
+
+void GPhotoCamera::setShutterSpeed(const QString& speed)
+{
+    d->setting(SHUTTER_SPEED_SETTING, speed);
 }
 
 shared_ptr< CameraSetting > CameraSetting::find(const string& _path)
 {
-  cerr << "searching for " << _path << " in " << path() << endl;
   if(_path == path())
     return shared_from_this();
   for(auto child: children) {
@@ -76,6 +98,30 @@ shared_ptr< CameraSetting > CameraSetting::find(const string& _path)
   return {};
 }
 
+
+
+
+void GPhotoCamera::Private::setting(const std::string &path, const QString& value)
+{
+  auto s = settings->find(path);
+  if(!s) return;
+  qDebug() << "finding child with path: " << s->path() << ", id: " << s->id << ", label: " << s->label;
+  CameraWidget *settings = nullptr;
+  CameraWidget *setting;
+  
+  gp_api{{
+    sequence_run( [&]{ return gp_camera_get_config(camera, &settings, context); }),
+    sequence_run( [&]{ return gp_widget_get_child_by_name(settings, s->name.c_str(), &setting); }),
+    sequence_run( [&]{ return gp_widget_set_value(setting, value.toStdString().c_str()); }),
+    sequence_run( [&]{ return gp_camera_set_config(camera, settings, context); }),
+  }}.on_error([&](int errorCode, const std::string &label) {
+    qDebug() << "Error writing setting " << value << " for widget " << path << " on " << label << ": " << gphoto_error(errorCode);
+    q->error(q, gphoto_error(errorCode));
+  });;
+  
+  gp_widget_free(settings);
+  
+}
 
 
 string CameraSetting::path() const

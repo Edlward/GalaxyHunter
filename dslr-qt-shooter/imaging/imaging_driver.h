@@ -29,6 +29,9 @@ public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
   virtual void shoot() = 0;
+  virtual void setShutterSpeed(const QString &) {};
+  virtual void setImageFormat(const QString &) {};
+  virtual void setISO(const QString &) {};
 signals:
   void connected();
   void disconnected();
