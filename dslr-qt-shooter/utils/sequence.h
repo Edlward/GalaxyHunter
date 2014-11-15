@@ -1,6 +1,7 @@
 #ifndef UTILS_SEQUENCE_H
 #define UTILS_SEQUENCE_H
 #include <functional>
+#include <list>
 
 template<typename T, T defaultValue, typename check_operator = std::equal_to<T>>
 class sequence {
@@ -27,6 +28,7 @@ public:
   }
   sequence &on_error(on_error_f run_on_error) { _run_on_error = run_on_error; return *this; }
   sequence &run_last(std::function<void()> run_last) { _run_last = run_last; return *this; }
+  sequence &add(run r) { runs.push_back(r); }
 private:
   std::list<run> runs;
   on_error_f _run_on_error = [](const T&, const std::string&) {};

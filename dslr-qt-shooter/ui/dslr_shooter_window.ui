@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>955</width>
+    <height>903</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -123,15 +123,15 @@
        </widget>
        <widget class="QToolBox" name="toolBox">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="camera_info_page">
          <property name="geometry">
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>225</width>
-           <height>222</height>
+           <width>183</width>
+           <height>161</height>
           </rect>
          </property>
          <attribute name="label">
@@ -165,8 +165,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>225</width>
-           <height>222</height>
+           <width>219</width>
+           <height>294</height>
           </rect>
          </property>
          <attribute name="label">
@@ -249,6 +249,48 @@
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Image Format</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="imageFormat">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Shutter Speed</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="shutterSpeed">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>ISO</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="iso">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="verticalSpacer_3">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -268,8 +310,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>123</width>
-           <height>76</height>
+           <width>111</width>
+           <height>66</height>
           </rect>
          </property>
          <attribute name="label">
@@ -325,8 +367,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
-     <height>20</height>
+     <width>955</width>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">

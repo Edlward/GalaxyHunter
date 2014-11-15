@@ -1,44 +1,13 @@
-#include "gphoto_camera.h"
-#include "gphoto_commons.h"
-#include <QTemporaryFile>
-#include "utils/scope.h"
-#include <QThread>
-#include <QImage>
-#include <QDebug>
-
-#include <GraphicsMagick/Magick++.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem/path.hpp>
-
+#include "gphoto_camera_p.h"
 #include <iostream>
-using namespace std;
-class GPhotoCamera::Private {
-public:
-  Private(const std::shared_ptr<GPhotoCameraInformation> &info)
-    : model(QString::fromStdString(info->name)), port(info->port), context(info->context) {}
-  std::string port;
-  QString model;
-  QString about;
-  QString summary;
-  GPContext* context;
-  Camera *camera = nullptr;
-};
 
+#include "utils/qt.h"
 
-
-struct CameraTempFile {
-  CameraTempFile();
-  ~CameraTempFile();
-  int save();
-  CameraFile *camera_file;
-  QTemporaryFile temp_file;
-  operator CameraFile *() const { return camera_file; }
-  operator QString() const { return path(); }
-  QString mimeType() const;
-  QString path() const { return temp_file.fileName(); }
-};
-
-
+QString gphoto_error(int errorCode)
+{
+    const char *errorMessage = gp_result_as_string(errorCode);
+    return QString(errorMessage);
+}
 
 
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
@@ -47,23 +16,10 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
   gp_api{{
     { [=] { return gp_camera_new(&d->camera); } },
   }}.on_error([=](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << errorMessage;
-    emit error(this, QString::fromLocal8Bit(errorMessage));
+    qDebug() << gphoto_error(errorCode);
+    emit error(this, gphoto_error(errorCode));
   });
 }
-
-struct CameraSetting : enable_shared_from_this<CameraSetting> {
-  int id;
-  string name;
-  string label;
-  string info;
-  CameraWidgetType type;
-  string path() const;
-  vector<shared_ptr<CameraSetting>> children;
-  shared_ptr<CameraSetting> parent;
-  static shared_ptr<CameraSetting> from(CameraWidget *widget, const shared_ptr<CameraSetting> &parent);
-};
 
 #define enum_pair(Value) {Value, #Value}
 ostream &operator<<(ostream &o, const CameraSetting &s) {
@@ -71,17 +27,56 @@ ostream &operator<<(ostream &o, const CameraSetting &s) {
   enum_pair(GP_WIDGET_WINDOW), enum_pair(GP_WIDGET_SECTION), enum_pair(GP_WIDGET_TEXT), enum_pair(GP_WIDGET_RANGE),
   enum_pair(GP_WIDGET_TOGGLE), enum_pair(GP_WIDGET_RADIO), enum_pair(GP_WIDGET_MENU), enum_pair(GP_WIDGET_BUTTON), enum_pair(GP_WIDGET_DATE),
   };
-  o << s.path() << ": " << ", " << s.label << ", " << s.info << ", " << types[s.type] << endl;
+  o << s.path() << ": " << ", " << s.label << ", " << s.info << ", " << types[s.type];
+  
+  if(s.type == GP_WIDGET_TEXT || s.type == GP_WIDGET_RADIO || s.type == GP_WIDGET_MENU)
+    o << "; value: " << s.value;
+  if(s.type == GP_WIDGET_RADIO || s.type == GP_WIDGET_MENU) {
+    string sep = "";
+    o << "\nchoices: ";
+    for(auto choice: s.choices) {
+      o << sep << choice;
+      sep = ", ";
+    }
+  }
+  o << endl;
   for(auto sub: s.children)
     o << *sub;
   return o;
 }
 
-// TODO: move to utils?
-QDebug &operator<<(QDebug &d, const std::string &s) {
-  d << QString::fromStdString(s);
-  return d;
+Imager::ComboSetting GPhotoCamera::imageFormat() const
+{
+  auto setting = d->settings->find("main/settings/imageformat");
+  return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
 }
+
+Imager::ComboSetting GPhotoCamera::iso() const
+{
+  auto setting = d->settings->find("main/settings/iso");
+  return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
+}
+
+Imager::ComboSetting GPhotoCamera::shutterSpeed() const
+{
+  auto setting = d->settings->find("main/settings/shutterspeed");
+  return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
+}
+
+shared_ptr< CameraSetting > CameraSetting::find(const string& _path)
+{
+  cerr << "searching for " << _path << " in " << path() << endl;
+  if(_path == path())
+    return shared_from_this();
+  for(auto child: children) {
+    auto found = child->find(_path);
+    if(found)
+      return found;
+  }
+  return {};
+}
+
+
 
 string CameraSetting::path() const
 {
@@ -111,9 +106,28 @@ shared_ptr< CameraSetting > CameraSetting::from(CameraWidget* widget, const shar
     sequence_run( [&]{ return to_string(setting->label, gp_widget_get_label(widget, &s) ); }),
     sequence_run( [&]{ return to_string(setting->name, gp_widget_get_name(widget, &s) ); }),
     sequence_run( [&]{ return gp_widget_get_type(widget, &setting->type); }),
+    sequence_run( [&]{ 
+      if(setting->type == GP_WIDGET_TEXT || setting->type == GP_WIDGET_RADIO || setting->type == GP_WIDGET_MENU) {
+	char *text;
+	int ret = gp_widget_get_value(widget, &text);
+	setting->value = string{text};
+	return ret;
+      }
+      return GP_OK;
+    }),
+    sequence_run( [&]{ 
+      if(setting->type == GP_WIDGET_RADIO || setting->type == GP_WIDGET_MENU) {
+	for(int i=0; i<gp_widget_count_choices(widget); i++) {
+	  const char *text;
+	  int ret = gp_widget_get_choice(widget, i, &text);
+	  if(ret != GP_OK) return ret;
+	  setting->choices.push_back({text});
+	}
+      }
+      return GP_OK;
+    }),
   }}.on_error([&](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "Error decoding setting on " << label << ": " << errorMessage;
+    qDebug() << "Error decoding setting on " << label << ": " << gphoto_error(errorCode);
   });
   for(int i=0; i<gp_widget_count_children(widget); i++) {
     CameraWidget *child;
@@ -149,9 +163,8 @@ void GPhotoCamera::connect()
     sequence_run( [&]{ return gp_camera_get_summary(d->camera, &camera_summary, d->context); } ),
     sequence_run( [&]{ return gp_camera_get_about(d->camera, &camera_about, d->context); } ),
   }}.on_error([=](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "on " << label << ": " << errorMessage;
-    emit error(this, QString::fromLocal8Bit(errorMessage));
+    qDebug() << "on " << label << ": " << gphoto_error(errorCode);
+    emit error(this, gphoto_error(errorCode));
   }).run_last([&]{
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
@@ -160,8 +173,8 @@ void GPhotoCamera::connect()
   CameraWidget *settings;
   if(gp_camera_get_config(d->camera, &settings, d->context) == GP_OK) {
     scope cleanup_settings{[&]{ gp_widget_free(settings); } };
-    auto cameraSetting = CameraSetting::from(settings);
-    cerr << *cameraSetting << endl;
+    d->settings = CameraSetting::from(settings);
+    cerr << *d->settings << endl;
   }
   
   gp_port_info_list_free(portInfoList);
@@ -220,9 +233,8 @@ void GPhotoCamera::shoot()
     qDebug() << "Error loading image.";
     emit error(this, "Error loading image");
   }).on_error([=](int errorCode, const std::string &label) {
-    const char *errorMessage = gp_result_as_string(errorCode);
-    qDebug() << "on " << QString::fromStdString(label) << ": " << errorMessage << "(" << errorCode << ")";
-    emit error(this, QString::fromLocal8Bit(errorMessage));
+    qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
+    emit error(this, gphoto_error(errorCode));
   });
 }
 

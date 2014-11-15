@@ -13,6 +13,9 @@ public:
   virtual QString summary() const;
   virtual QString model() const;
   virtual QString about() const;
+  virtual ComboSetting shutterSpeed() const;
+  virtual ComboSetting imageFormat() const;
+  virtual ComboSetting iso() const;
 public slots:
   virtual void connect();
   virtual void disconnect();

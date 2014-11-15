@@ -142,6 +142,18 @@ void DSLR_Shooter_Window::camera_connected()
     for(auto widget: std::vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
       widget->setEnabled(true);
   });
+  
+  auto populateCombo = [=] (QComboBox *combo, const Imager::ComboSetting &setting) {
+    combo->setEnabled(setting);
+    for(auto value: setting.available) {
+      combo->addItem(value);
+    }
+    combo->setCurrentText(setting.current);
+  };
+  
+  populateCombo(d->ui->imageFormat, d->imager->imageFormat());
+  populateCombo(d->ui->iso, d->imager->iso());
+  populateCombo(d->ui->shutterSpeed, d->imager->shutterSpeed());
 }
 
 void DSLR_Shooter_Window::start_shooting()

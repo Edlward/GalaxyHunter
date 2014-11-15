@@ -2,6 +2,7 @@
 #define IMAGER_DRIVER_H
 
 #include <QObject>
+#include <QStringList>
 #include <memory>
 
 
@@ -13,6 +14,17 @@ public:
     virtual QString summary() const = 0; // TODO: documentation
     virtual QString model() const = 0;  // TODO: documentation
     virtual QString about() const = 0; // TODO: documentation
+    
+    struct ComboSetting {
+      QString current;
+      QStringList available;
+      operator bool() const { return !current.isEmpty() && !available.empty(); }
+    };
+    
+    virtual ComboSetting shutterSpeed() const { return {}; }
+    virtual ComboSetting imageFormat() const { return {}; }
+    virtual ComboSetting iso() const { return {}; }
+    
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
