@@ -33,6 +33,9 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <iostream>
+#include <string.h>
+#include <sstream>
 
 using namespace std;
 
@@ -40,35 +43,41 @@ class SerialShoot::Private {
 public:
   Private(const string &port) : port(port) {}
   const std::string port;
-  void shoot();
-  void stop();
   
   void setStatus(function<void()> f);
   int fd;
   struct termios tio;
   int status;
+  bool shooting = false;
 };
 
 SerialShoot::SerialShoot(const std::string& port) : d(new Private{port})
 {
-  d->shoot();
+  shoot();
 }
 
 SerialShoot::~SerialShoot()
 {
-  d->stop();
+  stop();
 }
 
-void SerialShoot::Private::shoot()
+void SerialShoot::shoot()
 {
-  setStatus([=]{ status &= ~TIOCM_DTR; });
-  usleep(250000);
-  setStatus([=]{ status |= TIOCM_DTR; });
+  cerr << "Starting shoot on port " << d->port << endl;
+  d->setStatus([=]{ d->status &= ~TIOCM_DTR; d->status |= TIOCM_RTS; });
+  d->shooting = true;
 }
 
 void SerialShoot::Private::setStatus(function< void() > f)
 {
   fd = open(port.c_str(), O_RDWR); // TODO: check for >= 0
+  if(fd < 0) {
+    stringstream ss;
+    ss << "errno: " << errno;
+    char *errdesc = strerror(errno);
+    ss << ": " << errdesc;
+    cerr << "Error opening " << port << ": " << ss.str();
+  }
   tcgetattr(fd, &tio);          /* get the termio information */
   tio.c_cflag &= ~HUPCL;        /* clear the HUPCL bit */
   tcsetattr(fd, TCSANOW, &tio); /* set the termio information */
@@ -80,10 +89,12 @@ void SerialShoot::Private::setStatus(function< void() > f)
 }
 
 
-void SerialShoot::Private::stop()
+void SerialShoot::stop()
 {
-  setStatus([=]{ status &= ~TIOCM_RTS; });
-  usleep(250000);
-  setStatus([=]{ status |= ~TIOCM_RTS; });
+  if(! d->shooting)
+    return;
+  cerr << "Ending shoot on port " << d->port << endl;
+  d->shooting = false;
+  d->setStatus([=]{ d->status &= ~TIOCM_RTS; d->status |= TIOCM_DTR; });
 }
 

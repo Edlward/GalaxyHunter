@@ -34,12 +34,15 @@ public slots:
   virtual void setImageFormat(const QString &) {};
   virtual void setISO(const QString &) {};
   virtual void setManualExposure(uint64_t seconds) {}
+  virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
 signals:
   void connected();
   void disconnected();
   void message(Imager *, const QString &);
   void error(Imager *,const QString &);
   void preview(const QImage &);
+protected:
+  bool deletePicturesOnCamera = false;
 };
 
 class ImagingDriver : public QObject {

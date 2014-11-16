@@ -3,7 +3,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Network REQUIRED)
 find_package(ImageMagick REQUIRED)
-find_package(Boost REQUIRED COMPONENTS unit_test_framework system filesystem)
+find_package(Boost REQUIRED COMPONENTS thread unit_test_framework system filesystem)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${Qt5Widgets_INCLUDE_DIRS})

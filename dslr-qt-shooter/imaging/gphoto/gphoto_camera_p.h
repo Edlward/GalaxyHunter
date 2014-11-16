@@ -49,9 +49,13 @@ public:
   GPContext* context;
   Camera *camera = nullptr;
   shared_ptr<CameraSetting> settings;
+  uint64_t manualExposure = 0l;
   void setting(const std::string &path, const QString &value);
   void reloadSettings();
-  uint64_t manualExposure = 0l;
+  void shootTethered();
+  void shootPreset();
+  void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
+  std::string fixedFilename(const std::string &fileName) const;
 private:
   GPhotoCamera *q;
 };

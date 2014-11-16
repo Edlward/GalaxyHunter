@@ -27,6 +27,8 @@ class SerialShoot
 public:
     SerialShoot(const std::string &port);
     ~SerialShoot();
+    void shoot();
+    void stop();
 private:
   class Private;
   std::unique_ptr<Private> const d;

@@ -1,5 +1,7 @@
 #include "gphoto_camera_p.h"
+#include "serialshoot.h"
 #include <iostream>
+#include <QTimer>
 
 #include "utils/qt.h"
 
@@ -239,33 +241,34 @@ void GPhotoCamera::disconnect()
 
 void GPhotoCamera::shoot()
 {
-  bool delete_file = true;
+  if(d->manualExposure > 0) {
+    d->shootTethered();
+    return;
+  }
+  d->shootPreset();
+}
+
+
+string GPhotoCamera::Private::fixedFilename(const string& fileName) const
+{
+  return boost::replace_all_copy(fileName, "*", "");
+}
+
+
+void GPhotoCamera::Private::shootPreset()
+{
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
-  auto fixed_filename = [](const std::string &filename) { return boost::replace_all_copy(filename, "*", ""); };
   QImage image;
   gp_api{{
-    sequence_run( [&]{ return gp_camera_capture(d->camera, GP_CAPTURE_IMAGE, &camera_remote_file, d->context);} ),
-    sequence_run( [&]{ return gp_camera_file_get(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, d->context); } ),
+    sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
+    sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
   }}.run_last([&]{
-    if(delete_file) {
-      int retry = 3;
-      for(int i=1; i<=3; i++) {
-	int result = gp_camera_file_delete(d->camera, camera_remote_file.folder, fixed_filename(camera_remote_file.name).c_str(), d->context);
-	if(result == GP_OK)
-	  break;
-	if(i<retry)
-	  QThread::currentThread()->msleep(500);
-	else
-	  emit error(this, QString("Error removing image on camera: %1/%2")
-	    .arg(camera_remote_file.folder)
-	    .arg(QString::fromStdString(fixed_filename(camera_remote_file.name))));
-      }
-    }
+    deletePicturesOnCamera(camera_remote_file);
     qDebug() << "shoot completed: camera file " << camera_file.path();
     if(image.load(camera_file)) {
-      emit preview(image);
+      q->preview(image);
       return;
     }
     qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
@@ -276,17 +279,58 @@ void GPhotoCamera::shoot()
     QByteArray data(static_cast<int>(blob.length()), 0);
     std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
     if(image.loadFromData(data)) {
-      emit message(this, "image captured correctly");
-      emit preview(image);
+      q->message(q, "image captured correctly");
+      q->preview(image);
       return;
     }
     qDebug() << "Error loading image.";
-    emit error(this, "Error loading image");
+    q->error(q, "Error loading image");
   }).on_error([=](int errorCode, const std::string &label) {
     qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
-    emit error(this, gphoto_error(errorCode));
+    q->error(q, gphoto_error(errorCode));
   });
 }
+
+void GPhotoCamera::Private::shootTethered()
+{
+  {
+    auto shoot = make_shared<SerialShoot>("/dev/ttyUSB0");
+    q->thread()->msleep(manualExposure * 1000);
+  }
+    CameraEventType event;
+    void *data;
+    int retry = 0;
+    while(event != GP_EVENT_FILE_ADDED && retry < 3) {
+      int ret = gp_camera_wait_for_event(camera, 10000, &event, &data, context);
+      cerr << "ret: " << ret << "; event: " << event << endl;
+      if(ret < GP_OK) {
+	cerr << gphoto_error(ret) << endl;
+	q->thread()->msleep(500);
+      }
+      cerr << "last event: " << event << endl;
+      retry++;
+    }
+
+}
+
+void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
+{
+  if(q->deletePicturesOnCamera) {
+    int retry = 3;
+    for(int i=1; i<=3; i++) {
+      int result = gp_camera_file_delete(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), context);
+      if(result == GP_OK)
+	break;
+      if(i<retry)
+	QThread::currentThread()->msleep(500);
+      else
+	q->error(q, QString("Error removing image on camera: %1/%2")
+	  .arg(camera_remote_file.folder)
+	  .arg(QString::fromStdString(fixedFilename(camera_remote_file.name))));
+    }
+  }
+}
+
 
 QString GPhotoCamera::about() const
 {
