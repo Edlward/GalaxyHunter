@@ -50,10 +50,11 @@ public:
   Camera *camera = nullptr;
   shared_ptr<CameraSetting> settings;
   void setting(const std::string &path, const QString &value);
+  void reloadSettings();
+  uint64_t manualExposure = 0l;
 private:
   GPhotoCamera *q;
 };
-
 
 
 struct CameraTempFile {

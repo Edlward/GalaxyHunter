@@ -1,4 +1,5 @@
 #include "dslr_shooter_window.h"
+#include "imagesettingsdialog.h"
 #include "ui_dslr_shooter_window.h"
 #include "guider/linguider.h"
 #include <QtCore/QTimer>
@@ -73,6 +74,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
       });
     }
   }, Qt::QueuedConnection);
+  connect(d->ui->imageSettings, &QPushButton::clicked, [=] {
+    (new ImageSettingsDialog{d->imager, this})->show();
+  });
 }
 
 
@@ -137,26 +141,12 @@ void DSLR_Shooter_Window::camera_connected()
   got_message(QString("Camera connected: %1").arg(d->imager->model()));
   d->ui->camera_infos->setText(camera_infos);
   d->ui->shoot->setEnabled(true);
+  d->ui->toolBox->setEnabled(true);
   connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
   connect(d->imager.get(), &Imager::preview, this, [=]{
     for(auto widget: std::vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
       widget->setEnabled(true);
   });
-  
-  auto populateCombo = [=] (QComboBox *combo, const Imager::ComboSetting &setting) {
-    combo->setEnabled(setting);
-    for(auto value: setting.available) {
-      combo->addItem(value);
-    }
-    combo->setCurrentText(setting.current);
-  };
-  
-  populateCombo(d->ui->imageFormat, d->imager->imageFormat());
-  populateCombo(d->ui->iso, d->imager->iso());
-  populateCombo(d->ui->shutterSpeed, d->imager->shutterSpeed());
-  connect(d->ui->shutterSpeed, SIGNAL(currentTextChanged(QString)), d->imager.get(), SLOT(setShutterSpeed(QString)), Qt::QueuedConnection);
-  connect(d->ui->iso, SIGNAL(currentTextChanged(QString)), d->imager.get(), SLOT(setISO(QString)), Qt::QueuedConnection);
-  connect(d->ui->imageFormat, SIGNAL(currentTextChanged(QString)), d->imager.get(), SLOT(setImageFormat(QString)), Qt::QueuedConnection);
 }
 
 void DSLR_Shooter_Window::start_shooting()

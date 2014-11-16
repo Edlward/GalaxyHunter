@@ -120,7 +120,7 @@ void GPhotoCamera::Private::setting(const std::string &path, const QString& valu
   });;
   
   gp_widget_free(settings);
-  
+  reloadSettings();  
 }
 
 
@@ -215,17 +215,21 @@ void GPhotoCamera::connect()
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
     emit connected();    
-  });
-  CameraWidget *settings;
-  if(gp_camera_get_config(d->camera, &settings, d->context) == GP_OK) {
-    scope cleanup_settings{[&]{ gp_widget_free(settings); } };
-    d->settings = CameraSetting::from(settings);
-    cerr << *d->settings << endl;
-  }
-  
+  });  
+  d->reloadSettings();
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
   
+}
+
+void GPhotoCamera::Private::reloadSettings()
+{
+  CameraWidget *settings;
+  if(gp_camera_get_config(camera, &settings, context) == GP_OK) {
+    scope cleanup_settings{[&]{ gp_widget_free(settings); } };
+    this->settings = CameraSetting::from(settings);
+    cerr << *this->settings << endl;
+  }
 }
 
 void GPhotoCamera::disconnect()
@@ -337,4 +341,17 @@ QString CameraTempFile::mimeType() const
   r = gp_file_get_mime_type(camera_file, &mime);
   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
   return QString(mime);
+}
+
+uint64_t GPhotoCamera::manualExposure() const
+{
+    return d->manualExposure;
+}
+
+void GPhotoCamera::setManualExposure(uint64_t seconds)
+{
+    d->manualExposure = seconds;
+    if(seconds > 0) {
+      setShutterSpeed("Bulb");
+    }
 }

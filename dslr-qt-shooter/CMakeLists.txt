@@ -17,5 +17,4 @@ qt5_add_resources(dslr_qt_shooter_RESOURCES_RCC resources.qrc )
 ADD_EXECUTABLE(dslr-qt-shooter main.cpp ${dslr_qt_shooter_RESOURCES_RCC} )
 TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network ${IMAGEMAGICK_LDFLAGS} ${dslr_dependencies} ${Boost_LIBRARIES}  )
 
-add_subdirectory(utils)
 add_subdirectory(tests)

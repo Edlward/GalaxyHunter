@@ -24,6 +24,7 @@ public:
     virtual ComboSetting shutterSpeed() const { return {}; }
     virtual ComboSetting imageFormat() const { return {}; }
     virtual ComboSetting iso() const { return {}; }
+    virtual uint64_t manualExposure() const { return 0; }
     
 public slots:
   virtual void connect() = 0;
@@ -32,6 +33,7 @@ public slots:
   virtual void setShutterSpeed(const QString &) {};
   virtual void setImageFormat(const QString &) {};
   virtual void setISO(const QString &) {};
+  virtual void setManualExposure(uint64_t seconds) {}
 signals:
   void connected();
   void disconnected();
