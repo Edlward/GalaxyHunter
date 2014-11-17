@@ -305,13 +305,15 @@ void GPhotoCamera::Private::shootTethered()
     CameraEventType event;
     void *data;
     CameraTempFile camera_file;
+    string filename;
     
     gp_api{{
       sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
       sequence_run([&]{ 
         CameraFilePath *newfile = reinterpret_cast<CameraFilePath*>(data);
-        return gp_camera_file_get(camera, newfile->folder, fixedFilename(newfile->name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context);
+	filename = fixedFilename(newfile->name);
+        return gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, camera_file, context);
       }),
       sequence_run( [&]{ return camera_file.save();} ),
     }}.on_error([=](int errorCode, const std::string &label) {
@@ -321,7 +323,7 @@ void GPhotoCamera::Private::shootTethered()
       qDebug() << "Output directory: " << outputDirectory;
       if(!outputDirectory.isEmpty()) {
 	QFile file(camera_file.path());
-	auto destination = outputDirectory + QDir::separator() + file.fileName();
+	auto destination = outputDirectory + QDir::separator() + QString::fromStdString(filename);
 	bool copied = file.copy(destination);
 	qDebug() << "copied to " << destination << ": " << copied;
       }
