@@ -306,12 +306,13 @@ void GPhotoCamera::Private::shootTethered()
     void *data;
     CameraTempFile camera_file;
     string filename;
+    CameraFilePath *newfile;
     
     gp_api{{
       sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
       sequence_run([&]{ 
-        CameraFilePath *newfile = reinterpret_cast<CameraFilePath*>(data);
+        newfile = reinterpret_cast<CameraFilePath*>(data);
 	filename = fixedFilename(newfile->name);
         return gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, camera_file, context);
       }),
@@ -324,9 +325,12 @@ void GPhotoCamera::Private::shootTethered()
       if(!outputDirectory.isEmpty()) {
 	QFile file(camera_file.path());
 	auto destination = outputDirectory + QDir::separator() + QString::fromStdString(filename);
-	bool copied = file.copy(destination);
-	qDebug() << "copied to " << destination << ": " << copied;
+	if(file.copy(destination))
+	  q->message(q, QString("Saved image to %1").arg(destination));
+	else
+	  q->error(q, QString("Error saving image to %1").arg(destination));
       }
+      deletePicturesOnCamera(*newfile);
     });
 }
 
@@ -387,7 +391,7 @@ CameraTempFile::CameraTempFile()
   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_new=" << r;
   temp_file.open();
   temp_file.close();
-  temp_file.setAutoRemove(false);
+  temp_file.setAutoRemove(true);
 }
 
 int CameraTempFile::save()
