@@ -36,8 +36,8 @@ private:
   ComboSetting _imageFormat;
   ComboSetting _iso;
   ComboSetting _shutterSpeed;
-  
-  CameraWidget *settings, *isoWidget, *imageFormatWidget, *manualExposureWidget;
+  bool changed = false;
+  CameraWidget *settings, *isoWidget, *imageFormatWidget, *shutterSpeedWidget;
 };
 
 class GPhotoCamera::Private {

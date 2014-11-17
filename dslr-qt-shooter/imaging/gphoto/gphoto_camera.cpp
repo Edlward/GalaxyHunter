@@ -42,8 +42,27 @@ void GPhotoCamera::Settings::setShutterSpeed(const QString&)
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
   : context(context), camera(camera), q(q)
 {
+  auto combo_widget_to_combosetting = [=] (CameraWidget *widget, ComboSetting &setting){
+    void *value;
+    int ret = gp_widget_get_value(widget, value);
+    if(ret >= GP_OK) {
+      setting.current = QString::fromStdString({reinterpret_cast<char*>(value)});
+      for(int i=0; i<gp_widget_count_choices(widget); i++) {
+	const char *choice;
+	if(gp_widget_get_choice(widget, i, &choice) >= GP_OK)
+	  setting.available.push_back(QString::fromStdString({choice}));
+      }
+    }
+    return ret;
+  };
   gp_api{{
     sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &imageFormatWidget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &isoWidget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &shutterSpeedWidget); }),
+    sequence_run([&] { return combo_widget_to_combosetting(imageFormatWidget, _imageFormat); }),
+    sequence_run([&] { return combo_widget_to_combosetting(isoWidget, _iso); }),
+    sequence_run([&] { return combo_widget_to_combosetting(shutterSpeedWidget, _shutterSpeed); }),
   }};
 }
 
