@@ -3,6 +3,7 @@
 
 #include "gphoto_camera.h"
 #include "gphoto_commons.h"
+#include "gphoto.h"
 #include <QTemporaryFile>
 #include "utils/scope.h"
 #include <QThread>
@@ -35,6 +36,8 @@ private:
   ComboSetting _imageFormat;
   ComboSetting _iso;
   ComboSetting _shutterSpeed;
+  
+  CameraWidget *settings, *isoWidget, *imageFormatWidget, *manualExposureWidget;
 };
 
 class GPhotoCamera::Private {

@@ -42,12 +42,14 @@ void GPhotoCamera::Settings::setShutterSpeed(const QString&)
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
   : context(context), camera(camera), q(q)
 {
-
+  gp_api{{
+    sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
+  }};
 }
 
 GPhotoCamera::Settings::~Settings()
 {
-
+  gp_widget_free(settings);
 }
 
 
