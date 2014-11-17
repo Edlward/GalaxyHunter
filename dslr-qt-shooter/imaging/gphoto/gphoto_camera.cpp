@@ -24,46 +24,11 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
   });
 }
 
-#define enum_pair(Value) {Value, #Value}
-ostream &operator<<(ostream &o, const CameraSetting &s) {
-  static map<CameraWidgetType, string> types {
-  enum_pair(GP_WIDGET_WINDOW), enum_pair(GP_WIDGET_SECTION), enum_pair(GP_WIDGET_TEXT), enum_pair(GP_WIDGET_RANGE),
-  enum_pair(GP_WIDGET_TOGGLE), enum_pair(GP_WIDGET_RADIO), enum_pair(GP_WIDGET_MENU), enum_pair(GP_WIDGET_BUTTON), enum_pair(GP_WIDGET_DATE),
-  };
-  o << s.path() << ": " << ", " << s.label << ", " << s.info << ", " << types[s.type];
-  
-  if(s.type == GP_WIDGET_TEXT || s.type == GP_WIDGET_RADIO || s.type == GP_WIDGET_MENU)
-    o << "; value: " << s.value;
-  if(s.type == GP_WIDGET_RADIO || s.type == GP_WIDGET_MENU) {
-    string sep = "";
-    o << "\nchoices: ";
-    for(auto choice: s.choices) {
-      o << sep << choice;
-      sep = ", ";
-    }
-  }
-  o << endl;
-  for(auto sub: s.children)
-    o << *sub;
-  return o;
-}
 
 #define IMAGE_FORMAT_SETTING "main/settings/imageformat"
 #define ISO_SETTING "main/settings/iso"
 #define SHUTTER_SPEED_SETTING "main/settings/shutterspeed"
 
-
-shared_ptr< CameraSetting > CameraSetting::find(const string& _path)
-{
-  if(_path == path())
-    return shared_from_this();
-  for(auto child: children) {
-    auto found = child->find(_path);
-    if(found)
-      return found;
-  }
-  return {};
-}
 
 
 void GPhotoCamera::querySettings()
@@ -74,92 +39,6 @@ void GPhotoCamera::querySettings()
 
 
 
-void GPhotoCamera::Private::setting(const std::string &path, const QString& value)
-{
-  auto s = settings->find(path);
-  if(!s) return;
-  qDebug() << "finding child with path: " << s->path() << ", id: " << s->id << ", label: " << s->label;
-  CameraWidget *settings = nullptr;
-  CameraWidget *setting;
-  
-  gp_api{{
-    sequence_run( [&]{ return gp_camera_get_config(camera, &settings, context); }),
-    sequence_run( [&]{ return gp_widget_get_child_by_name(settings, s->name.c_str(), &setting); }),
-    sequence_run( [&]{ return gp_widget_set_value(setting, value.toStdString().c_str()); }),
-    sequence_run( [&]{ return gp_camera_set_config(camera, settings, context); }),
-  }}.on_error([&](int errorCode, const std::string &label) {
-    qDebug() << "Error writing setting " << value << " for widget " << path << " on " << label << ": " << gphoto_error(errorCode);
-    q->error(q, gphoto_error(errorCode));
-  }).run_last([&]{
-    int id = 0;
-    gp_widget_get_id(setting, &id);
-    qDebug() << "new id: " << id;
-  });
-  
-  gp_widget_free(settings);
-  reloadSettings();  
-}
-
-
-string CameraSetting::path() const
-{
-  auto v = shared_from_this();
-  boost::filesystem::path p{v->name};
-  while(v->parent) {
-    p = boost::filesystem::path(v->parent->name) / p;
-    v = v->parent;
-  }
-  return p.string();
-}
-
-
-shared_ptr< CameraSetting > CameraSetting::from(CameraWidget* widget, const shared_ptr< CameraSetting >& parent = {})
-{
-  const char *s;
-  auto setting = make_shared<CameraSetting>();
-  setting->parent = parent;
-  auto to_string = [&](string &dest, int error_code) {
-    if(error_code == GP_OK)
-      dest = {s};
-    return error_code;
-  };
-  gp_api{{
-    sequence_run( [&]{ return gp_widget_get_id(widget, &setting->id); }),
-    sequence_run( [&]{ return to_string(setting->info, gp_widget_get_info(widget, &s) ); }),
-    sequence_run( [&]{ return to_string(setting->label, gp_widget_get_label(widget, &s) ); }),
-    sequence_run( [&]{ return to_string(setting->name, gp_widget_get_name(widget, &s) ); }),
-    sequence_run( [&]{ return gp_widget_get_type(widget, &setting->type); }),
-    sequence_run( [&]{ 
-      if(setting->type == GP_WIDGET_TEXT || setting->type == GP_WIDGET_RADIO || setting->type == GP_WIDGET_MENU) {
-	char *text;
-	int ret = gp_widget_get_value(widget, &text);
-	setting->value = string{text};
-	return ret;
-      }
-      return GP_OK;
-    }),
-    sequence_run( [&]{ 
-      if(setting->type == GP_WIDGET_RADIO || setting->type == GP_WIDGET_MENU) {
-	for(int i=0; i<gp_widget_count_choices(widget); i++) {
-	  const char *text;
-	  int ret = gp_widget_get_choice(widget, i, &text);
-	  if(ret != GP_OK) return ret;
-	  setting->choices.push_back({text});
-	}
-      }
-      return GP_OK;
-    }),
-  }}.on_error([&](int errorCode, const std::string &label) {
-    qDebug() << "Error decoding setting on " << label << ": " << gphoto_error(errorCode);
-  });
-  for(int i=0; i<gp_widget_count_children(widget); i++) {
-    CameraWidget *child;
-    // TODO scope cleanup_child{[&child]{gp_widget_unref(child);}};
-    if(gp_widget_get_child(widget, i, &child) == GP_OK)
-      setting->children.push_back(from(child, setting));
-  }
-  return setting;
-}
 
 
 void GPhotoCamera::connect()
@@ -193,21 +72,12 @@ void GPhotoCamera::connect()
     d->about = QString(camera_about.text);
     emit connected();    
   });  
-  d->reloadSettings();
+  // TODO d->reloadSettings();
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
   
 }
 
-void GPhotoCamera::Private::reloadSettings()
-{
-  CameraWidget *settings;
-  if(gp_camera_get_config(camera, &settings, context) == GP_OK) {
-    scope cleanup_settings{[&]{ gp_widget_free(settings); } };
-    this->settings = CameraSetting::from(settings);
-    cerr << *this->settings << endl;
-  }
-}
 
 void GPhotoCamera::disconnect()
 {

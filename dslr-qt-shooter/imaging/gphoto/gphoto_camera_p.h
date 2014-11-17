@@ -17,27 +17,6 @@
 using namespace std;
 
 
-struct CameraSetting : enable_shared_from_this<CameraSetting> {
-  int id;
-  string name;
-  string label;
-  string info;
-  CameraWidgetType type;
-  string path() const;
-  vector<shared_ptr<CameraSetting>> children;
-  shared_ptr<CameraSetting> parent;
-  vector<string> choices;
-  string value;
-  int choice;
-  struct Range {
-    float min, max, step;
-  };
-  Range range;
-  static shared_ptr<CameraSetting> from(CameraWidget *widget, const shared_ptr<CameraSetting> &parent);
-  shared_ptr<CameraSetting> find(const std::string &path);
-};
-
-
 class GPhotoCamera::Private {
 public:
   Private(const shared_ptr<GPhotoCameraInformation> &info, GPhotoCamera *q)
@@ -48,11 +27,8 @@ public:
   QString summary;
   GPContext* context;
   Camera *camera = nullptr;
-  shared_ptr<CameraSetting> settings;
   uint64_t manualExposure = 0l;
     QString outputDirectory;
-  void setting(const std::string &path, const QString &value);
-  void reloadSettings();
   void shootTethered();
   void shootPreset();
   void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
