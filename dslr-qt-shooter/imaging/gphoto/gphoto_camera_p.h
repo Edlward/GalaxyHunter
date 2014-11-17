@@ -40,6 +40,7 @@ private:
   CameraWidget *settings, *isoWidget, *imageFormatWidget, *shutterSpeedWidget;
 };
 
+
 class GPhotoCamera::Private {
 public:
   Private(const shared_ptr<GPhotoCameraInformation> &info, GPhotoCamera *q)

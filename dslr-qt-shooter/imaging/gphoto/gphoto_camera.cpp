@@ -12,14 +12,18 @@ QString gphoto_error(int errorCode)
     return QString(errorMessage);
 }
 
-void GPhotoCamera::Settings::setImageFormat(const QString&)
-{
 
+
+void GPhotoCamera::Settings::setImageFormat(const QString &v)
+{
+  changed = true;
+  _imageFormat.current = v;
 }
 
-void GPhotoCamera::Settings::setISO(const QString&)
+void GPhotoCamera::Settings::setISO(const QString &v)
 {
-
+  changed = true;
+  _iso.current = v;
 }
 
 void GPhotoCamera::Settings::setManualExposure(uint64_t seconds)
@@ -34,9 +38,10 @@ uint64_t GPhotoCamera::Settings::manualExposure() const
 }
 
 
-void GPhotoCamera::Settings::setShutterSpeed(const QString&)
+void GPhotoCamera::Settings::setShutterSpeed(const QString &v)
 {
-
+  changed = true;
+  _shutterSpeed.current = v;
 }
 
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
@@ -68,6 +73,12 @@ GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamer
 
 GPhotoCamera::Settings::~Settings()
 {
+  if(changed)
+    gp_api {{
+      sequence_run([&]{  return gp_widget_set_value(imageFormatWidget, _imageFormat.current.data()); }),
+      sequence_run([&]{  return gp_widget_set_value(shutterSpeedWidget, _shutterSpeed.current.data()); }),
+      sequence_run([&]{  return gp_widget_set_value(isoWidget, _iso.current.data()); }),
+    }};
   gp_widget_free(settings);
 }
 
