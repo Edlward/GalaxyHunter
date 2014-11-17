@@ -16,6 +16,26 @@
 
 using namespace std;
 
+class GPhotoCamera::Settings : public Imager::Settings {
+public:
+    Settings(GPContext *context, Camera *camera, GPhotoCamera *q);
+    virtual ComboSetting imageFormat() const { return _imageFormat; }
+    virtual ComboSetting iso() const { return _iso; }
+    virtual ComboSetting shutterSpeed() const { return _shutterSpeed; }
+    virtual uint64_t manualExposure() const;
+    virtual void setImageFormat(const QString&);
+    virtual void setISO(const QString&);
+    virtual void setManualExposure(uint64_t seconds);
+    virtual void setShutterSpeed(const QString&);
+    virtual ~Settings();
+private:
+  GPContext *context;
+  Camera *camera;
+  GPhotoCamera *q;
+  ComboSetting _imageFormat;
+  ComboSetting _iso;
+  ComboSetting _shutterSpeed;
+};
 
 class GPhotoCamera::Private {
 public:

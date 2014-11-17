@@ -12,6 +12,45 @@ QString gphoto_error(int errorCode)
     return QString(errorMessage);
 }
 
+void GPhotoCamera::Settings::setImageFormat(const QString&)
+{
+
+}
+
+void GPhotoCamera::Settings::setISO(const QString&)
+{
+
+}
+
+void GPhotoCamera::Settings::setManualExposure(uint64_t seconds)
+{
+  q->d->manualExposure = seconds;
+}
+
+
+uint64_t GPhotoCamera::Settings::manualExposure() const
+{
+  return q->d->manualExposure;
+}
+
+
+void GPhotoCamera::Settings::setShutterSpeed(const QString&)
+{
+
+}
+
+GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
+  : context(context), camera(camera), q(q)
+{
+
+}
+
+GPhotoCamera::Settings::~Settings()
+{
+
+}
+
+
 
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
   : d(new Private{gphotoCameraInformation, this})
@@ -33,7 +72,7 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
 
 void GPhotoCamera::querySettings()
 {
-  // TODO
+  emit settings(make_shared<Settings>(d->context, d->camera, this));
 }
 
 

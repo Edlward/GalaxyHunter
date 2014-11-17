@@ -18,7 +18,7 @@ public:
       QStringList available;
       operator bool() const { return !current.isEmpty() && !available.empty(); }
     };
-    virtual ~Settings() = 0;
+    virtual ~Settings() {};
     virtual ComboSetting shutterSpeed() const = 0;
     virtual ComboSetting imageFormat() const = 0;
     virtual ComboSetting iso() const = 0;

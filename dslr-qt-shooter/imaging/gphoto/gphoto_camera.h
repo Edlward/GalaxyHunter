@@ -22,6 +22,8 @@ public slots:
 private:
   class Private;
   friend class Private;
+  class Settings;
+  friend class Settings;
   std::unique_ptr<Private> const d;
 };
 
