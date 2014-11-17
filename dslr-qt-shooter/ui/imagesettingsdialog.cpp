@@ -28,11 +28,11 @@ using namespace std;
 
 class ImageSettingsDialog::Private {
 public:
-  Private(ImageSettingsDialog *q, Ui::ImageSettingsDialog *ui, const shared_ptr<Imager> &imager)
-    : q(q), ui(ui), imager(imager), shutterSpeed(imager->shutterSpeed().current), iso(imager->iso().current), imageFormat(imager->imageFormat().current) {}
+  Private(ImageSettingsDialog *q, Ui::ImageSettingsDialog *ui, const shared_ptr<Imager::Settings> &imagerSettings)
+    : q(q), ui(ui), imager(imager), shutterSpeed(imagerSettings->shutterSpeed().current), iso(imagerSettings->iso().current), imageFormat(imagerSettings->imageFormat().current) {}
     ImageSettingsDialog *q;
     unique_ptr<Ui::ImageSettingsDialog> ui;
-    shared_ptr<Imager> imager;
+    shared_ptr<Imager::Settings> imager;
     
     // Settings
     QString shutterSpeed;
@@ -44,12 +44,12 @@ ImageSettingsDialog::~ImageSettingsDialog()
 {
 }
 
-ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager> &imager, QWidget* parent)
-  : QDialog(parent), d(new Private{this, new Ui::ImageSettingsDialog, imager})
+ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &imagerSettings, QWidget* parent)
+  : QDialog(parent), d(new Private{this, new Ui::ImageSettingsDialog, imagerSettings})
 {
     d->ui->setupUi(this);
     
-  auto populateCombo = [=] (QComboBox *combo, const Imager::ComboSetting &setting) {
+  auto populateCombo = [=] (QComboBox *combo, const Imager::Settings::ComboSetting &setting) {
     combo->setEnabled(setting);
     for(auto value: setting.available) {
       combo->addItem(value);
@@ -89,11 +89,9 @@ void ImageSettingsDialog::accept()
   uint64_t unit = pow(60, d->ui->shutterSpeedManualUnit->currentIndex());
   uint64_t manualExposure = d->ui->shutterSpeedManual->value() * unit;
   manualExposure = d->ui->manualExposure->isChecked() ? manualExposure : 0;
-  new QLambdaThread{d->imager->thread(), [=]{
     d->imager->setShutterSpeed(d->shutterSpeed);
     d->imager->setImageFormat(d->imageFormat);
     d->imager->setISO(d->iso);
     d->imager->setManualExposure(manualExposure);
-  }};
   QDialog::accept();
 }

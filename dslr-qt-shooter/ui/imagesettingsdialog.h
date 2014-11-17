@@ -22,6 +22,7 @@
 
 #include <QDialog>
 #include <memory>
+#include "imaging/imaging_driver.h"
 namespace Ui
 {
 class ImageSettingsDialog;
@@ -33,7 +34,7 @@ class ImageSettingsDialog : public QDialog
     Q_OBJECT
 public:
     ~ImageSettingsDialog();
-    ImageSettingsDialog(const std::shared_ptr<Imager> &imager, QWidget* parent);
+    ImageSettingsDialog(const std::shared_ptr<Imager::Settings> &imagerSettings, QWidget* parent);
 public slots:
   void accept();
 private:

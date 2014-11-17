@@ -13,14 +13,12 @@ public:
   virtual QString summary() const;
   virtual QString model() const;
   virtual QString about() const;
-  
-  virtual std::shared_ptr< Settings > settings();
-
 public slots:
   virtual void connect();
   virtual void disconnect();
   virtual void shoot();
   virtual void setOutputDirectory(const QString& directory);
+  virtual void querySettings();
 private:
   class Private;
   friend class Private;

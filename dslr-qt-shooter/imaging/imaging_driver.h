@@ -12,6 +12,7 @@ class Imager : public QObject {
   Q_OBJECT
 public:
   class Settings {
+  public:
     struct ComboSetting {
       QString current;
       QStringList available;
@@ -21,19 +22,17 @@ public:
     virtual ComboSetting shutterSpeed() const = 0;
     virtual ComboSetting imageFormat() const = 0;
     virtual ComboSetting iso() const = 0;
-    virtual uint64_t manualExposure() const = 0;
     virtual void setShutterSpeed(const QString &) = 0;
     virtual void setImageFormat(const QString &) = 0;
     virtual void setISO(const QString &) = 0;
     virtual void setManualExposure(uint64_t seconds) = 0;
+    virtual uint64_t manualExposure() const = 0;
   };
   
   virtual QString summary() const = 0; // TODO: documentation
   virtual QString model() const = 0;  // TODO: documentation
   virtual QString about() const = 0; // TODO: documentation
-    
-  virtual std::shared_ptr<Settings> settings() = 0;
-    
+        
     
 public slots:
   virtual void connect() = 0;
@@ -41,12 +40,14 @@ public slots:
   virtual void shoot() = 0;
   virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
   virtual void setOutputDirectory(const QString &directory) = 0;
+  virtual void querySettings() = 0;
 signals:
   void connected();
   void disconnected();
   void message(Imager *, const QString &);
   void error(Imager *,const QString &);
   void preview(const QImage &);
+  void settings(const std::shared_ptr<Settings> &);
 protected:
   bool deletePicturesOnCamera = false;
 };

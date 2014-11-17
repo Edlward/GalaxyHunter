@@ -76,7 +76,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     }
   }, Qt::QueuedConnection);
   connect(d->ui->imageSettings, &QPushButton::clicked, [=] {
-    (new ImageSettingsDialog{d->imager, this})->show();
+    // TODO restore (new ImageSettingsDialog{d->imager, this})->show();
   });
   auto outputChanged = [=] (bool save) {
     d->ui->outputDir->setEnabled(save);

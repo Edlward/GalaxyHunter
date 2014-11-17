@@ -52,42 +52,6 @@ ostream &operator<<(ostream &o, const CameraSetting &s) {
 #define ISO_SETTING "main/settings/iso"
 #define SHUTTER_SPEED_SETTING "main/settings/shutterspeed"
 
-Imager::ComboSetting GPhotoCamera::imageFormat() const
-{
-  auto setting = d->settings->find(IMAGE_FORMAT_SETTING);
-  if(!setting) return {};
-  return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
-}
-
-Imager::ComboSetting GPhotoCamera::iso() const
-{
-  auto setting = d->settings->find(ISO_SETTING);
-  if(!setting) return {};
-  return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
-}
-
-Imager::ComboSetting GPhotoCamera::shutterSpeed() const
-{
-  auto setting = d->settings->find(SHUTTER_SPEED_SETTING);
-  if(!setting) return {};
-  return {QString::fromStdString(setting->value), qstringlist(setting->choices)};
-}
-
-
-void GPhotoCamera::setImageFormat(const QString& imageFormat)
-{
-    d->setting(IMAGE_FORMAT_SETTING, imageFormat);
-}
-
-void GPhotoCamera::setISO(const QString& iso)
-{
-    d->setting(ISO_SETTING, iso);
-}
-
-void GPhotoCamera::setShutterSpeed(const QString& speed)
-{
-    d->setting(SHUTTER_SPEED_SETTING, speed);
-}
 
 shared_ptr< CameraSetting > CameraSetting::find(const string& _path)
 {
@@ -99,6 +63,12 @@ shared_ptr< CameraSetting > CameraSetting::find(const string& _path)
       return found;
   }
   return {};
+}
+
+
+void GPhotoCamera::querySettings()
+{
+  // TODO
 }
 
 
@@ -414,7 +384,7 @@ QString CameraTempFile::mimeType() const
   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
   return QString(mime);
 }
-
+/*
 uint64_t GPhotoCamera::manualExposure() const
 {
     return d->manualExposure;
@@ -426,4 +396,4 @@ void GPhotoCamera::setManualExposure(uint64_t seconds)
     if(seconds > 0) {
       setShutterSpeed("Bulb");
     }
-}
+}*/
