@@ -2,6 +2,7 @@
 #include "serialshoot.h"
 #include <iostream>
 #include <QTimer>
+#include <QDir>
 
 #include "utils/qt.h"
 
@@ -119,7 +120,11 @@ void GPhotoCamera::Private::setting(const std::string &path, const QString& valu
   }}.on_error([&](int errorCode, const std::string &label) {
     qDebug() << "Error writing setting " << value << " for widget " << path << " on " << label << ": " << gphoto_error(errorCode);
     q->error(q, gphoto_error(errorCode));
-  });;
+  }).run_last([&]{
+    int id = 0;
+    gp_widget_get_id(setting, &id);
+    qDebug() << "new id: " << id;
+  });
   
   gp_widget_free(settings);
   reloadSettings();  
@@ -299,18 +304,28 @@ void GPhotoCamera::Private::shootTethered()
   }
     CameraEventType event;
     void *data;
-    int retry = 0;
-    while(event != GP_EVENT_FILE_ADDED && retry < 3) {
-      int ret = gp_camera_wait_for_event(camera, 10000, &event, &data, context);
-      cerr << "ret: " << ret << "; event: " << event << endl;
-      if(ret < GP_OK) {
-	cerr << gphoto_error(ret) << endl;
-	q->thread()->msleep(500);
+    CameraTempFile camera_file;
+    
+    gp_api{{
+      sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
+      sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
+      sequence_run([&]{ 
+        CameraFilePath *newfile = reinterpret_cast<CameraFilePath*>(data);
+        return gp_camera_file_get(camera, newfile->folder, fixedFilename(newfile->name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context);
+      }),
+      sequence_run( [&]{ return camera_file.save();} ),
+    }}.on_error([=](int errorCode, const std::string &label) {
+      qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
+      q->error(q, gphoto_error(errorCode));
+    }).run_last([&]{
+      qDebug() << "Output directory: " << outputDirectory;
+      if(!outputDirectory.isEmpty()) {
+	QFile file(camera_file.path());
+	auto destination = outputDirectory + QDir::separator() + file.fileName();
+	bool copied = file.copy(destination);
+	qDebug() << "copied to " << destination << ": " << copied;
       }
-      cerr << "last event: " << event << endl;
-      retry++;
-    }
-
+    });
 }
 
 void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
@@ -330,6 +345,13 @@ void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_
     }
   }
 }
+
+void GPhotoCamera::setOutputDirectory(const QString& directory)
+{
+  qDebug() << "OutputDirectory: " << directory;
+  d->outputDirectory = directory;
+}
+
 
 
 QString GPhotoCamera::about() const

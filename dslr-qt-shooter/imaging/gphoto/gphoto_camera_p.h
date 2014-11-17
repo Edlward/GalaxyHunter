@@ -9,7 +9,7 @@
 #include <QImage>
 #include <QDebug>
 
-#include <GraphicsMagick/Magick++.h>
+#include <Magick++.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -50,6 +50,7 @@ public:
   Camera *camera = nullptr;
   shared_ptr<CameraSetting> settings;
   uint64_t manualExposure = 0l;
+    QString outputDirectory;
   void setting(const std::string &path, const QString &value);
   void reloadSettings();
   void shootTethered();

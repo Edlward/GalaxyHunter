@@ -8,7 +8,7 @@ find_package(Boost REQUIRED COMPONENTS thread unit_test_framework system filesys
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${Qt5Widgets_INCLUDE_DIRS})
 include_directories(${Qt5Network_INCLUDE_DIRS})
-include_directories(${GraphicsMagick_INCLUDE_DIRS})
+include_directories(${ImageMagick_INCLUDE_DIRS})
 add_subdirectory(ui)
 add_subdirectory(guider)
 add_subdirectory(imaging)

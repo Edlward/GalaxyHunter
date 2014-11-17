@@ -1,5 +1,5 @@
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GPHOTO2 libgphoto2)
+pkg_check_modules(GPHOTO2 libgphoto2 REQUIRED)
 include_directories(${GPHOTO2_INCLUDE_DIRS})
 set(dslr_imaging_SOURCES ${dslr_imaging_SOURCES}
   ${CMAKE_CURRENT_SOURCE_DIR}/gphoto.cpp 

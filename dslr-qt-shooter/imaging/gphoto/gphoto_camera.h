@@ -25,6 +25,7 @@ public slots:
   virtual void setISO(const QString&);
   virtual void setShutterSpeed(const QString&);
   virtual void setManualExposure(uint64_t seconds);
+  virtual void setOutputDirectory(const QString& directory);
 private:
   class Private;
   friend class Private;

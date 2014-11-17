@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QThread>
 #include <QScrollBar>
+#include <QFileDialog>
 #include <QScreen>
 #include <QSettings>
 
@@ -76,6 +77,17 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   }, Qt::QueuedConnection);
   connect(d->ui->imageSettings, &QPushButton::clicked, [=] {
     (new ImageSettingsDialog{d->imager, this})->show();
+  });
+  auto outputChanged = [=] (bool save) {
+    d->ui->outputDir->setEnabled(save);
+    d->ui->outputDirButton->setEnabled(save);
+    QMetaObject::invokeMethod(d->imager.get(), "setOutputDirectory", Qt::QueuedConnection, Q_ARG(QString, save ? d->ui->outputDir->text() : QString() ));
+  };
+  connect(d->ui->outputDiscard, &QAbstractButton::toggled, [=](bool dontsave) { outputChanged(!dontsave); });
+  connect(d->ui->outputSave, &QAbstractButton::toggled, outputChanged);
+  connect(d->ui->outputDirButton, &QAbstractButton::clicked, [=]{
+    d->ui->outputDir->setText(QFileDialog::getExistingDirectory());
+    outputChanged(true);
   });
 }
 

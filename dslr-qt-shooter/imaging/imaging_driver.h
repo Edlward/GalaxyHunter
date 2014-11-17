@@ -35,6 +35,7 @@ public slots:
   virtual void setISO(const QString &) {};
   virtual void setManualExposure(uint64_t seconds) {}
   virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
+  virtual void setOutputDirectory(const QString &directory) = 0;
 signals:
   void connected();
   void disconnected();
