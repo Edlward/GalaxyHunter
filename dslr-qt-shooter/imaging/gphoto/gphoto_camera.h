@@ -13,18 +13,13 @@ public:
   virtual QString summary() const;
   virtual QString model() const;
   virtual QString about() const;
-  virtual ComboSetting shutterSpeed() const;
-  virtual ComboSetting imageFormat() const;
-  virtual ComboSetting iso() const;
-  virtual uint64_t manualExposure() const;
+  
+  virtual std::shared_ptr< Settings > settings();
+
 public slots:
   virtual void connect();
   virtual void disconnect();
   virtual void shoot();
-  virtual void setImageFormat(const QString&);
-  virtual void setISO(const QString&);
-  virtual void setShutterSpeed(const QString&);
-  virtual void setManualExposure(uint64_t seconds);
   virtual void setOutputDirectory(const QString& directory);
 private:
   class Private;
