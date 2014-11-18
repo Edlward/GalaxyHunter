@@ -27,11 +27,14 @@ public:
     virtual void setISO(const QString &) = 0;
     virtual void setManualExposure(uint64_t seconds) = 0;
     virtual uint64_t manualExposure() const = 0;
+    virtual void reload() = 0;
+    virtual void apply() = 0;
   };
   
   virtual QString summary() const = 0; // TODO: documentation
   virtual QString model() const = 0;  // TODO: documentation
   virtual QString about() const = 0; // TODO: documentation
+  std::shared_ptr<Settings> settings() const { return _settings; }
         
     
 public slots:
@@ -40,16 +43,20 @@ public slots:
   virtual void shoot() = 0;
   virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
   virtual void setOutputDirectory(const QString &directory) = 0;
-  virtual void querySettings() = 0;
+  void reloadSettings() { _settings->reload(); emit settingsReady(); }
+  void applySettings() { _settings->apply(); emit settingsSaved(); }
+  
 signals:
   void connected();
   void disconnected();
   void message(Imager *, const QString &);
   void error(Imager *,const QString &);
   void preview(const QImage &);
-  void settings(const std::shared_ptr<Settings> &);
+  void settingsReady();
+  void settingsSaved();
 protected:
   bool deletePicturesOnCamera = false;
+  std::shared_ptr<Settings> _settings;
 };
 
 class ImagingDriver : public QObject {

@@ -11,11 +11,13 @@
 #include <QScreen>
 #include <QSettings>
 
+using namespace std;
+
 class DSLR_Shooter_Window::Private {
 public:
   Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver) : q(q), ui(ui), imagingDriver(imagingDriver),
     settings("GuLinux", "DSLR-Shooter") {}
-    std::unique_ptr<Ui::DSLR_Shooter_Window> ui;
+    unique_ptr<Ui::DSLR_Shooter_Window> ui;
     LinGuider *guider;
     struct LogEntry {
        QString message;
@@ -24,7 +26,7 @@ public:
 
     QList<LogEntry> logEntries;
     ImagingDriver *imagingDriver;
-    std::shared_ptr<Imager> imager;
+    shared_ptr<Imager> imager;
     QSettings settings;
 private:
   DSLR_Shooter_Window *q;
@@ -50,13 +52,10 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->camera_splitter->setSizes({height()/10*8, height()/10*2});
   d->ui->log_splitter->setSizes({height()/10*8, height()/10*2});
   
-  auto set_imager = [=](const std::shared_ptr<Imager> &imager) {
+  auto set_imager = [=](const shared_ptr<Imager> &imager) {
     d->imager = imager;
     connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
     connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
-    d->ui->imageSettings->disconnect();
-    connect(d->ui->imageSettings, SIGNAL(clicked(bool)), d->imager.get(), SLOT(querySettings()), Qt::QueuedConnection);
-    connect(d->imager.get(), &Imager::settings, this, [=](const std::shared_ptr<Imager::Settings> &s) { (new ImageSettingsDialog(s, this))->show(); }, Qt::QueuedConnection);
     d->imager->connect();
   };
 
@@ -124,7 +123,7 @@ void DSLR_Shooter_Window::update_log()
 {
     d->ui->logWindow->clear();
     QStringList log;
-    std::transform(d->logEntries.begin(), d->logEntries.end(), std::back_inserter(log), [](const Private::LogEntry &e) { return QString("%1 - %2").arg(e.when.toString(Qt::ISODate)).arg(e.message); } );
+    transform(d->logEntries.begin(), d->logEntries.end(), back_inserter(log), [](const Private::LogEntry &e) { return QString("%1 - %2").arg(e.when.toString(Qt::ISODate)).arg(e.message); } );
     d->ui->logWindow->setText(log.join("\n"));
 }
 
@@ -157,14 +156,22 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->toolBox->setEnabled(true);
   connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
   connect(d->imager.get(), &Imager::preview, this, [=]{
-    for(auto widget: std::vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
+    for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
       widget->setEnabled(true);
+  });
+  d->ui->imageSettings->disconnect();
+  
+  connect(d->ui->imageSettings, SIGNAL(clicked(bool)), d->imager.get(), SLOT(reloadSettings()), Qt::QueuedConnection);
+  connect(d->imager.get(), &Imager::settingsReady, this, [=] {
+    auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
+    connect(dialog, SIGNAL(accepted()), d->imager.get(), SLOT(applySettings()), Qt::QueuedConnection);
+    dialog->show();
   });
 }
 
 void DSLR_Shooter_Window::start_shooting()
 {
-  std::shared_ptr<long> shots = std::make_shared<long>(0);
+  shared_ptr<long> shots = make_shared<long>(0);
   auto shoot = [=](){
     qDebug() << "Shot #" << *shots;
     QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
@@ -174,7 +181,7 @@ void DSLR_Shooter_Window::start_shooting()
     shoot();
     return;
   }
-  static std::map<int, int> multipliers {
+  static map<int, int> multipliers {
     {0, 1},
     {1, 60},
     {2, 60*60},
@@ -199,7 +206,7 @@ void DSLR_Shooter_Window::start_shooting()
     delete shootTimer;
   };
   
-  long total_shots = d->ui->images_count->value() == 0 ? std::numeric_limits<long>::max() : d->ui->images_count->value();
+  long total_shots = d->ui->images_count->value() == 0 ? numeric_limits<long>::max() : d->ui->images_count->value();
   
   connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
   long seconds_interval = d->ui->shoot_interval->value() * multipliers[d->ui->shoot_interval_unit->currentIndex()];

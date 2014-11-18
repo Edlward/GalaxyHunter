@@ -17,7 +17,7 @@
 
 using namespace std;
 
-class GPhotoCamera::Settings : public Imager::Settings, public enable_shared_from_this<GPhotoCamera::Settings> {
+class GPhotoCamera::Settings : public Imager::Settings {
 public:
     Settings(GPContext *context, Camera *camera, GPhotoCamera *q);
     virtual ComboSetting imageFormat() const { return _imageFormat; }
@@ -28,6 +28,8 @@ public:
     virtual void setISO(const QString&);
     virtual void setManualExposure(uint64_t seconds);
     virtual void setShutterSpeed(const QString&);
+    virtual void apply();
+    virtual void reload();
     virtual ~Settings();
 private:
   GPContext *context;
@@ -37,7 +39,11 @@ private:
   ComboSetting _iso;
   ComboSetting _shutterSpeed;
   bool changed = false;
-  CameraWidget *settings, *isoWidget, *imageFormatWidget, *shutterSpeedWidget;
+  CameraWidget *settings = nullptr;
+  CameraWidget *isoWidget = nullptr;
+  CameraWidget *imageFormatWidget = nullptr;
+  CameraWidget *shutterSpeedWidget = nullptr;
+  int loadComboSetting(ComboSetting &setting, CameraWidget *widget);
 };
 
 
@@ -52,7 +58,7 @@ public:
   GPContext* context;
   Camera *camera = nullptr;
   uint64_t manualExposure = 0l;
-    QString outputDirectory;
+  QString outputDirectory;
   void shootTethered();
   void shootPreset();
   void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);

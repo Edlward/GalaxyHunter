@@ -7,6 +7,7 @@
 #include "utils/qt.h"
 #include <utils/qlambdathread.h>
 
+
 QString gphoto_error(int errorCode)
 {
     const char *errorMessage = gp_result_as_string(errorCode);
@@ -48,42 +49,63 @@ void GPhotoCamera::Settings::setShutterSpeed(const QString &v)
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
   : context(context), camera(camera), q(q)
 {
-  auto combo_widget_to_combosetting = [=] (CameraWidget *widget, ComboSetting &setting){
-    void *value;
-    int ret = gp_widget_get_value(widget, value);
-    if(ret >= GP_OK) {
-      setting.current = QString::fromStdString({reinterpret_cast<char*>(value)});
-      for(int i=0; i<gp_widget_count_choices(widget); i++) {
-	const char *choice;
-	if(gp_widget_get_choice(widget, i, &choice) >= GP_OK)
-	  setting.available.push_back(QString::fromStdString({choice}));
-      }
+}
+
+int GPhotoCamera::Settings::loadComboSetting(Imager::Settings::ComboSetting& setting, CameraWidget* widget)
+{
+  char *value;
+  int ret = gp_widget_get_value(widget, &value);
+  if(ret >= GP_OK) {
+    setting.current = QString(value);
+    int choices = gp_widget_count_choices(widget);
+    for(int i=0; i<choices; i++) {
+      const char *choice;
+      if(gp_widget_get_choice(widget, i, &choice) == GP_OK)
+	setting.available.push_back(QString(choice));
     }
-    return ret;
-  };
+  }
+  return ret;
+}
+
+
+
+void GPhotoCamera::Settings::apply()
+{
+  int counter = 0;
+  qDebug() << __PRETTY_FUNCTION__;
+  if(changed) {
+    qDebug() << __PRETTY_FUNCTION__ << ": settings changed, saving (shutterSpeed: " <<  _shutterSpeed.current << ", w=" << shutterSpeedWidget << ")";
+    gp_api {{
+      sequence_run([&]{ return gp_widget_set_value(imageFormatWidget, _imageFormat.current.data()); }),
+      sequence_run([&]{ return gp_widget_set_value(shutterSpeedWidget, _shutterSpeed.current.data()); }),
+      sequence_run([&]{ return gp_widget_set_value(isoWidget, _iso.current.data()); }),
+      sequence_run([&]{ return gp_camera_set_config(camera, settings, context); }),
+    }}.on_error([=](int errorCode, const std::string &label) {
+      qDebug() << gphoto_error(errorCode);
+      q->error(q, gphoto_error(errorCode));
+    });
+  }
+  gp_widget_free(settings);
+  qDebug() << "done";
+}
+
+void GPhotoCamera::Settings::reload()
+{
   gp_api{{
     sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &imageFormatWidget); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &isoWidget); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &shutterSpeedWidget); }),
-    sequence_run([&] { return combo_widget_to_combosetting(imageFormatWidget, _imageFormat); }),
-    sequence_run([&] { return combo_widget_to_combosetting(isoWidget, _iso); }),
-    sequence_run([&] { return combo_widget_to_combosetting(shutterSpeedWidget, _shutterSpeed); }),
-  }};
+  }}.run_last([=]{
+    loadComboSetting(_imageFormat, imageFormatWidget);
+    loadComboSetting(_iso, isoWidget);
+    loadComboSetting(_shutterSpeed, shutterSpeedWidget);
+  });
+  gp_widget_free(settings);
 }
 
 GPhotoCamera::Settings::~Settings()
 {
-    new QLambdaThread(q->thread(), [=]{
-      auto my = shared_from_this();
-      if(changed)
-	gp_api {{
-	  sequence_run([=]{  return gp_widget_set_value(my->imageFormatWidget, my->_imageFormat.current.data()); }),
-	  sequence_run([=]{  return gp_widget_set_value(my->shutterSpeedWidget, my->_shutterSpeed.current.data()); }),
-	  sequence_run([=]{  return gp_widget_set_value(my->isoWidget, my->_iso.current.data()); }),
-	}};
-      gp_widget_free(settings);
-    });
 }
 
 
@@ -103,17 +125,6 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
 #define IMAGE_FORMAT_SETTING "main/settings/imageformat"
 #define ISO_SETTING "main/settings/iso"
 #define SHUTTER_SPEED_SETTING "main/settings/shutterspeed"
-
-
-
-void GPhotoCamera::querySettings()
-{
-  emit settings(make_shared<Settings>(d->context, d->camera, this));
-}
-
-
-
-
 
 
 void GPhotoCamera::connect()
@@ -145,12 +156,12 @@ void GPhotoCamera::connect()
   }).run_last([&]{
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
+    _settings = make_shared<Settings>(d->context, d->camera, this);
     emit connected();    
   });  
   // TODO d->reloadSettings();
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
-  
 }
 
 

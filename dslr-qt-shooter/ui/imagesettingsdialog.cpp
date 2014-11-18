@@ -29,10 +29,14 @@ using namespace std;
 class ImageSettingsDialog::Private {
 public:
   Private(ImageSettingsDialog *q, Ui::ImageSettingsDialog *ui, const shared_ptr<Imager::Settings> &imagerSettings)
-    : q(q), ui(ui), imager(imager), shutterSpeed(imagerSettings->shutterSpeed().current), iso(imagerSettings->iso().current), imageFormat(imagerSettings->imageFormat().current) {}
+    : q(q), ui(ui), imagerSettings(imagerSettings) {
+      this->imageFormat = imagerSettings->imageFormat().current;
+      this->shutterSpeed = imagerSettings->shutterSpeed().current;
+      this->iso = imagerSettings->iso().current;
+    }
     ImageSettingsDialog *q;
     unique_ptr<Ui::ImageSettingsDialog> ui;
-    shared_ptr<Imager::Settings> imager;
+    shared_ptr<Imager::Settings> imagerSettings;
     
     // Settings
     QString shutterSpeed;
@@ -57,9 +61,9 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
     combo->setCurrentText(setting.current);
   };
   
-  populateCombo(d->ui->imageFormat, d->imager->imageFormat());
-  populateCombo(d->ui->iso, d->imager->iso());
-  populateCombo(d->ui->shutterSpeedPresets, d->imager->shutterSpeed());
+  populateCombo(d->ui->imageFormat, d->imagerSettings->imageFormat());
+  populateCombo(d->ui->iso, d->imagerSettings->iso());
+  populateCombo(d->ui->shutterSpeedPresets, d->imagerSettings->shutterSpeed());
   connect(d->ui->shutterSpeedPresets, &QComboBox::currentTextChanged, [=](const QString &t) { d->shutterSpeed = t; });
   connect(d->ui->iso, &QComboBox::currentTextChanged, [=](const QString &t) { d->iso = t; });
   connect(d->ui->imageFormat, &QComboBox::currentTextChanged, [=](const QString &t) { d->imageFormat = t; });
@@ -72,8 +76,8 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
   auto manualExposure = [=](bool checked) {
     d->ui->shutterSpeedManual->setEnabled(checked);
     d->ui->shutterSpeedManualUnit->setEnabled(checked);
-    d->ui->shutterSpeedManual->setValue(d->imager->manualExposure() > 60 ? d->imager->manualExposure()/60 : d->imager->manualExposure());
-    d->ui->shutterSpeedManualUnit->setCurrentIndex(d->imager->manualExposure() > 60 ? 1 : 0);
+    d->ui->shutterSpeedManual->setValue(d->imagerSettings->manualExposure() > 60 ? d->imagerSettings->manualExposure()/60 : d->imagerSettings->manualExposure());
+    d->ui->shutterSpeedManualUnit->setCurrentIndex(d->imagerSettings->manualExposure() > 60 ? 1 : 0);
   };
   
   connect(d->ui->presetExposure, &QRadioButton::toggled, presetExposure);
@@ -89,9 +93,10 @@ void ImageSettingsDialog::accept()
   uint64_t unit = pow(60, d->ui->shutterSpeedManualUnit->currentIndex());
   uint64_t manualExposure = d->ui->shutterSpeedManual->value() * unit;
   manualExposure = d->ui->manualExposure->isChecked() ? manualExposure : 0;
-    d->imager->setShutterSpeed(d->shutterSpeed);
-    d->imager->setImageFormat(d->imageFormat);
-    d->imager->setISO(d->iso);
-    d->imager->setManualExposure(manualExposure);
+    d->imagerSettings->setShutterSpeed(d->shutterSpeed);
+    d->imagerSettings->setImageFormat(d->imageFormat);
+    d->imagerSettings->setISO(d->iso);
+    d->imagerSettings->setManualExposure(manualExposure);
   QDialog::accept();
+  deleteLater();
 }
