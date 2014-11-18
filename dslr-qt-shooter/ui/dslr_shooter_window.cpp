@@ -54,6 +54,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imager = imager;
     connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
     connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
+    d->ui->imageSettings->disconnect();
+    connect(d->ui->imageSettings, SIGNAL(clicked(bool)), d->imager.get(), SLOT(querySettings()), Qt::QueuedConnection);
+    connect(d->imager.get(), &Imager::settings, this, [=](const std::shared_ptr<Imager::Settings> &s) { (new ImageSettingsDialog(s, this))->show(); }, Qt::QueuedConnection);
     d->imager->connect();
   };
 
@@ -75,9 +78,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
       });
     }
   }, Qt::QueuedConnection);
-  connect(d->ui->imageSettings, &QPushButton::clicked, [=] {
-    // TODO restore (new ImageSettingsDialog{d->imager, this})->show();
-  });
+
   auto outputChanged = [=] (bool save) {
     d->ui->outputDir->setEnabled(save);
     d->ui->outputDirButton->setEnabled(save);
