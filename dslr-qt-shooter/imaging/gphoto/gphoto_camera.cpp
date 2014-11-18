@@ -15,19 +15,6 @@ QString gphoto_error(int errorCode)
 }
 
 
-
-void GPhotoCamera::Settings::setImageFormat(const QString &v)
-{
-  changed = true;
-  _imageFormat.current = v;
-}
-
-void GPhotoCamera::Settings::setISO(const QString &v)
-{
-  changed = true;
-  _iso.current = v;
-}
-
 void GPhotoCamera::Settings::setManualExposure(uint64_t seconds)
 {
   q->d->manualExposure = seconds;
@@ -39,24 +26,24 @@ uint64_t GPhotoCamera::Settings::manualExposure() const
   return q->d->manualExposure;
 }
 
-
-void GPhotoCamera::Settings::setShutterSpeed(const QString &v)
-{
-  changed = true;
-  _shutterSpeed.current = v;
-}
-
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
   : context(context), camera(camera), q(q)
 {
 }
 
-int GPhotoCamera::Settings::loadComboSetting(Imager::Settings::ComboSetting& setting, CameraWidget* widget)
+int GPhotoCamera::Settings::Set::save()
+{
+  if(setting.current == _original)
+    return GP_OK;
+  return gp_widget_set_value(widget, setting.current.data());
+}
+int GPhotoCamera::Settings::Set::load()
 {
   char *value;
   int ret = gp_widget_get_value(widget, &value);
   if(ret >= GP_OK) {
     setting.current = QString(value);
+    _original = setting.current;
     int choices = gp_widget_count_choices(widget);
     for(int i=0; i<choices; i++) {
       const char *choice;
@@ -68,17 +55,16 @@ int GPhotoCamera::Settings::loadComboSetting(Imager::Settings::ComboSetting& set
 }
 
 
-
 void GPhotoCamera::Settings::apply()
 {
   int counter = 0;
   qDebug() << __PRETTY_FUNCTION__;
-  if(changed) {
-    qDebug() << __PRETTY_FUNCTION__ << ": settings changed, saving (shutterSpeed: " <<  _shutterSpeed.current << ", w=" << shutterSpeedWidget << ")";
+  vector<Set> sets{_imageFormat, _iso, _shutterSpeed};
+  if(any_of(begin(sets), end(sets), [](const Set &s){ return s._original != s.setting.current; })) {
     gp_api {{
-      sequence_run([&]{ return gp_widget_set_value(imageFormatWidget, _imageFormat.current.data()); }),
-      sequence_run([&]{ return gp_widget_set_value(shutterSpeedWidget, _shutterSpeed.current.data()); }),
-      sequence_run([&]{ return gp_widget_set_value(isoWidget, _iso.current.data()); }),
+      sequence_run([&]{ return _imageFormat.save(); }),
+      sequence_run([&]{ return _shutterSpeed.save(); }),
+      sequence_run([&]{ return _iso.save(); }),
       sequence_run([&]{ return gp_camera_set_config(camera, settings, context); }),
     }}.on_error([=](int errorCode, const std::string &label) {
       qDebug() << gphoto_error(errorCode);
@@ -93,13 +79,13 @@ void GPhotoCamera::Settings::reload()
 {
   gp_api{{
     sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &imageFormatWidget); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &isoWidget); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &shutterSpeedWidget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &_imageFormat.widget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &_iso.widget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &_shutterSpeed.widget); }),
   }}.run_last([=]{
-    loadComboSetting(_imageFormat, imageFormatWidget);
-    loadComboSetting(_iso, isoWidget);
-    loadComboSetting(_shutterSpeed, shutterSpeedWidget);
+    _imageFormat.load();
+    _iso.load();
+    _shutterSpeed.load();
   });
   gp_widget_free(settings);
 }

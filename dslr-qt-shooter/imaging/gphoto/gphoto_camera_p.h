@@ -19,31 +19,34 @@ using namespace std;
 
 class GPhotoCamera::Settings : public Imager::Settings {
 public:
+  struct Set {
+    int load();
+    int save();
+    void change(const QString &value) { setting.current = value; }
+    ComboSetting setting;
+    CameraWidget *widget;
+    QString _original;
+  };
     Settings(GPContext *context, Camera *camera, GPhotoCamera *q);
-    virtual ComboSetting imageFormat() const { return _imageFormat; }
-    virtual ComboSetting iso() const { return _iso; }
-    virtual ComboSetting shutterSpeed() const { return _shutterSpeed; }
+    virtual ComboSetting imageFormat() const { return _imageFormat.setting; }
+    virtual ComboSetting iso() const { return _iso.setting; }
+    virtual ComboSetting shutterSpeed() const { return _shutterSpeed.setting; }
     virtual uint64_t manualExposure() const;
-    virtual void setImageFormat(const QString&);
-    virtual void setISO(const QString&);
+    virtual void setImageFormat(const QString &v) { _imageFormat.change(v); }
+    virtual void setISO(const QString &v) { _iso.change(v); }
     virtual void setManualExposure(uint64_t seconds);
-    virtual void setShutterSpeed(const QString&);
+    virtual void setShutterSpeed(const QString &v) { _shutterSpeed.change(v); }
     virtual void apply();
     virtual void reload();
     virtual ~Settings();
 private:
   GPContext *context;
   Camera *camera;
+  CameraWidget *settings;
   GPhotoCamera *q;
-  ComboSetting _imageFormat;
-  ComboSetting _iso;
-  ComboSetting _shutterSpeed;
-  bool changed = false;
-  CameraWidget *settings = nullptr;
-  CameraWidget *isoWidget = nullptr;
-  CameraWidget *imageFormatWidget = nullptr;
-  CameraWidget *shutterSpeedWidget = nullptr;
-  int loadComboSetting(ComboSetting &setting, CameraWidget *widget);
+  Set _imageFormat;
+  Set _iso;
+  Set _shutterSpeed;
 };
 
 
