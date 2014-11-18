@@ -74,12 +74,13 @@ GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamer
 
 GPhotoCamera::Settings::~Settings()
 {
-    new QLambdaThread(q->thread(), [&]{
+    new QLambdaThread(q->thread(), [=]{
+      auto my = shared_from_this();
       if(changed)
 	gp_api {{
-	  sequence_run([&]{  return gp_widget_set_value(imageFormatWidget, _imageFormat.current.data()); }),
-	  sequence_run([&]{  return gp_widget_set_value(shutterSpeedWidget, _shutterSpeed.current.data()); }),
-	  sequence_run([&]{  return gp_widget_set_value(isoWidget, _iso.current.data()); }),
+	  sequence_run([=]{  return gp_widget_set_value(my->imageFormatWidget, my->_imageFormat.current.data()); }),
+	  sequence_run([=]{  return gp_widget_set_value(my->shutterSpeedWidget, my->_shutterSpeed.current.data()); }),
+	  sequence_run([=]{  return gp_widget_set_value(my->isoWidget, my->_iso.current.data()); }),
 	}};
       gp_widget_free(settings);
     });

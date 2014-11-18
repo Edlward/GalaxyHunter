@@ -17,7 +17,7 @@
 
 using namespace std;
 
-class GPhotoCamera::Settings : public Imager::Settings {
+class GPhotoCamera::Settings : public Imager::Settings, public enable_shared_from_this<GPhotoCamera::Settings> {
 public:
     Settings(GPContext *context, Camera *camera, GPhotoCamera *q);
     virtual ComboSetting imageFormat() const { return _imageFormat; }
