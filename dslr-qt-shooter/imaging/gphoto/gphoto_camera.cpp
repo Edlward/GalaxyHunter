@@ -5,6 +5,7 @@
 #include <QDir>
 
 #include "utils/qt.h"
+#include <utils/qlambdathread.h>
 
 QString gphoto_error(int errorCode)
 {
@@ -73,13 +74,15 @@ GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamer
 
 GPhotoCamera::Settings::~Settings()
 {
-  if(changed)
-    gp_api {{
-      sequence_run([&]{  return gp_widget_set_value(imageFormatWidget, _imageFormat.current.data()); }),
-      sequence_run([&]{  return gp_widget_set_value(shutterSpeedWidget, _shutterSpeed.current.data()); }),
-      sequence_run([&]{  return gp_widget_set_value(isoWidget, _iso.current.data()); }),
-    }};
-  gp_widget_free(settings);
+    new QLambdaThread(q->thread(), [&]{
+      if(changed)
+	gp_api {{
+	  sequence_run([&]{  return gp_widget_set_value(imageFormatWidget, _imageFormat.current.data()); }),
+	  sequence_run([&]{  return gp_widget_set_value(shutterSpeedWidget, _shutterSpeed.current.data()); }),
+	  sequence_run([&]{  return gp_widget_set_value(isoWidget, _iso.current.data()); }),
+	}};
+      gp_widget_free(settings);
+    });
 }
 
 
