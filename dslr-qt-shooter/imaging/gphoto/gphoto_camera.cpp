@@ -33,12 +33,15 @@ GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamer
 
 int GPhotoCamera::Settings::Set::save()
 {
+  qDebug() << "Saving setting: current=" << setting.current << ", previous: " << _original;
   if(setting.current == _original)
     return GP_OK;
-  return gp_widget_set_value(widget, setting.current.data());
+  return  gp_widget_set_value(widget, setting.current.toStdString().c_str());
 }
+
 int GPhotoCamera::Settings::Set::load()
 {
+  setting.available.clear();
   char *value;
   int ret = gp_widget_get_value(widget, &value);
   if(ret >= GP_OK) {
@@ -87,7 +90,6 @@ void GPhotoCamera::Settings::reload()
     _iso.load();
     _shutterSpeed.load();
   });
-  gp_widget_free(settings);
 }
 
 GPhotoCamera::Settings::~Settings()

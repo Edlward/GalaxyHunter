@@ -162,9 +162,11 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->imageSettings->disconnect();
   
   connect(d->ui->imageSettings, SIGNAL(clicked(bool)), d->imager.get(), SLOT(reloadSettings()), Qt::QueuedConnection);
+  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{ d->ui->imageSettings->setDisabled(true); });
   connect(d->imager.get(), &Imager::settingsReady, this, [=] {
     auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
     connect(dialog, SIGNAL(accepted()), d->imager.get(), SLOT(applySettings()), Qt::QueuedConnection);
+    connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); });
     dialog->show();
   });
 }
