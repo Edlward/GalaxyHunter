@@ -172,6 +172,13 @@ void DSLR_Shooter_Window::camera_connected()
     d->ui->imageFormatLabel->setText(d->imager->settings()->imageFormat().current);
     d->ui->shutterSpeedLabel->setText(d->imager->settings()->shutterSpeed().current);
     d->ui->manualExposureLabel->setText(QString("%1 seconds").arg(d->imager->settings()->manualExposure()));
+    
+    int secs = d->imager->settings()->manualExposure();
+    if(secs < 60)
+      d->ui->manualExposureLabel->setText(QString("%1 %2").arg(secs).arg(tr("seconds")));
+    else
+      d->ui->manualExposureLabel->setText(QString("%1 %2 %3 %4").arg(secs/60).arg(tr("minutes")).arg(secs%60).arg(tr("seconds")));
+    
     qDebug() << "Settings loaded";
     if(! d->about_to_show_settings) return;
     d->about_to_show_settings = false;

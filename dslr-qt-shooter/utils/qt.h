@@ -29,5 +29,4 @@ inline void timedLambda(int msec, std::function<void()> f, QObject *context) {
   timer->start(msec);
 }
 
-
 #endif
