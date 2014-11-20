@@ -3,6 +3,7 @@
 #include <string>
 #include "utils/sequence.h"
 #include <gphoto2/gphoto2.h>
+#include <QMutex>
 typedef sequence<int, GP_OK, std::greater_equal<int>> gp_api;
 
 class GPhotoCameraInformation {
@@ -14,5 +15,15 @@ public:
   GPContext *context;
 };
 
+
+class GPhotoAPICall {
+public:
+  GPhotoAPICall(const std::list<gp_api::run> &runs, QMutex &mutex)
+    : api{runs}, locker(&mutex) {}
+  ~GPhotoAPICall();
+private:
+  QMutexLocker locker;
+  gp_api api;
+};
 #endif
 

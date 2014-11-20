@@ -97,7 +97,6 @@ GPhotoCamera::Settings::~Settings()
 }
 
 
-
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
   : d(new Private{gphotoCameraInformation, this})
 {
