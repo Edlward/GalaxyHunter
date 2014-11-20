@@ -26,8 +26,8 @@ uint64_t GPhotoCamera::Settings::manualExposure() const
   return q->d->manualExposure;
 }
 
-GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q)
-  : context(context), camera(camera), q(q)
+GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q, QMutex &mutex)
+  : context(context), camera(camera), q(q), mutex(mutex)
 {
 }
 
@@ -64,7 +64,7 @@ void GPhotoCamera::Settings::apply()
   qDebug() << __PRETTY_FUNCTION__;
   vector<Set> sets{_imageFormat, _iso, _shutterSpeed};
   if(any_of(begin(sets), end(sets), [](const Set &s){ return s._original != s.setting.current; })) {
-    gp_api {{
+    gp_api {mutex, {
       sequence_run([&]{ return _imageFormat.save(); }),
       sequence_run([&]{ return _shutterSpeed.save(); }),
       sequence_run([&]{ return _iso.save(); }),
@@ -80,7 +80,7 @@ void GPhotoCamera::Settings::apply()
 
 void GPhotoCamera::Settings::reload()
 {
-  gp_api{{
+  gp_api{mutex, {
     sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &_imageFormat.widget); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &_iso.widget); }),
@@ -100,7 +100,7 @@ GPhotoCamera::Settings::~Settings()
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
   : d(new Private{gphotoCameraInformation, this})
 {
-  gp_api{{
+  gp_api{ d->mutex, {
     { [=] { return gp_camera_new(&d->camera); } },
   }}.on_error([=](int errorCode, const std::string &label) {
     qDebug() << gphoto_error(errorCode);
@@ -123,7 +123,7 @@ void GPhotoCamera::connect()
   CameraText camera_summary;
   CameraText camera_about;
   int model, port;
-  gp_api{{
+  gp_api{ d->mutex, {
     sequence_run( [&]{ return gp_abilities_list_new (&abilities_list); } ),
     sequence_run( [&]{ return gp_abilities_list_load(abilities_list, d->context); } ),
     sequence_run( [&]{ model = gp_abilities_list_lookup_model(abilities_list, d->model.toLocal8Bit()); return model; } ),
@@ -143,7 +143,7 @@ void GPhotoCamera::connect()
   }).run_last([&]{
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
-    _settings = make_shared<Settings>(d->context, d->camera, this);
+    _settings = make_shared<Settings>(d->context, d->camera, this, d->mutex);
     emit connected();    
   });  
   // TODO d->reloadSettings();
@@ -178,7 +178,7 @@ void GPhotoCamera::Private::shootPreset()
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
   QImage image;
-  gp_api{{
+  gp_api{ mutex, {
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
     sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
@@ -221,7 +221,7 @@ void GPhotoCamera::Private::shootTethered()
     string filename;
     CameraFilePath *newfile;
     
-    gp_api{{
+    gp_api{ mutex, {
       sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
       sequence_run([&]{ 

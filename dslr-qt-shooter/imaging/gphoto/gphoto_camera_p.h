@@ -27,7 +27,7 @@ public:
     CameraWidget *widget;
     QString _original;
   };
-    Settings(GPContext *context, Camera *camera, GPhotoCamera *q);
+    Settings(GPContext *context, Camera *camera, GPhotoCamera *q, QMutex &mutex);
     virtual ComboSetting imageFormat() const { return _imageFormat.setting; }
     virtual ComboSetting iso() const { return _iso.setting; }
     virtual ComboSetting shutterSpeed() const { return _shutterSpeed.setting; }
@@ -42,6 +42,7 @@ public:
 private:
   GPContext *context;
   Camera *camera;
+  QMutex &mutex;
   CameraWidget *settings;
   GPhotoCamera *q;
   Set _imageFormat;
@@ -53,7 +54,7 @@ private:
 class GPhotoCamera::Private {
 public:
   Private(const shared_ptr<GPhotoCameraInformation> &info, GPhotoCamera *q)
-    : model(QString::fromStdString(info->name)), port(info->port), context(info->context), q(q) {}
+    : model(QString::fromStdString(info->name)), port(info->port), context(info->context), mutex(info->mutex), q(q) {}
   string port;
   QString model;
   QString about;
@@ -66,6 +67,7 @@ public:
   void shootPreset();
   void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
   std::string fixedFilename(const std::string &fileName) const;
+  QMutex &mutex;
 private:
   GPhotoCamera *q;
 };

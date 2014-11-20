@@ -4,26 +4,35 @@
 #include "utils/sequence.h"
 #include <gphoto2/gphoto2.h>
 #include <QMutex>
-typedef sequence<int, GP_OK, std::greater_equal<int>> gp_api;
 
 class GPhotoCameraInformation {
 public:
-  GPhotoCameraInformation(const std::string &name, const std::string &port, GPContext *context) 
-    : name(name), port(port), context(context) {}
+  GPhotoCameraInformation(const std::string &name, const std::string &port, GPContext *context, QMutex &mutex) 
+    : name(name), port(port), context(context), mutex(mutex) {}
   std::string name;
   std::string port;
   GPContext *context;
+  QMutex &mutex;
 };
 
 
-class GPhotoAPICall {
+class gp_api {
+  typedef sequence<int, GP_OK, std::greater_equal<int>> api_sequence;
 public:
-  GPhotoAPICall(const std::list<gp_api::run> &runs, QMutex &mutex)
+  gp_api(QMutex &mutex, const std::list<api_sequence::run> &runs)
     : api{runs}, locker(&mutex) {}
-  ~GPhotoAPICall();
+  ~gp_api() = default;
+  gp_api &on_error(api_sequence::on_error_f e) {
+    api.on_error(e);
+    return *this;
+  }
+  gp_api &run_last(std::function<void()> _run_last) {
+    api.run_last(_run_last);
+    return *this;
+  }
 private:
   QMutexLocker locker;
-  gp_api api;
+  api_sequence api;
 };
 #endif
 

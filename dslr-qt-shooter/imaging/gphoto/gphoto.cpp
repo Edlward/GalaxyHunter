@@ -43,6 +43,7 @@ public:
   static void gphotoMessage(GPContext *context, const char *, void *);
   static void gphotoErrorMessage(GPContext *context, const char *, void *);
   void reset_messages();
+  QMutex mutex;
 };
 
 
@@ -73,7 +74,7 @@ void GPhoto::scan_imagers()
     gp_list_get_name(cameras, i, &name);
     gp_list_get_value(cameras, i, &port);
     qDebug() << "found camera " << i << ": " << name << ", port " << port;
-    _imagers.push_back(make_shared<GPhotoCamera>(make_shared<GPhotoCameraInformation>(name, port, d->context)));
+    _imagers.push_back(make_shared<GPhotoCamera>(make_shared<GPhotoCameraInformation>(name, port, d->context, d->mutex)));
   }
 }
 
