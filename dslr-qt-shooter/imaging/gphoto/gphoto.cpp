@@ -64,18 +64,26 @@ GPhoto::~GPhoto()
 void GPhoto::scan_imagers()
 {
   CameraList *cameras;
+  size_t cameras_size;
   gp_list_new(&cameras);
-  scope cleanup{[=]{ gp_list_unref(cameras); }};
-  int result = gp_camera_autodetect(cameras, d->context);
-  size_t cameras_size = gp_list_count(cameras);
-  qDebug() << "result: " << result << ", list size: " << cameras_size;
-  for(int i=0; i<cameras_size; i++) {
-    const char *name, *port;
-    gp_list_get_name(cameras, i, &name);
-    gp_list_get_value(cameras, i, &port);
-    qDebug() << "found camera " << i << ": " << name << ", port " << port;
-    _imagers.push_back(make_shared<GPhotoCamera>(make_shared<GPhotoCameraInformation>(name, port, d->context, d->mutex)));
-  }
+  list<shared_ptr<GPhotoCameraInformation>> cameras_info;
+  gp_api{{
+    sequence_run([&]{ return gp_camera_autodetect(cameras, d->context); }),
+    sequence_run([&]{  cameras_size = gp_list_count(cameras); return static_cast<int>(cameras_size); }),
+    sequence_run([&]{  
+      for(int i=0; i<cameras_size; i++) {
+	const char *name, *port;
+	gp_list_get_name(cameras, i, &name);
+	gp_list_get_value(cameras, i, &port);
+	qDebug() << "found camera " << i << ": " << name << ", port " << port;
+	cameras_info.push_back(make_shared<GPhotoCameraInformation>(name, port, d->context, d->mutex));
+	return GP_OK;
+      }
+    }),
+  }, make_shared<QMutexLocker>(&d->mutex)};
+  gp_list_unref(cameras);
+  for(auto camera: cameras_info)
+    _imagers.push_back(make_shared<GPhotoCamera>(camera));
 }
 
 void GPhoto::Private::gphotoMessage(GPContext* context, const char* m, void* data)

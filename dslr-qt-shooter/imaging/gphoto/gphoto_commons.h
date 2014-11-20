@@ -15,24 +15,7 @@ public:
   QMutex &mutex;
 };
 
+typedef sequence<int, GP_OK, std::greater_equal<int>, std::shared_ptr<QMutexLocker>> gp_api;
 
-class gp_api {
-  typedef sequence<int, GP_OK, std::greater_equal<int>> api_sequence;
-public:
-  gp_api(QMutex &mutex, const std::list<api_sequence::run> &runs)
-    : api{runs}, locker(&mutex) {}
-  ~gp_api() = default;
-  gp_api &on_error(api_sequence::on_error_f e) {
-    api.on_error(e);
-    return *this;
-  }
-  gp_api &run_last(std::function<void()> _run_last) {
-    api.run_last(_run_last);
-    return *this;
-  }
-private:
-  QMutexLocker locker;
-  api_sequence api;
-};
 #endif
 

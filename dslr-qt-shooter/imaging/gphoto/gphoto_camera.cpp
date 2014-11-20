@@ -64,12 +64,12 @@ void GPhotoCamera::Settings::apply()
   qDebug() << __PRETTY_FUNCTION__;
   vector<Set> sets{_imageFormat, _iso, _shutterSpeed};
   if(any_of(begin(sets), end(sets), [](const Set &s){ return s._original != s.setting.current; })) {
-    gp_api {mutex, {
+    gp_api {{
       sequence_run([&]{ return _imageFormat.save(); }),
       sequence_run([&]{ return _shutterSpeed.save(); }),
       sequence_run([&]{ return _iso.save(); }),
       sequence_run([&]{ return gp_camera_set_config(camera, settings, context); }),
-    }}.on_error([=](int errorCode, const std::string &label) {
+    }, make_shared<QMutexLocker>(&mutex)}.on_error([=](int errorCode, const std::string &label) {
       qDebug() << gphoto_error(errorCode);
       q->error(q, gphoto_error(errorCode));
     });
@@ -80,12 +80,12 @@ void GPhotoCamera::Settings::apply()
 
 void GPhotoCamera::Settings::reload()
 {
-  gp_api{mutex, {
+  gp_api{{
     sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &_imageFormat.widget); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &_iso.widget); }),
     sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &_shutterSpeed.widget); }),
-  }}.run_last([=]{
+  }, make_shared<QMutexLocker>(&mutex)}.run_last([=]{
     _imageFormat.load();
     _iso.load();
     _shutterSpeed.load();
@@ -100,9 +100,9 @@ GPhotoCamera::Settings::~Settings()
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
   : d(new Private{gphotoCameraInformation, this})
 {
-  gp_api{ d->mutex, {
+  gp_api{{
     { [=] { return gp_camera_new(&d->camera); } },
-  }}.on_error([=](int errorCode, const std::string &label) {
+  }, make_shared<QMutexLocker>(&d->mutex)}.on_error([=](int errorCode, const std::string &label) {
     qDebug() << gphoto_error(errorCode);
     emit error(this, gphoto_error(errorCode));
   });
@@ -123,7 +123,7 @@ void GPhotoCamera::connect()
   CameraText camera_summary;
   CameraText camera_about;
   int model, port;
-  gp_api{ d->mutex, {
+  gp_api{{
     sequence_run( [&]{ return gp_abilities_list_new (&abilities_list); } ),
     sequence_run( [&]{ return gp_abilities_list_load(abilities_list, d->context); } ),
     sequence_run( [&]{ model = gp_abilities_list_lookup_model(abilities_list, d->model.toLocal8Bit()); return model; } ),
@@ -137,7 +137,7 @@ void GPhotoCamera::connect()
     sequence_run( [&]{ return gp_camera_set_port_info(d->camera, portInfo); } ),
     sequence_run( [&]{ return gp_camera_get_summary(d->camera, &camera_summary, d->context); } ),
     sequence_run( [&]{ return gp_camera_get_about(d->camera, &camera_about, d->context); } ),
-  }}.on_error([=](int errorCode, const std::string &label) {
+  }, make_shared<QMutexLocker>(&d->mutex)}.on_error([=](int errorCode, const std::string &label) {
     qDebug() << "on " << label << ": " << gphoto_error(errorCode);
     emit error(this, gphoto_error(errorCode));
   }).run_last([&]{
@@ -178,11 +178,11 @@ void GPhotoCamera::Private::shootPreset()
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
   QImage image;
-  gp_api{ mutex, {
+  gp_api{{
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
     sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
-  }}.run_last([&]{
+  }, make_shared<QMutexLocker>(&mutex)}.run_last([&]{
     deletePicturesOnCamera(camera_remote_file);
     qDebug() << "shoot completed: camera file " << camera_file.path();
     if(image.load(camera_file)) {
@@ -221,7 +221,7 @@ void GPhotoCamera::Private::shootTethered()
     string filename;
     CameraFilePath *newfile;
     
-    gp_api{ mutex, {
+    gp_api{{
       sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
       sequence_run([&]{ 
@@ -230,7 +230,7 @@ void GPhotoCamera::Private::shootTethered()
         return gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, camera_file, context);
       }),
       sequence_run( [&]{ return camera_file.save();} ),
-    }}.on_error([=](int errorCode, const std::string &label) {
+    }, make_shared<QMutexLocker>(&mutex)}.on_error([=](int errorCode, const std::string &label) {
       qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
       q->error(q, gphoto_error(errorCode));
     }).run_last([&]{

@@ -2,8 +2,10 @@
 #define UTILS_SEQUENCE_H
 #include <functional>
 #include <list>
+#include <mutex>
 
-template<typename T, T defaultValue, typename check_operator = std::equal_to<T>>
+typedef std::shared_ptr<std::unique_lock<std::mutex>> default_lock;
+template<typename T, T defaultValue, typename check_operator = std::equal_to<T>, typename RAII_Object = default_lock>
 class sequence {
 public:
   typedef std::function<T()> run_function;
@@ -15,7 +17,7 @@ public:
     run(run_function f, const std::string &label = {}, T check = defaultValue) : f(f), label(label), check(check) {}
   };
   template <typename ...Args>
-  sequence(const std::list<run> &runs) : runs(runs), _check_operator(check_operator{}) {}
+  sequence(const std::list<run> &runs, const RAII_Object &raii_object = {}) : runs(runs), _check_operator(check_operator{}), raii_object(raii_object) {}
   ~sequence() {
     for(auto r: runs) {
       T result = r.f();
@@ -34,6 +36,7 @@ private:
   on_error_f _run_on_error = [](const T&, const std::string&) {};
   check_operator _check_operator;
   std::function<void()> _run_last = []{};
+  RAII_Object raii_object;
 };
 
 #ifdef IN_IDE_PARSER
