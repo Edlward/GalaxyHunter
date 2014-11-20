@@ -23,6 +23,8 @@
 #include <utils/qt.h>
 #include <utils/qlambdathread.h>
 #include <QThread>
+#include <QFileDialog>
+#include <QPushButton>
 
 using namespace std;
 
@@ -79,12 +81,16 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
     d->ui->shutterSpeedManual->setValue(d->imagerSettings->manualExposure() > 60 ? d->imagerSettings->manualExposure()/60 : d->imagerSettings->manualExposure());
     d->ui->shutterSpeedManualUnit->setCurrentIndex(d->imagerSettings->manualExposure() > 60 ? 1 : 0);
   };
+  d->ui->manualExposure->setText(QString::fromStdString(d->imagerSettings->serialShootPort()));
   
   connect(d->ui->presetExposure, &QRadioButton::toggled, presetExposure);
   connect(d->ui->manualExposure, &QRadioButton::toggled, manualExposure);
   auto bulbMode = d->ui->shutterSpeedPresets->currentText() == "Bulb";
   d->ui->presetExposure->setChecked(!bulbMode); presetExposure(!bulbMode);
   d->ui->manualExposure->setChecked(bulbMode); manualExposure(bulbMode);
+  connect(d->ui->pickSerialShootPort, &QPushButton::clicked, [=]{
+    d->ui->serialShootPort->setText(QFileDialog::getOpenFileName(this, QString(), "/dev"));
+  });
 }
 
 
@@ -97,6 +103,7 @@ void ImageSettingsDialog::accept()
     d->imagerSettings->setImageFormat(d->imageFormat);
     d->imagerSettings->setISO(d->iso);
     d->imagerSettings->setManualExposure(manualExposure);
+    d->imagerSettings->setSerialShootPort(d->ui->serialShootPort->text().toStdString() );
   QDialog::accept();
   deleteLater();
 }

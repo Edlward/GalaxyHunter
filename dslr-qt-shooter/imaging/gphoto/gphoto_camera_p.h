@@ -36,6 +36,8 @@ public:
     virtual void setISO(const QString &v) { _iso.change(v); }
     virtual void setManualExposure(uint64_t seconds);
     virtual void setShutterSpeed(const QString &v) { _shutterSpeed.change(v); }
+    virtual std::string serialShootPort() const;
+    virtual void setSerialShootPort(const string serialShootPort);
     virtual void apply();
     virtual void reload();
     virtual ~Settings();
@@ -68,6 +70,7 @@ public:
   void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
   std::string fixedFilename(const std::string &fileName) const;
   QMutex &mutex;
+  std::string serialShootPort;
 private:
   GPhotoCamera *q;
 };

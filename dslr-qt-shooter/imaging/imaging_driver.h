@@ -27,6 +27,8 @@ public:
     virtual void setISO(const QString &) = 0;
     virtual void setManualExposure(uint64_t seconds) = 0;
     virtual uint64_t manualExposure() const = 0;
+    virtual void setSerialShootPort(const std::string serialShootPort) = 0;
+    virtual std::string serialShootPort() const = 0;
     virtual void reload() = 0;
     virtual void apply() = 0;
   };

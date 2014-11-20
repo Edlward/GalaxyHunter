@@ -26,6 +26,18 @@ uint64_t GPhotoCamera::Settings::manualExposure() const
   return q->d->manualExposure;
 }
 
+
+string GPhotoCamera::Settings::serialShootPort() const
+{
+  return q->d->serialShootPort;
+}
+
+void GPhotoCamera::Settings::setSerialShootPort(const string serialShootPort)
+{
+  q->d->serialShootPort = serialShootPort;
+}
+
+
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q, QMutex &mutex)
   : context(context), camera(camera), q(q), mutex(mutex)
 {
@@ -212,7 +224,7 @@ void GPhotoCamera::Private::shootPreset()
 void GPhotoCamera::Private::shootTethered()
 {
   {
-    auto shoot = make_shared<SerialShoot>("/dev/ttyUSB0");
+    auto shoot = make_shared<SerialShoot>(serialShootPort);
     q->thread()->msleep(manualExposure * 1000);
   }
     CameraEventType event;
