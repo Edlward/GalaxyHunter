@@ -233,6 +233,10 @@ void DSLR_Shooter_Window::start_shooting()
   long seconds_interval = d->ui->shoot_interval->value() * multipliers[d->ui->shoot_interval_unit->currentIndex()];
   auto timer_shooting = [=]{
     shoot();
+    if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
+      qDebug() << "Dither enabled: dithering";
+      d->guider->dither();
+    }
     d->ui->images_count->setValue(total_shots - *shots);
     if( *shots >= total_shots) {
       stopShooting();
