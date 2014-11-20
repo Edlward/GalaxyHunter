@@ -28,6 +28,7 @@ public:
     ImagingDriver *imagingDriver;
     shared_ptr<Imager> imager;
     QSettings settings;
+    bool about_to_show_settings;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -160,14 +161,25 @@ void DSLR_Shooter_Window::camera_connected()
       widget->setEnabled(true);
   });
   d->ui->imageSettings->disconnect();
+  d->about_to_show_settings = false;
+  QMetaObject::invokeMethod(d->imager.get(), "reloadSettings", Qt::QueuedConnection);
   
+  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{ d->about_to_show_settings = true; });
   connect(d->ui->imageSettings, SIGNAL(clicked(bool)), d->imager.get(), SLOT(reloadSettings()), Qt::QueuedConnection);
   connect(d->ui->imageSettings, &QPushButton::clicked, [=]{ d->ui->imageSettings->setDisabled(true); });
-  connect(d->imager.get(), &Imager::settingsReady, this, [=] {
+  connect(d->imager.get(), &Imager::settingsReady, this, [=] {    
+    d->ui->isoLabel->setText(d->imager->settings()->iso().current);
+    d->ui->imageFormatLabel->setText(d->imager->settings()->imageFormat().current);
+    d->ui->shutterSpeedLabel->setText(d->imager->settings()->shutterSpeed().current);
+    d->ui->manualExposureLabel->setText(QString("%1 seconds").arg(d->imager->settings()->manualExposure()));
+    qDebug() << "Settings loaded";
+    if(! d->about_to_show_settings) return;
+    d->about_to_show_settings = false;
     auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
     connect(dialog, SIGNAL(accepted()), d->imager.get(), SLOT(applySettings()), Qt::QueuedConnection);
     connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); });
     dialog->show();
+    connect(dialog, SIGNAL(accepted()), d->imager.get(), SLOT(reloadSettings()), Qt::QueuedConnection);
   });
 }
 
