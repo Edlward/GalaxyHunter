@@ -25,8 +25,8 @@ public:
     virtual void setShutterSpeed(const QString &) = 0;
     virtual void setImageFormat(const QString &) = 0;
     virtual void setISO(const QString &) = 0;
-    virtual void setManualExposure(uint64_t seconds) = 0;
-    virtual uint64_t manualExposure() const = 0;
+    virtual void setManualExposure(qulonglong seconds) = 0;
+    virtual qulonglong manualExposure() const = 0;
     virtual void setSerialShootPort(const std::string serialShootPort) = 0;
     virtual std::string serialShootPort() const = 0;
   };

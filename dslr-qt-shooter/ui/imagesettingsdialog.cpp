@@ -81,7 +81,7 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
     d->ui->pickSerialShootPort->setEnabled(checked);
     d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings->manualExposure()));
   };
-  d->ui->manualExposure->setText(QString::fromStdString(d->imagerSettings->serialShootPort()));
+  d->ui->serialShootPort->setText(QString::fromStdString(d->imagerSettings->serialShootPort()));
   
   connect(d->ui->presetExposure, &QRadioButton::toggled, presetExposure);
   connect(d->ui->manualExposure, &QRadioButton::toggled, manualExposure);

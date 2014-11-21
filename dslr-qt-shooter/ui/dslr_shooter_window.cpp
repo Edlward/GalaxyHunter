@@ -15,6 +15,8 @@
 
 using namespace std;
 
+typedef QFutureWatcher<shared_ptr<Imager::Settings>> ImagerSettingsFuture;
+
 class DSLR_Shooter_Window::Private {
 public:
   Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver) : q(q), ui(ui), imagingDriver(imagingDriver),
@@ -30,6 +32,7 @@ public:
     ImagingDriver *imagingDriver;
     shared_ptr<Imager> imager;
     QSettings settings;
+    
 private:
   DSLR_Shooter_Window *q;
 };
@@ -149,6 +152,20 @@ void DSLR_Shooter_Window::camera_connected()
 {
   qDebug() << __PRETTY_FUNCTION__;
   d->ui->camera_infos->clear();
+
+  auto fw = new ImagerSettingsFuture();
+  connect(fw, &ImagerSettingsFuture::finished, [=]{
+    d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
+    fw->result()->setSerialShootPort(d->settings.value("serial_shoot_port", "/dev/ttyUSB0").toString().toStdString());
+    fw->result()->setImageFormat(d->settings.value("image_format", fw->result()->imageFormat().current).toString());
+    fw->result()->setISO(d->settings.value("iso", fw->result()->iso().current).toString());
+    fw->result()->setShutterSpeed(d->settings.value("shutter_speed", fw->result()->shutterSpeed().current).toString());
+    fw->result()->setManualExposure(d->settings.value("manual_exposure_secs", fw->result()->manualExposure()).toULongLong());
+    d->settings.endGroup();
+    fw->deleteLater();
+  });
+  fw->setFuture(QtConcurrent::run([=]{ return d->imager->settings(); }));
+  
   QString camera_infos = QString("Model: %1\nSummary: %2")
     .arg(d->imager->model())
     .arg(d->imager->summary());
@@ -164,24 +181,33 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->imageSettings->disconnect();
   
   auto reloadSettings = [=] {
-    auto fw = new QFutureWatcher< shared_ptr<Imager::Settings>>();
-    connect(fw, &QFutureWatcher< shared_ptr<Imager::Settings>>::finished, [=]{
+    auto fw = new ImagerSettingsFuture();
+    connect(fw, &ImagerSettingsFuture::finished, [=]{
       d->ui->isoLabel->setText(fw->result()->iso().current);
       d->ui->imageFormatLabel->setText(fw->result()->imageFormat().current);
       d->ui->shutterSpeedLabel->setText(fw->result()->shutterSpeed().current);
       d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(fw->result()->manualExposure()).toString());
+      
+      d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
+      d->settings.setValue("serial_shoot_port", QString::fromStdString(fw->result()->serialShootPort()));
+      d->settings.setValue("image_format", fw->result()->imageFormat().current);
+      d->settings.setValue("iso", fw->result()->iso().current);
+      d->settings.setValue("shutter_speed", fw->result()->shutterSpeed().current);
+      d->settings.setValue("manual_exposure_secs", fw->result()->manualExposure());
+      d->settings.endGroup();
+      
       fw->deleteLater();
     });
     fw->setFuture(QtConcurrent::run([=]{ return d->imager->settings(); }));
   };
 
-  reloadSettings();
+  timedLambda(500, reloadSettings, this);
   
   connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
     qDebug() << "Starting future thread";
     d->ui->imageSettings->setDisabled(true);
-    auto fw = new QFutureWatcher< shared_ptr<Imager::Settings>>();
-    connect(fw, &QFutureWatcher< shared_ptr<Imager::Settings>>::finished, [=]{
+    auto fw = new ImagerSettingsFuture();
+    connect(fw, &ImagerSettingsFuture::finished, [=]{
       qDebug() << "Got settings!";
       auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
       connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true);fw->deleteLater(); timedLambda(500, reloadSettings, this);});
@@ -203,11 +229,6 @@ void DSLR_Shooter_Window::start_shooting()
     shoot();
     return;
   }
-  static map<int, int> multipliers {
-    {0, 1},
-    {1, 60},
-    {2, 60*60},
-  };
   disconnect(d->ui->shoot, 0, 0, 0);
   d->ui->shoot->setText("Stop Shooting");
   QTimer *shootTimer = new QTimer(this);
@@ -231,7 +252,7 @@ void DSLR_Shooter_Window::start_shooting()
   long total_shots = d->ui->images_count->value() == 0 ? numeric_limits<long>::max() : d->ui->images_count->value();
   
   connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
-  long seconds_interval = d->ui->shoot_interval->value() * multipliers[d->ui->shoot_interval_unit->currentIndex()];
+  long seconds_interval = QTime{0,0,0}.secsTo(d->ui->shoot_interval->time());;
   auto timer_shooting = [=]{
     shoot();
     if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {

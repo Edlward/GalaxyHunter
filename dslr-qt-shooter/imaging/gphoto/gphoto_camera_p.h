@@ -31,10 +31,10 @@ public:
     virtual ComboSetting imageFormat() const { return _imageFormat.setting; }
     virtual ComboSetting iso() const { return _iso.setting; }
     virtual ComboSetting shutterSpeed() const { return _shutterSpeed.setting; }
-    virtual uint64_t manualExposure() const;
+    virtual qulonglong manualExposure() const;
     virtual void setImageFormat(const QString &v) { _imageFormat.change(v); }
     virtual void setISO(const QString &v) { _iso.change(v); }
-    virtual void setManualExposure(uint64_t seconds);
+    virtual void setManualExposure(qulonglong seconds);
     virtual void setShutterSpeed(const QString &v) { _shutterSpeed.change(v); }
     virtual std::string serialShootPort() const;
     virtual void setSerialShootPort(const string serialShootPort);
@@ -61,7 +61,7 @@ public:
   QString summary;
   GPContext* context;
   Camera *camera = nullptr;
-  uint64_t manualExposure = 0l;
+  qulonglong manualExposure = 0l;
   QString outputDirectory;
   void shootTethered();
   void shootPreset();

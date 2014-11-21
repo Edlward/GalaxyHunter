@@ -15,13 +15,13 @@ QString gphoto_error(int errorCode)
 }
 
 
-void GPhotoCamera::Settings::setManualExposure(uint64_t seconds)
+void GPhotoCamera::Settings::setManualExposure(qulonglong seconds)
 {
   q->d->manualExposure = seconds;
 }
 
 
-uint64_t GPhotoCamera::Settings::manualExposure() const
+qulonglong GPhotoCamera::Settings::manualExposure() const
 {
   return q->d->manualExposure;
 }
