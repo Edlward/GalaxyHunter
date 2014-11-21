@@ -38,8 +38,6 @@ public:
     virtual void setShutterSpeed(const QString &v) { _shutterSpeed.change(v); }
     virtual std::string serialShootPort() const;
     virtual void setSerialShootPort(const string serialShootPort);
-    virtual void apply();
-    virtual void reload();
     virtual ~Settings();
 private:
   GPContext *context;

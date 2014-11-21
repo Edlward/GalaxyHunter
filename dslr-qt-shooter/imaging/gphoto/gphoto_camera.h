@@ -16,6 +16,7 @@ public:
   
   class Settings;
   friend class Settings;
+  virtual std::shared_ptr< Imager::Settings > settings();
 public slots:
   virtual void connect();
   virtual void disconnect();

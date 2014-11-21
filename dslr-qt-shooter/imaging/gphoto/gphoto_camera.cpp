@@ -41,6 +41,17 @@ void GPhotoCamera::Settings::setSerialShootPort(const string serialShootPort)
 GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q, QMutex &mutex)
   : context(context), camera(camera), q(q), mutex(mutex)
 {
+  qDebug() << __PRETTY_FUNCTION__ << ": Loading settings";
+  gp_api{{
+    sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &_imageFormat.widget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &_iso.widget); }),
+    sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &_shutterSpeed.widget); }),
+  }, make_shared<QMutexLocker>(&mutex)}.run_last([=]{
+    _imageFormat.load();
+    _iso.load();
+    _shutterSpeed.load();
+  });
 }
 
 int GPhotoCamera::Settings::Set::save()
@@ -70,9 +81,8 @@ int GPhotoCamera::Settings::Set::load()
 }
 
 
-void GPhotoCamera::Settings::apply()
+GPhotoCamera::Settings::~Settings()
 {
-  int counter = 0;
   qDebug() << __PRETTY_FUNCTION__;
   vector<Set> sets{_imageFormat, _iso, _shutterSpeed};
   if(any_of(begin(sets), end(sets), [](const Set &s){ return s._original != s.setting.current; })) {
@@ -88,24 +98,6 @@ void GPhotoCamera::Settings::apply()
   }
   gp_widget_free(settings);
   qDebug() << "done";
-}
-
-void GPhotoCamera::Settings::reload()
-{
-  gp_api{{
-    sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &_imageFormat.widget); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &_iso.widget); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &_shutterSpeed.widget); }),
-  }, make_shared<QMutexLocker>(&mutex)}.run_last([=]{
-    _imageFormat.load();
-    _iso.load();
-    _shutterSpeed.load();
-  });
-}
-
-GPhotoCamera::Settings::~Settings()
-{
 }
 
 
@@ -155,13 +147,18 @@ void GPhotoCamera::connect()
   }).run_last([&]{
     d->summary = QString(camera_summary.text);
     d->about = QString(camera_about.text);
-    _settings = make_shared<Settings>(d->context, d->camera, this, d->mutex);
     emit connected();    
   });  
   // TODO d->reloadSettings();
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
 }
+
+shared_ptr< Imager::Settings > GPhotoCamera::settings()
+{
+    return make_shared<Settings>(d->context, d->camera, this, d->mutex);
+}
+
 
 
 void GPhotoCamera::disconnect()

@@ -4,12 +4,14 @@
 #include "guider/linguider.h"
 #include <QtCore/QTimer>
 #include "imaging/imaging_driver.h"
+#include <utils/qt.h>
 #include <QDebug>
 #include <QThread>
 #include <QScrollBar>
 #include <QFileDialog>
 #include <QScreen>
 #include <QSettings>
+#include <QtConcurrent>
 
 using namespace std;
 
@@ -28,7 +30,6 @@ public:
     ImagingDriver *imagingDriver;
     shared_ptr<Imager> imager;
     QSettings settings;
-    bool about_to_show_settings;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -161,32 +162,32 @@ void DSLR_Shooter_Window::camera_connected()
       widget->setEnabled(true);
   });
   d->ui->imageSettings->disconnect();
-  d->about_to_show_settings = false;
-  QMetaObject::invokeMethod(d->imager.get(), "reloadSettings", Qt::QueuedConnection);
   
-  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{ d->about_to_show_settings = true; });
-  connect(d->ui->imageSettings, SIGNAL(clicked(bool)), d->imager.get(), SLOT(reloadSettings()), Qt::QueuedConnection);
-  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{ d->ui->imageSettings->setDisabled(true); });
-  connect(d->imager.get(), &Imager::settingsReady, this, [=] {    
-    d->ui->isoLabel->setText(d->imager->settings()->iso().current);
-    d->ui->imageFormatLabel->setText(d->imager->settings()->imageFormat().current);
-    d->ui->shutterSpeedLabel->setText(d->imager->settings()->shutterSpeed().current);
-    d->ui->manualExposureLabel->setText(QString("%1 seconds").arg(d->imager->settings()->manualExposure()));
-    
-    int secs = d->imager->settings()->manualExposure();
-    if(secs < 60)
-      d->ui->manualExposureLabel->setText(QString("%1 %2").arg(secs).arg(tr("seconds")));
-    else
-      d->ui->manualExposureLabel->setText(QString("%1 %2 %3 %4").arg(secs/60).arg(tr("minutes")).arg(secs%60).arg(tr("seconds")));
-    
-    qDebug() << "Settings loaded";
-    if(! d->about_to_show_settings) return;
-    d->about_to_show_settings = false;
-    auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
-    connect(dialog, SIGNAL(accepted()), d->imager.get(), SLOT(applySettings()), Qt::QueuedConnection);
-    connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); });
-    dialog->show();
-    connect(dialog, SIGNAL(accepted()), d->imager.get(), SLOT(reloadSettings()), Qt::QueuedConnection);
+  auto reloadSettings = [=] {
+    auto fw = new QFutureWatcher< shared_ptr<Imager::Settings>>();
+    connect(fw, &QFutureWatcher< shared_ptr<Imager::Settings>>::finished, [=]{
+      d->ui->isoLabel->setText(fw->result()->iso().current);
+      d->ui->imageFormatLabel->setText(fw->result()->imageFormat().current);
+      d->ui->shutterSpeedLabel->setText(fw->result()->shutterSpeed().current);
+      d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(fw->result()->manualExposure()).toString());
+      fw->deleteLater();
+    });
+    fw->setFuture(QtConcurrent::run([=]{ return d->imager->settings(); }));
+  };
+
+  reloadSettings();
+  
+  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
+    qDebug() << "Starting future thread";
+    d->ui->imageSettings->setDisabled(true);
+    auto fw = new QFutureWatcher< shared_ptr<Imager::Settings>>();
+    connect(fw, &QFutureWatcher< shared_ptr<Imager::Settings>>::finished, [=]{
+      qDebug() << "Got settings!";
+      auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
+      connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true);fw->deleteLater(); timedLambda(500, reloadSettings, this);});
+      dialog->show();
+    });
+    fw->setFuture(QtConcurrent::run([=]{ qDebug() << "Retrieving settings..." ; return d->imager->settings(); }));
   });
 }
 

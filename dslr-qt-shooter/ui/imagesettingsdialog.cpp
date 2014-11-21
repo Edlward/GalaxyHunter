@@ -77,9 +77,9 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
   };
   auto manualExposure = [=](bool checked) {
     d->ui->shutterSpeedManual->setEnabled(checked);
-    d->ui->shutterSpeedManualUnit->setEnabled(checked);
-    d->ui->shutterSpeedManual->setValue(d->imagerSettings->manualExposure() > 60 ? d->imagerSettings->manualExposure()/60 : d->imagerSettings->manualExposure());
-    d->ui->shutterSpeedManualUnit->setCurrentIndex(d->imagerSettings->manualExposure() > 60 ? 1 : 0);
+    d->ui->serialShootPort->setEnabled(checked);
+    d->ui->pickSerialShootPort->setEnabled(checked);
+    d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings->manualExposure()));
   };
   d->ui->manualExposure->setText(QString::fromStdString(d->imagerSettings->serialShootPort()));
   
@@ -96,9 +96,7 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
 
 void ImageSettingsDialog::accept()
 {
-  uint64_t unit = pow(60, d->ui->shutterSpeedManualUnit->currentIndex());
-  uint64_t manualExposure = d->ui->shutterSpeedManual->value() * unit;
-  manualExposure = d->ui->manualExposure->isChecked() ? manualExposure : 0;
+  uint64_t manualExposure = d->ui->manualExposure->isChecked() ? QTime{0,0,0}.secsTo(d->ui->shutterSpeedManual->time()) : 0;
     d->imagerSettings->setShutterSpeed(d->shutterSpeed);
     d->imagerSettings->setImageFormat(d->imageFormat);
     d->imagerSettings->setISO(d->iso);
