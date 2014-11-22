@@ -166,13 +166,12 @@ void GPhotoCamera::disconnect()
   gp_camera_exit(d->camera, d->context);
 }
 
-void GPhotoCamera::shoot()
+QImage GPhotoCamera::shoot() const
 {
   if(d->manualExposure > 0) {
-    d->shootTethered();
-    return;
+    return d->shootTethered();
   }
-  d->shootPreset();
+  return d->shootPreset();
 }
 
 
@@ -182,7 +181,7 @@ string GPhotoCamera::Private::fixedFilename(const string& fileName) const
 }
 
 
-void GPhotoCamera::Private::shootPreset()
+QImage GPhotoCamera::Private::shootPreset() const
 {
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
@@ -195,8 +194,7 @@ void GPhotoCamera::Private::shootPreset()
     deletePicturesOnCamera(camera_remote_file);
     qDebug() << "shoot completed: camera file " << camera_file.path();
     if(image.load(camera_file)) {
-      q->preview(image);
-      return;
+      return image;
     }
     qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
     Magick::Image m_image;
@@ -207,8 +205,7 @@ void GPhotoCamera::Private::shootPreset()
     std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
     if(image.loadFromData(data)) {
       q->message(q, "image captured correctly");
-      q->preview(image);
-      return;
+      return image;
     }
     qDebug() << "Error loading image.";
     q->error(q, "Error loading image");
@@ -216,10 +213,12 @@ void GPhotoCamera::Private::shootPreset()
     qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
     q->error(q, gphoto_error(errorCode));
   });
+  return image;
 }
 
-void GPhotoCamera::Private::shootTethered()
+QImage GPhotoCamera::Private::shootTethered() const
 {
+  QImage image;
   {
     auto shoot = make_shared<SerialShoot>(serialShootPort);
     q->thread()->msleep(manualExposure * 1000);
@@ -254,6 +253,7 @@ void GPhotoCamera::Private::shootTethered()
       }
       deletePicturesOnCamera(*newfile);
     });
+    return image;
 }
 
 void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)

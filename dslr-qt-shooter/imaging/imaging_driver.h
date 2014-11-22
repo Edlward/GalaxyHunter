@@ -2,6 +2,7 @@
 #define IMAGER_DRIVER_H
 
 #include <QObject>
+#include <QImage>
 #include <QStringList>
 #include <memory>
 
@@ -40,7 +41,7 @@ public:
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
-  virtual void shoot() = 0;
+  virtual QImage shoot() const = 0;
   virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
   virtual void setOutputDirectory(const QString &directory) = 0;
   
@@ -49,7 +50,6 @@ signals:
   void disconnected();
   void message(Imager *, const QString &);
   void error(Imager *,const QString &);
-  void preview(const QImage &);
 protected:
   bool deletePicturesOnCamera = false;
 };

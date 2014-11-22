@@ -199,11 +199,7 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->camera_infos->setText(camera_infos);
   d->ui->shoot->setEnabled(true);
   d->ui->toolBox->setEnabled(true);
-  connect(d->imager.get(), SIGNAL(preview(QImage)), d->ui->imageContainer, SLOT(setImage(QImage)));
-  connect(d->imager.get(), &Imager::preview, this, [=]{
-    for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
-      widget->setEnabled(true);
-  });
+
   d->ui->imageSettings->disconnect();
   
   auto reloadSettings = [=] {
@@ -236,11 +232,17 @@ void DSLR_Shooter_Window::camera_connected()
   });
 }
 
+
 void DSLR_Shooter_Window::start_shooting()
 {
   shared_ptr<long> shots = make_shared<long>(0);
   auto shoot = [=](){
     qDebug() << "Shot #" << *shots;
+    qt_async<QImage>([=]{ return d->imager->shoot();}, [=](const QImage &image) {
+      d->ui->imageContainer->setImage(image);
+      for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
+	widget->setEnabled(!image.isNull());
+    });
     QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
       ++(*shots);
   };

@@ -63,8 +63,8 @@ public:
   Camera *camera = nullptr;
   qulonglong manualExposure = 0l;
   QString outputDirectory;
-  void shootTethered();
-  void shootPreset();
+  QImage shootTethered() const;
+  QImage shootPreset() const;
   void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
   std::string fixedFilename(const std::string &fileName) const;
   QMutex &mutex;
