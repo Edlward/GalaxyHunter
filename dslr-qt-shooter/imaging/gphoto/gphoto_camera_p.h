@@ -51,6 +51,20 @@ private:
 };
 
 
+struct CameraTempFile {
+  CameraTempFile();
+  ~CameraTempFile();
+  int save();
+  CameraFile *camera_file;
+  QTemporaryFile temp_file;
+  QString originalName;
+  operator CameraFile *() const { return camera_file; }
+  operator QString() const { return path(); }
+  QString mimeType() const;
+  QString path() const { return temp_file.fileName(); }
+};
+
+
 class GPhotoCamera::Private {
 public:
   Private(const shared_ptr<GPhotoCameraInformation> &info, GPhotoCamera *q)
@@ -65,6 +79,7 @@ public:
   QString outputDirectory;
   QImage shootTethered() const;
   QImage shootPreset() const;
+  QImage fileToImage(CameraTempFile &cameraTempFile) const;
   void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
   std::string fixedFilename(const std::string &fileName) const;
   QMutex &mutex;
@@ -73,18 +88,6 @@ private:
   GPhotoCamera *q;
 };
 
-
-struct CameraTempFile {
-  CameraTempFile();
-  ~CameraTempFile();
-  int save();
-  CameraFile *camera_file;
-  QTemporaryFile temp_file;
-  operator CameraFile *() const { return camera_file; }
-  operator QString() const { return path(); }
-  QString mimeType() const;
-  QString path() const { return temp_file.fileName(); }
-};
 
 
 #endif

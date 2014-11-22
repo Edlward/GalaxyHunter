@@ -185,40 +185,53 @@ QImage GPhotoCamera::Private::shootPreset() const
 {
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
-  QImage image;
   gp_api{{
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
     sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context); } ),
     sequence_run( [&]{ return camera_file.save();} ),
   }, make_shared<QMutexLocker>(&mutex)}.run_last([&]{
+    camera_file.originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
     deletePicturesOnCamera(camera_remote_file);
-    qDebug() << "shoot completed: camera file " << camera_file.path();
-    if(image.load(camera_file)) {
-      return image;
-    }
-    qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
-    Magick::Image m_image;
-    m_image.read(camera_file.path().toStdString());
-    Magick::Blob blob;
-    m_image.write(&blob, "PNG");
-    QByteArray data(static_cast<int>(blob.length()), 0);
-    std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
-    if(image.loadFromData(data)) {
-      q->message(q, "image captured correctly");
-      return image;
-    }
-    qDebug() << "Error loading image.";
-    q->error(q, "Error loading image");
   }).on_error([=](int errorCode, const std::string &label) {
     qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
     q->error(q, gphoto_error(errorCode));
   });
-  return image;
+  return fileToImage(camera_file);
+}
+
+
+QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
+{
+  if(!outputDirectory.isEmpty()) {
+    QFile file(cameraTempFile.path());
+    auto destination = outputDirectory + QDir::separator() + cameraTempFile.originalName;
+    if(file.copy(destination))
+      q->message(q, QString("Saved image to %1").arg(destination));
+    else
+      q->error(q, QString("Error saving image to %1").arg(destination));
+  }
+  QImage image;
+  qDebug() << "shoot completed: camera file " << cameraTempFile.path();
+  if(image.load(cameraTempFile)) {
+    return image;
+  }
+  qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
+  Magick::Image m_image;
+  m_image.read(cameraTempFile.path().toStdString());
+  Magick::Blob blob;
+  m_image.write(&blob, "PNG");
+  QByteArray data(static_cast<int>(blob.length()), 0);
+  std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
+  if(image.loadFromData(data)) {
+    q->message(q, "image captured correctly");
+    return image;
+  }
+  qDebug() << "Error loading image.";
+  q->error(q, "Error loading image");
 }
 
 QImage GPhotoCamera::Private::shootTethered() const
 {
-  QImage image;
   {
     auto shoot = make_shared<SerialShoot>(serialShootPort);
     q->thread()->msleep(manualExposure * 1000);
@@ -242,18 +255,11 @@ QImage GPhotoCamera::Private::shootTethered() const
       qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
       q->error(q, gphoto_error(errorCode));
     }).run_last([&]{
+      camera_file.originalName = QString::fromStdString(filename);
       qDebug() << "Output directory: " << outputDirectory;
-      if(!outputDirectory.isEmpty()) {
-	QFile file(camera_file.path());
-	auto destination = outputDirectory + QDir::separator() + QString::fromStdString(filename);
-	if(file.copy(destination))
-	  q->message(q, QString("Saved image to %1").arg(destination));
-	else
-	  q->error(q, QString("Error saving image to %1").arg(destination));
-      }
       deletePicturesOnCamera(*newfile);
     });
-    return image;
+    return fileToImage(camera_file);
 }
 
 void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
