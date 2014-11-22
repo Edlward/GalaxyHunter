@@ -32,6 +32,8 @@ private slots:
   void camera_connected();
   void camera_disconnected();
   void start_shooting();
+private slots:
+  void shootModeChanged(int index);
 private:
   class Private;
   friend class Private;

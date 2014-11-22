@@ -12,6 +12,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QtConcurrent>
+#include <QComboBox>
 
 using namespace std;
 
@@ -32,6 +33,8 @@ public:
     ImagingDriver *imagingDriver;
     shared_ptr<Imager> imager;
     QSettings settings;
+    
+    void enableOrDisableShootingModeWidgets();
     
 private:
   DSLR_Shooter_Window *q;
@@ -94,7 +97,20 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->ui->outputDir->setText(QFileDialog::getExistingDirectory());
     outputChanged(true);
   });
+  
+  
+  connect(d->ui->shoot_interval, &QTimeEdit::timeChanged, [=](const QTime &t) { d->settings.setValue("shoot_interval", t); });
+  connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool t) { d->settings.setValue("dither_after_each_shot", t); });
+  connect(d->ui->shoot_mode, SIGNAL(activated(int)), this, SLOT(shootModeChanged(int)));
 }
+
+// TODO: why doesn't it work with lambda slot?
+void DSLR_Shooter_Window::shootModeChanged(int index)
+{
+  d->settings.setValue("shoot_mode", d->ui->shoot_mode->currentIndex());
+  d->enableOrDisableShootingModeWidgets();
+}
+
 
 
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
@@ -148,11 +164,23 @@ void DSLR_Shooter_Window::got_message(const QString& message)
   update_log();
 }
 
+void DSLR_Shooter_Window::Private::enableOrDisableShootingModeWidgets()
+{
+  ui->shoot_interval->setEnabled(ui->shoot_mode->currentIndex() == 1);
+  ui->ditherAfterShot->setEnabled(ui->shoot_mode->currentIndex() == 1);
+}
+
+
 void DSLR_Shooter_Window::camera_connected()
 {
   qDebug() << __PRETTY_FUNCTION__;
   d->ui->camera_infos->clear();
-
+  
+  d->ui->shoot_mode->setCurrentIndex(d->settings.value("shoot_mode", 0).toInt());
+  d->ui->shoot_interval->setTime(d->settings.value("shoot_interval", QTime(0,0,0)).toTime());
+  d->ui->ditherAfterShot->setChecked(d->settings.value("dither_after_each_shot", false).toBool());
+  
+  d->enableOrDisableShootingModeWidgets();
   auto fw = new ImagerSettingsFuture();
   connect(fw, &ImagerSettingsFuture::finished, [=]{
     d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
