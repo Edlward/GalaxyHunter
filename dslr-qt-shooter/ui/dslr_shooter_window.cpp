@@ -166,8 +166,10 @@ void DSLR_Shooter_Window::got_message(const QString& message)
 
 void DSLR_Shooter_Window::Private::enableOrDisableShootingModeWidgets()
 {
-  ui->shoot_interval->setEnabled(ui->shoot_mode->currentIndex() == 1);
-  ui->ditherAfterShot->setEnabled(ui->shoot_mode->currentIndex() == 1);
+  auto enable = ui->shoot_mode->currentIndex() == 1;
+  ui->shoot_interval->setEnabled(enable);
+  ui->ditherAfterShot->setEnabled(enable);
+  ui->images_count->setEnabled(enable);
 }
 
 
