@@ -16,7 +16,6 @@
 
 using namespace std;
 
-typedef QFutureWatcher<shared_ptr<Imager::Settings>> ImagerSettingsFuture;
 
 class DSLR_Shooter_Window::Private {
 public:
@@ -183,18 +182,15 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->ditherAfterShot->setChecked(d->settings.value("dither_after_each_shot", false).toBool());
   
   d->enableOrDisableShootingModeWidgets();
-  auto fw = new ImagerSettingsFuture();
-  connect(fw, &ImagerSettingsFuture::finished, [=]{
+  qt_async<Imager::Settings::ptr>([=]{ return d->imager->settings(); }, [=](const Imager::Settings::ptr &settings) {
     d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
-    fw->result()->setSerialShootPort(d->settings.value("serial_shoot_port", "/dev/ttyUSB0").toString().toStdString());
-    fw->result()->setImageFormat(d->settings.value("image_format", fw->result()->imageFormat().current).toString());
-    fw->result()->setISO(d->settings.value("iso", fw->result()->iso().current).toString());
-    fw->result()->setShutterSpeed(d->settings.value("shutter_speed", fw->result()->shutterSpeed().current).toString());
-    fw->result()->setManualExposure(d->settings.value("manual_exposure_secs", fw->result()->manualExposure()).toULongLong());
+    settings->setSerialShootPort(d->settings.value("serial_shoot_port", "/dev/ttyUSB0").toString().toStdString());
+    settings->setImageFormat(d->settings.value("image_format", settings->imageFormat().current).toString());
+    settings->setISO(d->settings.value("iso", settings->iso().current).toString());
+    settings->setShutterSpeed(d->settings.value("shutter_speed", settings->shutterSpeed().current).toString());
+    settings->setManualExposure(d->settings.value("manual_exposure_secs", settings->manualExposure()).toULongLong());
     d->settings.endGroup();
-    fw->deleteLater();
   });
-  fw->setFuture(QtConcurrent::run([=]{ return d->imager->settings(); }));
   
   QString camera_infos = QString("Model: %1\nSummary: %2")
     .arg(d->imager->model())
@@ -211,24 +207,20 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->imageSettings->disconnect();
   
   auto reloadSettings = [=] {
-    auto fw = new ImagerSettingsFuture();
-    connect(fw, &ImagerSettingsFuture::finished, [=]{
-      d->ui->isoLabel->setText(fw->result()->iso().current);
-      d->ui->imageFormatLabel->setText(fw->result()->imageFormat().current);
-      d->ui->shutterSpeedLabel->setText(fw->result()->shutterSpeed().current);
-      d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(fw->result()->manualExposure()).toString());
+    qt_async<Imager::Settings::ptr>([=]{ return d->imager->settings(); }, [=](const Imager::Settings::ptr &settings){
+      d->ui->isoLabel->setText(settings->iso().current);
+      d->ui->imageFormatLabel->setText(settings->imageFormat().current);
+      d->ui->shutterSpeedLabel->setText(settings->shutterSpeed().current);
+      d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(settings->manualExposure()).toString());
       
       d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
-      d->settings.setValue("serial_shoot_port", QString::fromStdString(fw->result()->serialShootPort()));
-      d->settings.setValue("image_format", fw->result()->imageFormat().current);
-      d->settings.setValue("iso", fw->result()->iso().current);
-      d->settings.setValue("shutter_speed", fw->result()->shutterSpeed().current);
-      d->settings.setValue("manual_exposure_secs", fw->result()->manualExposure());
+      d->settings.setValue("serial_shoot_port", QString::fromStdString(settings->serialShootPort()));
+      d->settings.setValue("image_format", settings->imageFormat().current);
+      d->settings.setValue("iso", settings->iso().current);
+      d->settings.setValue("shutter_speed", settings->shutterSpeed().current);
+      d->settings.setValue("manual_exposure_secs", settings->manualExposure());
       d->settings.endGroup();
-      
-      fw->deleteLater();
     });
-    fw->setFuture(QtConcurrent::run([=]{ return d->imager->settings(); }));
   };
 
   timedLambda(500, reloadSettings, this);
@@ -236,14 +228,11 @@ void DSLR_Shooter_Window::camera_connected()
   connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
     qDebug() << "Starting future thread";
     d->ui->imageSettings->setDisabled(true);
-    auto fw = new ImagerSettingsFuture();
-    connect(fw, &ImagerSettingsFuture::finished, [=]{
-      qDebug() << "Got settings!";
-      auto dialog = new ImageSettingsDialog{d->imager->settings(), this};
-      connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true);fw->deleteLater(); timedLambda(500, reloadSettings, this);});
+    qt_async<Imager::Settings::ptr>([=]{ return d->imager->settings(); }, [=](const Imager::Settings::ptr &settings){
+      auto dialog = new ImageSettingsDialog{ settings , this};
+      connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); timedLambda(500, reloadSettings, this);});
       dialog->show();
     });
-    fw->setFuture(QtConcurrent::run([=]{ qDebug() << "Retrieving settings..." ; return d->imager->settings(); }));
   });
 }
 

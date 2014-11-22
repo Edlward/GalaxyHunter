@@ -13,6 +13,7 @@ class Imager : public QObject {
 public:
   class Settings {
   public:
+    typedef std::shared_ptr<Settings> ptr;
     struct ComboSetting {
       QString current;
       QStringList available;

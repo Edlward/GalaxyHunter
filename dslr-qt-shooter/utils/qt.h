@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QStringList>
 #include <QTimer>
+#include <QtConcurrent>
 
 inline QDebug &operator<<(QDebug &d, const std::string &s) {
   d << QString::fromStdString(s);
@@ -27,6 +28,15 @@ inline void timedLambda(int msec, std::function<void()> f, QObject *context) {
   timer->setSingleShot(true);
   QObject::connect(timer, &QTimer::timeout, context, [=] {f(); delete timer; });
   timer->start(msec);
+}
+
+template<typename T> QFutureWatcher<T> *qt_async(std::function<T()> runAsync, std::function<void(T)> runOnFinish) {
+  auto futureWatcher = new QFutureWatcher<T>();
+  QObject::connect(futureWatcher, &QFutureWatcher<T>::finished, [=]{
+    runOnFinish(futureWatcher->result());
+    futureWatcher->deleteLater();
+  });
+  futureWatcher->setFuture(QtConcurrent::run(runAsync));
 }
 
 #endif
