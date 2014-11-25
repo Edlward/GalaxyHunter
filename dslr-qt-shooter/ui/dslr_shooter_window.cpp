@@ -250,27 +250,33 @@ void DSLR_Shooter_Window::camera_connected()
 void DSLR_Shooter_Window::start_shooting()
 {
   shared_ptr<long> shots = make_shared<long>(0);
-  auto shoot = [=](){
+  auto shoot = [=](function<void()> afterEachShot){
     qDebug() << "Shot #" << *shots;
     qt_async<QImage>([=]{ return d->imager->shoot();}, [=](const QImage &image) {
       d->ui->imageContainer->setImage(image);
       for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
 	widget->setEnabled(!image.isNull());
+      afterEachShot();
     });
       ++(*shots);
   };
-  if(d->ui->shoot_mode->currentIndex() == 0) {
-    shoot();
-    return;
-  }
-  d->ui->shoot->setText("Stop Shooting");
-  QTimer *shootTimer = new QTimer(this);
   
   auto setWidgetsEnabled = [=](bool enable) {
     d->ui->shoot_mode->setEnabled(enable);
     d->ui->shoot_interval->setEnabled(enable);
     d->ui->images_count->setEnabled(enable);
+    d->ui->imageSettings->setEnabled(enable);
   };
+  
+  if(d->ui->shoot_mode->currentIndex() == 0) {
+    setWidgetsEnabled(false);
+    shoot((bind(setWidgetsEnabled, true)));
+    return;
+  }
+  d->ui->shoot->setText("Stop Shooting");
+  QTimer *shootTimer = new QTimer(this);
+  
+
   
   setWidgetsEnabled(false);
   
@@ -285,7 +291,7 @@ void DSLR_Shooter_Window::start_shooting()
   connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
   long seconds_interval = QTime{0,0,0}.secsTo(d->ui->shoot_interval->time());;
   auto timer_shooting = [=]{
-    shoot();
+    shoot([]{});
     if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
       qDebug() << "Dither enabled: dithering";
       d->guider->dither();
