@@ -270,7 +270,11 @@ void DSLR_Shooter_Window::start_shooting()
   
   if(d->ui->shoot_mode->currentIndex() == 0) {
     setWidgetsEnabled(false);
-    shoot((bind(setWidgetsEnabled, true)));
+    d->ui->shoot->setEnabled(false);
+    shoot([=]{
+     setWidgetsEnabled(true);
+     d->ui->shoot->setEnabled(true);
+    });
     return;
   }
   d->ui->shoot->setText("Stop Shooting");
