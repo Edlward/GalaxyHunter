@@ -34,6 +34,7 @@ public:
     QSettings settings;
     
     void enableOrDisableShootingModeWidgets();
+    void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
 private:
   DSLR_Shooter_Window *q;
@@ -171,6 +172,20 @@ void DSLR_Shooter_Window::Private::enableOrDisableShootingModeWidgets()
   ui->images_count->setEnabled(enable);
 }
 
+void DSLR_Shooter_Window::Private::camera_settings(function<void(Imager::Settings::ptr)> callback)
+{
+  if(!imager)
+    return;
+  ui->shoot->setDisabled(true);
+  ui->imageSettings->setDisabled(true);
+  qt_async<Imager::Settings::ptr>([=]{ return imager->settings(); }, [=](const Imager::Settings::ptr &settings) {
+    callback(settings);
+    ui->shoot->setEnabled(true);
+    ui->imageSettings->setEnabled(true);
+  });
+}
+
+
 
 void DSLR_Shooter_Window::camera_connected()
 {
@@ -182,7 +197,8 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->ditherAfterShot->setChecked(d->settings.value("dither_after_each_shot", false).toBool());
   
   d->enableOrDisableShootingModeWidgets();
-  qt_async<Imager::Settings::ptr>([=]{ return d->imager->settings(); }, [=](const Imager::Settings::ptr &settings) {
+  
+  d->camera_settings([=](const Imager::Settings::ptr &settings) {
     d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
     settings->setSerialShootPort(d->settings.value("serial_shoot_port", "/dev/ttyUSB0").toString().toStdString());
     settings->setImageFormat(d->settings.value("image_format", settings->imageFormat().current).toString());
@@ -203,7 +219,7 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->imageSettings->disconnect();
   
   auto reloadSettings = [=] {
-    qt_async<Imager::Settings::ptr>([=]{ return d->imager->settings(); }, [=](const Imager::Settings::ptr &settings){
+    d->camera_settings([=](const Imager::Settings::ptr &settings){
       d->ui->isoLabel->setText(settings->iso().current);
       d->ui->imageFormatLabel->setText(settings->imageFormat().current);
       d->ui->shutterSpeedLabel->setText(settings->shutterSpeed().current);
@@ -222,9 +238,7 @@ void DSLR_Shooter_Window::camera_connected()
   timedLambda(500, reloadSettings, this);
   
   connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
-    qDebug() << "Starting future thread";
-    d->ui->imageSettings->setDisabled(true);
-    qt_async<Imager::Settings::ptr>([=]{ return d->imager->settings(); }, [=](const Imager::Settings::ptr &settings){
+    d->camera_settings([=](const Imager::Settings::ptr &settings){
       auto dialog = new ImageSettingsDialog{ settings , this};
       connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); timedLambda(500, reloadSettings, this);});
       dialog->show();
