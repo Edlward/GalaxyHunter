@@ -243,14 +243,12 @@ void DSLR_Shooter_Window::start_shooting()
       for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
 	widget->setEnabled(!image.isNull());
     });
-    QMetaObject::invokeMethod(d->imager.get(), "shoot", Qt::QueuedConnection);
       ++(*shots);
   };
   if(d->ui->shoot_mode->currentIndex() == 0) {
     shoot();
     return;
   }
-  disconnect(d->ui->shoot, 0, 0, 0);
   d->ui->shoot->setText("Stop Shooting");
   QTimer *shootTimer = new QTimer(this);
   
@@ -263,8 +261,6 @@ void DSLR_Shooter_Window::start_shooting()
   setWidgetsEnabled(false);
   
   auto stopShooting = [=]{
-    d->ui->shoot->disconnect();
-    connect(d->ui->shoot, SIGNAL(clicked(bool)), this, SLOT(start_shooting()));
     d->ui->shoot->setText("Shoot");
     setWidgetsEnabled(true);
     delete shootTimer;

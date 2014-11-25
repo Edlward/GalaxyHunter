@@ -185,6 +185,7 @@ QImage GPhotoCamera::Private::shootPreset() const
 {
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
+  QImage image;
   gp_api{{
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
     sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context); } ),
@@ -192,11 +193,12 @@ QImage GPhotoCamera::Private::shootPreset() const
   }, make_shared<QMutexLocker>(&mutex)}.run_last([&]{
     camera_file.originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
     deletePicturesOnCamera(camera_remote_file);
+    image = fileToImage(camera_file);
   }).on_error([=](int errorCode, const std::string &label) {
     qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
     q->error(q, gphoto_error(errorCode));
   });
-  return fileToImage(camera_file);
+  return image;
 }
 
 
@@ -241,7 +243,7 @@ QImage GPhotoCamera::Private::shootTethered() const
     CameraTempFile camera_file;
     string filename;
     CameraFilePath *newfile;
-    
+    QImage image;
     gp_api{{
       sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
@@ -258,8 +260,9 @@ QImage GPhotoCamera::Private::shootTethered() const
       camera_file.originalName = QString::fromStdString(filename);
       qDebug() << "Output directory: " << outputDirectory;
       deletePicturesOnCamera(*newfile);
+      image = fileToImage(camera_file);
     });
-    return fileToImage(camera_file);
+    return image;
 }
 
 void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
@@ -330,6 +333,7 @@ int CameraTempFile::save()
 
 CameraTempFile::~CameraTempFile()
 {
+  qDebug() << __PRETTY_FUNCTION__ ;
   gp_file_free(camera_file);
 }
 
