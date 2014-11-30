@@ -30,10 +30,16 @@ void TestingImagerDriver::scan_imagers()
 }
 
 
-QImage TestingImager::shoot()
+QImage TestingImager::shoot() const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 4) + 1);
   qDebug() << "loading image: " << imageFile;
   QImage image(imageFile);
   return image;
 }
+
+shared_ptr< Imager::Settings > TestingImager::settings()
+{
+
+}
+

@@ -9,10 +9,11 @@ public:
     virtual QString summary() const { return "---- Testing Imager ----"; }
     virtual QString model() const { return "Testing Imager v.0.0"; }
     virtual QString about() const { return ""; }
+    virtual std::shared_ptr<Settings> settings();
 public slots:
   virtual void connect();
   virtual void disconnect();
-  virtual QImage shoot();
+  virtual QImage shoot() const;
 };
 class TestingImagerDriver : public ImagingDriver
 {
