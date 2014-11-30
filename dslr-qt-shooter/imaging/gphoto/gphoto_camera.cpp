@@ -204,9 +204,9 @@ QImage GPhotoCamera::Private::shootPreset() const
 
 QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
 {
-  if(!outputDirectory.isEmpty()) {
+  if(!q->_outputDirectory.isEmpty()) {
     QFile file(cameraTempFile.path());
-    auto destination = outputDirectory + QDir::separator() + cameraTempFile.originalName;
+    auto destination = q->_outputDirectory + QDir::separator() + cameraTempFile.originalName;
     if(file.copy(destination))
       q->message(q, QString("Saved image to %1").arg(destination));
     else
@@ -258,7 +258,7 @@ QImage GPhotoCamera::Private::shootTethered() const
       q->error(q, gphoto_error(errorCode));
     }).run_last([&]{
       camera_file.originalName = QString::fromStdString(filename);
-      qDebug() << "Output directory: " << outputDirectory;
+      qDebug() << "Output directory: " << q->_outputDirectory;
       deletePicturesOnCamera(*newfile);
       image = fileToImage(camera_file);
     });
@@ -281,12 +281,6 @@ void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_
 	  .arg(QString::fromStdString(fixedFilename(camera_remote_file.name))));
     }
   }
-}
-
-void GPhotoCamera::setOutputDirectory(const QString& directory)
-{
-  qDebug() << "OutputDirectory: " << directory;
-  d->outputDirectory = directory;
 }
 
 

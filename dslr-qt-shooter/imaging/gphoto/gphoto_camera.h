@@ -21,7 +21,6 @@ public slots:
   virtual void connect();
   virtual void disconnect();
   virtual QImage shoot() const;
-  virtual void setOutputDirectory(const QString& directory);
 private:
   class Private;
   friend class Private;

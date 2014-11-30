@@ -43,7 +43,7 @@ public slots:
   virtual void disconnect() = 0;
   virtual QImage shoot() const = 0;
   virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
-  virtual void setOutputDirectory(const QString &directory) = 0;
+  virtual void setOutputDirectory(const QString &directory) { _outputDirectory = directory; }
   
 signals:
   void connected();
@@ -52,6 +52,7 @@ signals:
   void error(Imager *,const QString &);
 protected:
   bool deletePicturesOnCamera = false;
+  QString _outputDirectory;
 };
 
 class ImagingDriver : public QObject {
