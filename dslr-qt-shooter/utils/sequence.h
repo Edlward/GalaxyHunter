@@ -16,7 +16,6 @@ public:
     T check;
     run(run_function f, const std::string &label = {}, T check = defaultValue) : f(f), label(label), check(check) {}
   };
-  template <typename ...Args>
   sequence(const std::list<run> &runs, const RAII_Object &raii_object = {}) : runs(runs), _check_operator(check_operator{}), raii_object(raii_object) {}
   ~sequence() {
     for(auto r: runs) {
