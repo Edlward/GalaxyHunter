@@ -6,6 +6,7 @@
 
 #include "utils/qt.h"
 #include <utils/qlambdathread.h>
+#include <sstream>
 
 
 QString gphoto_error(int errorCode)
@@ -204,32 +205,37 @@ QImage GPhotoCamera::Private::shootPreset() const
 
 QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
 {
-  if(!q->_outputDirectory.isEmpty()) {
-    QFile file(cameraTempFile.path());
-    auto destination = q->_outputDirectory + QDir::separator() + cameraTempFile.originalName;
-    if(file.copy(destination))
-      q->message(q, QString("Saved image to %1").arg(destination));
-    else
-      q->error(q, QString("Error saving image to %1").arg(destination));
+  try {
+    if(!q->_outputDirectory.isEmpty()) {
+      QFile file(cameraTempFile.path());
+      auto destination = q->_outputDirectory + QDir::separator() + cameraTempFile.originalName;
+      if(file.copy(destination))
+	q->message(q, QString("Saved image to %1").arg(destination));
+      else
+	q->error(q, QString("Error saving image to %1").arg(destination));
+    }
+    QImage image;
+    qDebug() << "shoot completed: camera file " << cameraTempFile.path();
+    if(image.load(cameraTempFile)) {
+      return image;
+    }
+    qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
+    Magick::Image m_image;
+    m_image.read(cameraTempFile.path().toStdString());
+    Magick::Blob blob;
+    m_image.write(&blob, "PNG");
+    QByteArray data(static_cast<int>(blob.length()), 0);
+    std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
+    if(image.loadFromData(data)) {
+      q->message(q, "image captured correctly");
+      return image;
+    }
+    qDebug() << "Error loading image.";
+    q->error(q, "Error loading image");
+  } catch(std::exception &e) {
+      stringstream s;
+      q->error(q, QString("Error converting image: %1").arg(e.what()));
   }
-  QImage image;
-  qDebug() << "shoot completed: camera file " << cameraTempFile.path();
-  if(image.load(cameraTempFile)) {
-    return image;
-  }
-  qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
-  Magick::Image m_image;
-  m_image.read(cameraTempFile.path().toStdString());
-  Magick::Blob blob;
-  m_image.write(&blob, "PNG");
-  QByteArray data(static_cast<int>(blob.length()), 0);
-  std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
-  if(image.loadFromData(data)) {
-    q->message(q, "image captured correctly");
-    return image;
-  }
-  qDebug() << "Error loading image.";
-  q->error(q, "Error loading image");
 }
 
 QImage GPhotoCamera::Private::shootTethered() const
