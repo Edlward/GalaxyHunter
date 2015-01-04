@@ -4,7 +4,7 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Network REQUIRED)
 find_package(Qt5Concurrent REQUIRED)
 find_package(Qt5Test REQUIRED)
-find_package(ImageMagick REQUIRED)
+find_package(Magick REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread unit_test_framework system filesystem)
 # TODO: check for ufraw-batch app, either in cmake or runtime
 
@@ -20,6 +20,6 @@ add_subdirectory(imaging)
 qt5_add_resources(dslr_qt_shooter_RESOURCES_RCC resources.qrc )
 
 ADD_EXECUTABLE(dslr-qt-shooter main.cpp ${dslr_qt_shooter_RESOURCES_RCC} )
-TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network Qt5::Concurrent ${IMAGEMAGICK_LDFLAGS} ${dslr_dependencies} ${Boost_LIBRARIES}  )
+TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network Qt5::Concurrent ${MAGICK_LDFLAGS} ${dslr_dependencies} ${Boost_LIBRARIES}  )
 
 add_subdirectory(tests)
