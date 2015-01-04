@@ -1,8 +1,20 @@
-#define BOOST_TEST_MAIN
-#include "test_helper.h"
+#include <QtTest/QTest>
 #include "utils/sequence.h"
 
-BOOST_AUTO_TEST_CASE(TestSequenceRunningAllExecutions)
+class TestSequence : public QObject {
+Q_OBJECT
+private slots:
+  void testSequenceRunningAllExecutions();
+  void testRunLast();
+  void testSequenceHaltingAtFirstError();
+  void testDontRunErrorFunctionOnNoErrors();
+  void testRunErrorfunction();
+  void testWithDifferentDefault();
+  void testWithDifferentReturnValueInitialization();
+  void testWithDifferentComparison();
+};
+
+void TestSequence::testSequenceRunningAllExecutions()
 {
   int executions = 0;
   {
@@ -11,12 +23,12 @@ BOOST_AUTO_TEST_CASE(TestSequenceRunningAllExecutions)
       { [&executions]{ executions++; return 0; }},
       { [&executions]{ executions++; return 0; }},
     }};
-    BOOST_REQUIRE_EQUAL(0, executions);
+    QCOMPARE(executions, 0);
   }
-  BOOST_REQUIRE_EQUAL(3, executions);
+  QCOMPARE(executions, 3);
 }
 
-BOOST_AUTO_TEST_CASE(TestRunLast)
+void TestSequence::testRunLast()
 {
   int executions = 0;
   bool run_last = false;
@@ -25,11 +37,11 @@ BOOST_AUTO_TEST_CASE(TestRunLast)
     { [&executions]{ executions++; return 0; }},
     { [&executions]{ executions++; return 0; }},
   }}.run_last([&run_last] { run_last=true; } );
-  BOOST_REQUIRE_EQUAL(3, executions);
-  BOOST_REQUIRE(run_last);
+  QCOMPARE(executions, 3);
+  QVERIFY(run_last);
 }
 
-BOOST_AUTO_TEST_CASE(TestSequenceHaltingAtFirstError)
+void TestSequence::testSequenceHaltingAtFirstError()
 {
   int executions = 0;
   sequence<int, 0> {{
@@ -38,10 +50,10 @@ BOOST_AUTO_TEST_CASE(TestSequenceHaltingAtFirstError)
     { [&executions]{ executions++; return 0; }},
     { [&executions]{ executions++; return 0; }},
   }};
-  BOOST_REQUIRE_EQUAL(2, executions);
+  QCOMPARE(executions, 2);
 }
 
-BOOST_AUTO_TEST_CASE(TestDontRunErrorFunctionOnNoErrors)
+void TestSequence::testDontRunErrorFunctionOnNoErrors()
 {
   int executions = 0;
   int errorCode = 0;
@@ -54,11 +66,11 @@ BOOST_AUTO_TEST_CASE(TestDontRunErrorFunctionOnNoErrors)
     }};
     s.on_error([&errorCode](int, std::string){ errorCode = 10; });
   }
-  BOOST_REQUIRE_EQUAL(4, executions);
-  BOOST_REQUIRE_EQUAL(0, errorCode);
+  QCOMPARE(executions, 4);
+  QCOMPARE(errorCode, 0);
 }
 
-BOOST_AUTO_TEST_CASE(TestRunErrorfunction)
+void TestSequence::testRunErrorfunction()
 {
   int executions = 0;
   int errorCode = 0;
@@ -68,12 +80,11 @@ BOOST_AUTO_TEST_CASE(TestRunErrorfunction)
     { [&executions]{ executions++; return 0; }},
     { [&executions]{ executions++; return 0; }},
   }}.on_error([&errorCode](int e, std::string){ errorCode = e+1; });
-  BOOST_REQUIRE_EQUAL(2, executions);
-  BOOST_REQUIRE_EQUAL(4, errorCode);
+  QCOMPARE(executions, 2);
+  QCOMPARE(errorCode, 4);
 }
 
-
-BOOST_AUTO_TEST_CASE(TestWithDifferentDefault)
+void TestSequence::testWithDifferentDefault()
 {
   int executions = 0;
   sequence<int, 10>{{
@@ -82,9 +93,10 @@ BOOST_AUTO_TEST_CASE(TestWithDifferentDefault)
     { [&executions]{ executions++; return 10; }},
     { [&executions]{ executions++; return 10; }},
   }};
-  BOOST_REQUIRE_EQUAL(2, executions);
+  QCOMPARE(executions, 2);
 }
-BOOST_AUTO_TEST_CASE(TestWithDifferentReturnValueInitialization)
+
+void TestSequence::testWithDifferentReturnValueInitialization()
 {
   int executions = 0;
   sequence<int, 10>{{
@@ -93,9 +105,10 @@ BOOST_AUTO_TEST_CASE(TestWithDifferentReturnValueInitialization)
     { [&executions]{ executions++; return 10; }},
     { [&executions]{ executions++; return 10; }},
   }};
-  BOOST_REQUIRE_EQUAL(1, executions);
+  QCOMPARE(executions, 1);
 }
-BOOST_AUTO_TEST_CASE(TestWithDifferentComparison)
+
+void TestSequence::testWithDifferentComparison()
 {
   int executions = 0;
   sequence<int, 0, std::greater_equal<int>>{{
@@ -105,5 +118,11 @@ BOOST_AUTO_TEST_CASE(TestWithDifferentComparison)
     { [&executions]{ executions++; return -1; }},
     { [&executions]{ executions++; return 10; }},
   }};
-  BOOST_REQUIRE_EQUAL(4, executions);
+  QCOMPARE(executions, 4);
 }
+
+
+QTEST_MAIN(TestSequence)
+
+#include "testsequence.moc"
+

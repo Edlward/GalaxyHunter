@@ -1,5 +1,6 @@
 #include "gphoto_camera_p.h"
 #include "serialshoot.h"
+#include <file2image.h>
 #include <iostream>
 #include <QTimer>
 #include <QDir>
@@ -214,27 +215,15 @@ QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
       else
 	q->error(q, QString("Error saving image to %1").arg(destination));
     }
-    QImage image;
     qDebug() << "shoot completed: camera file " << cameraTempFile.path();
-    if(image.load(cameraTempFile)) {
-      return image;
-    }
-    qDebug() << "Unable to load image; trying to convert it using GraphicsMagick.";
-    Magick::Image m_image;
-    m_image.read(cameraTempFile.path().toStdString());
-    Magick::Blob blob;
-    m_image.write(&blob, "PNG");
-    QByteArray data(static_cast<int>(blob.length()), 0);
-    std::copy(reinterpret_cast<const char*>(blob.data()), reinterpret_cast<const char*>(blob.data()) + blob.length(), begin(data));
-    if(image.loadFromData(data)) {
-      q->message(q, "image captured correctly");
-      return image;
-    }
-    qDebug() << "Error loading image.";
-    q->error(q, "Error loading image");
+    QImage image;
+    QFileInfo fileInfo(cameraTempFile.originalName);
+    File2Image file2image(image);
+    file2image.load(cameraTempFile, fileInfo.suffix().toLower());
+    return image;
   } catch(std::exception &e) {
-      stringstream s;
       q->error(q, QString("Error converting image: %1").arg(e.what()));
+      return QImage();
   }
 }
 

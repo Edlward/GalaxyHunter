@@ -2,6 +2,7 @@
 #include <QImage>
 #include <QFile>
 #include <Magick++.h>
+#include <imaging/file2image.h>
 class TestRawConversion : public QObject {
   Q_OBJECT
 public:
@@ -9,6 +10,8 @@ public:
 private slots:
   void raw2QImageDirectFailing();
   void raw2ImageMagick();
+  void testFile2QImageOnSupportedFile();
+  void testFile2QImageOnCanonRaw();
 };
 TestRawConversion::TestRawConversion(QObject* parent): QObject(parent)
 {
@@ -27,6 +30,24 @@ void TestRawConversion::raw2ImageMagick()
 {
   Magick::Image image("cr2:" TESTS_SRC_DIR "/IMG_0344.CR2");
   QVERIFY(image.isValid());
+}
+
+void TestRawConversion::testFile2QImageOnSupportedFile()
+{
+  QImage image;
+  QVERIFY(image.isNull());
+  File2Image file2image(image);
+  file2image.load(TESTS_SRC_DIR "/IMG_0344.png");
+  QVERIFY(!image.isNull());
+}
+
+void TestRawConversion::testFile2QImageOnCanonRaw()
+{
+  QImage image;
+  QVERIFY(image.isNull());
+  File2Image file2image(image);
+  file2image.load(TESTS_SRC_DIR "/IMG_0344.CR2", "cr2");
+  QVERIFY(!image.isNull());
 }
 
 

@@ -3,6 +3,7 @@
 #include <functional>
 #include <list>
 #include <mutex>
+#include <memory>
 
 typedef std::shared_ptr<std::unique_lock<std::mutex>> default_lock;
 template<typename T, T defaultValue, typename check_operator = std::equal_to<T>, typename RAII_Object = default_lock>

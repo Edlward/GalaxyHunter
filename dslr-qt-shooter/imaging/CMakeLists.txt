@@ -1,5 +1,5 @@
 set(dslr_imaging_HEADERS imaging_driver.h)
-set(dslr_imaging_SOURCES imaging_driver.cpp)
+set(dslr_imaging_SOURCES imaging_driver.cpp file2image.cpp)
 
 set(DEFAULT_IMAGING_BACKEND gphoto2)
 set(IMAGING_BACKEND ${DEFAULT_IMAGING_BACKEND} CACHE STRING "Imaging backend to use (Default: $DEFAULT_IMAGING_BACKEND)")
