@@ -304,13 +304,17 @@ void DSLR_Shooter_Window::start_shooting()
   long total_shots = d->ui->images_count->value() == 0 ? numeric_limits<long>::max() : d->ui->images_count->value();
   
   connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
-  long seconds_interval = QTime{0,0,0}.secsTo(d->ui->shoot_interval->time());;
-  auto timer_shooting = [=]{
-    shoot([]{});
+  long seconds_interval = QTime{0,0,0}.secsTo(d->ui->shoot_interval->time());
+  auto check_dithering = [=] {
     if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
       qDebug() << "Dither enabled: dithering";
       d->guider->dither();
     }
+  };
+  auto timer_shooting = [=]{
+    shoot([=]{
+      check_dithering();
+    });
     d->ui->images_count->setValue(total_shots - *shots);
     if( *shots >= total_shots) {
       stopShooting();
