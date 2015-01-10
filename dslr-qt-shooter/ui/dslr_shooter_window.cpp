@@ -48,6 +48,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->setupUi(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
+  connect(d->ui->actionClean_Log_Messages, &QAction::triggered, [=]{ d->ui->logWindow->clear(); });
+  connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
   d->ui->toolBox->setEnabled(false);
   d->ui->toolBox->setCurrentIndex(0);
   d->guider = new LinGuider(this);

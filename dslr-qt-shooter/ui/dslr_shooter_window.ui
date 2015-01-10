@@ -447,8 +447,17 @@
      <string>Guider</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionClean_Log_Messages"/>
+    <addaction name="actionOpen_Last_Images_Folde"/>
+    <addaction name="action_Quit"/>
+   </widget>
    <addaction name="menuCamera"/>
    <addaction name="menuGuider"/>
+   <addaction name="menuFile"/>
   </widget>
   <action name="actionConnect_LinGuider">
    <property name="text">
@@ -478,6 +487,21 @@
   <action name="actionSet_Preview_Interval">
    <property name="text">
     <string>Set Preview Interval...</string>
+   </property>
+  </action>
+  <action name="actionClean_Log_Messages">
+   <property name="text">
+    <string>Clean Log Messages</string>
+   </property>
+  </action>
+  <action name="actionOpen_Last_Images_Folde">
+   <property name="text">
+    <string>Open Last Images Folder</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>&amp;Quit</string>
    </property>
   </action>
  </widget>
