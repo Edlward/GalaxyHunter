@@ -123,18 +123,18 @@
        </widget>
        <widget class="QToolBox" name="toolBox">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="camera_info_page">
          <property name="geometry">
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>228</width>
-           <height>301</height>
+           <width>98</width>
+           <height>34</height>
           </rect>
          </property>
          <attribute name="label">
@@ -168,8 +168,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>219</width>
-           <height>414</height>
+           <width>310</width>
+           <height>488</height>
           </rect>
          </property>
          <attribute name="label">
@@ -249,6 +249,12 @@
            <widget class="QSpinBox" name="images_count">
             <property name="suffix">
              <string> images</string>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>999</number>
             </property>
            </widget>
           </item>
@@ -367,8 +373,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>228</width>
-           <height>301</height>
+           <width>111</width>
+           <height>66</height>
           </rect>
          </property>
          <attribute name="label">
@@ -425,7 +431,7 @@
      <x>0</x>
      <y>0</y>
      <width>955</width>
-     <height>20</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">

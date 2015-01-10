@@ -240,7 +240,18 @@ QImage GPhotoCamera::Private::shootTethered() const
     CameraFilePath *newfile;
     QImage image;
     gp_api{{
-      sequence_run([&]{ return gp_camera_wait_for_event(camera, 10000, &event, &data, context); }),
+      sequence_run([&]{
+	int result = -1;
+	int _try = 0;
+	while(result != GP_OK && _try < 40) {
+	  result = gp_camera_wait_for_event(camera, 10000, &event, &data, context);
+	  _try++;
+	  if(result != GP_OK)
+	    QThread::currentThread()->msleep(1000);
+	}
+	return result;
+	
+      }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
       sequence_run([&]{ 
         newfile = reinterpret_cast<CameraFilePath*>(data);

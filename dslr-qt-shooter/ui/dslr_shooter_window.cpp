@@ -13,6 +13,7 @@
 #include <QSettings>
 #include <QtConcurrent>
 #include <QComboBox>
+#include <QMessageBox>
 
 using namespace std;
 
@@ -47,6 +48,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->setupUi(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
+  d->ui->toolBox->setEnabled(false);
+  d->ui->toolBox->setCurrentIndex(0);
   d->guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(update_infos()));
@@ -277,6 +280,10 @@ void DSLR_Shooter_Window::start_shooting()
     });
     return;
   }
+  if(d->ui->images_count->value() == 0) {
+    QMessageBox::warning(this, tr("Invalid Images Count"), tr("You must set a proper images count to start sequenced shooting"));
+    return;
+  }
   d->ui->shoot->setText("Stop Shooting");
   QTimer *shootTimer = new QTimer(this);
   
@@ -288,6 +295,8 @@ void DSLR_Shooter_Window::start_shooting()
     d->ui->shoot->setText("Shoot");
     setWidgetsEnabled(true);
     delete shootTimer;
+    d->ui->shoot->disconnect();
+    connect(d->ui->shoot, SIGNAL(clicked(bool)), this, SLOT(start_shooting()));
   };
   
   long total_shots = d->ui->images_count->value() == 0 ? numeric_limits<long>::max() : d->ui->images_count->value();
