@@ -4,6 +4,7 @@
 #include <QNetworkReply>
 #include <QImage>
 #include <QDebug>
+#include <QThread>
 #include <QPixmap>
 
 using namespace std;
@@ -60,6 +61,7 @@ QImage TestingImager::shoot() const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 12) + 1);
   qDebug() << "loading image: " << imageFile;
+  QThread::currentThread()->sleep(_settings->manualExposure());
   QImage image(imageFile);
   return image;
 }

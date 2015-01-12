@@ -306,6 +306,7 @@ void DSLR_Shooter_Window::start_shooting()
   connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
   long seconds_interval = QTime{0,0,0}.secsTo(d->ui->shoot_interval->time());
   auto check_dithering = [=] {
+    qDebug() << "Checking for dithering...";
     if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
       qDebug() << "Dither enabled: dithering";
       d->guider->dither();
