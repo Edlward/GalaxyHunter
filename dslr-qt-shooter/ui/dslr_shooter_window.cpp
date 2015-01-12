@@ -37,6 +37,8 @@ public:
     void enableOrDisableShootingModeWidgets();
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
+    void shoot(std::shared_ptr< long int > remaining, function< void() > afterShot, function< void() > afterSequence);
+    
 private:
   DSLR_Shooter_Window *q;
 };
@@ -249,6 +251,24 @@ void DSLR_Shooter_Window::camera_connected()
       dialog->show();
     });
   });
+}
+
+
+void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::function< void()> afterShot, std::function< void()> afterSequence)
+{
+    qDebug() << "Shots remaining: " << *remaining;
+    if(*remaining <= 0) {
+      afterSequence();
+      return;
+    }
+    qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
+      --*remaining;
+      ui->imageContainer->setImage(image);
+      for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
+	widget->setEnabled(!image.isNull());
+      afterShot();
+      shoot(remaining, afterShot, afterSequence);
+    });
 }
 
 
