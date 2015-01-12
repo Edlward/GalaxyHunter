@@ -107,6 +107,16 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="stopShooting">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Stop Shooting</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -134,7 +144,7 @@
            <x>0</x>
            <y>0</y>
            <width>98</width>
-           <height>34</height>
+           <height>38</height>
           </rect>
          </property>
          <attribute name="label">
@@ -168,8 +178,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>310</width>
-           <height>488</height>
+           <width>281</width>
+           <height>500</height>
           </rect>
          </property>
          <attribute name="label">
@@ -373,8 +383,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>111</width>
-           <height>66</height>
+           <width>123</width>
+           <height>76</height>
           </rect>
          </property>
          <attribute name="label">
@@ -431,7 +441,7 @@
      <x>0</x>
      <y>0</y>
      <width>955</width>
-     <height>18</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
