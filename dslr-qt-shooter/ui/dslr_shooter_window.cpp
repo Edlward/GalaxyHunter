@@ -273,7 +273,6 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
       afterShot();
       long seconds_interval = QTime{0,0,0}.secsTo(ui->shoot_interval->time());
       timedLambda(seconds_interval * 1000, [=]{ shoot(remaining, afterShot, afterSequence); }, q);
-      // TODO: delayed shot QTimer::singleShot();
     });
 }
 
