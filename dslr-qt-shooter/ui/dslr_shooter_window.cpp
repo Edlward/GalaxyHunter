@@ -116,6 +116,10 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->ui->shoot_interval, &QTimeEdit::timeChanged, [=](const QTime &t) { d->settings.setValue("shoot_interval", t); });
   connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool t) { d->settings.setValue("dither_after_each_shot", t); });
   connect(d->ui->shoot_mode, SIGNAL(activated(int)), this, SLOT(shootModeChanged(int)));
+  QTimer *autoScan = new QTimer(this);
+  autoScan->setSingleShot(true);
+  connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
+  autoScan->start(1000);
 }
 
 // TODO: why doesn't it work with lambda slot?
