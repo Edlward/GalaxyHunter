@@ -33,6 +33,7 @@ public:
     ImagingDriver *imagingDriver;
     shared_ptr<Imager> imager;
     QSettings settings;
+    bool abort_sequence;
     
     void enableOrDisableShootingModeWidgets();
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
@@ -51,6 +52,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
   connect(d->ui->actionClean_Log_Messages, &QAction::triggered, [=]{ d->ui->logWindow->clear(); });
+  connect(d->ui->stopShooting, &QPushButton::clicked, [=]{ d->ui->stopShooting->setDisabled(true); d->abort_sequence = true; });
   connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
   d->ui->toolBox->setEnabled(false);
   d->ui->toolBox->setCurrentIndex(0);
@@ -66,6 +68,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->imageContainer->setWidgetResizable(true);
   d->ui->camera_splitter->setSizes({height()/10*8, height()/10*2});
   d->ui->log_splitter->setSizes({height()/10*8, height()/10*2});
+  d->ui->stopShooting->setHidden(true);
   
   auto set_imager = [=](const shared_ptr<Imager> &imager) {
     d->imager = imager;
@@ -260,8 +263,9 @@ void DSLR_Shooter_Window::camera_connected()
 void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::function< void()> afterShot, std::function< void()> afterSequence)
 {
     qDebug() << "Shots remaining: " << *remaining;
-    if(*remaining <= 0) {
+    if(*remaining <= 0 || abort_sequence) {
       afterSequence();
+      ui->stopShooting->setEnabled(true);
       return;
     }
     qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
@@ -270,102 +274,39 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
 	widget->setEnabled(!image.isNull());
       afterShot();
-      // TODO: delayed shot QTimer::singleShot();
-      shoot(remaining, afterShot, afterSequence);
+      long seconds_interval = QTime{0,0,0}.secsTo(ui->shoot_interval->time());
+      timedLambda(seconds_interval * 1000, [=]{ shoot(remaining, afterShot, afterSequence); }, q);
     });
 }
 
 
 void DSLR_Shooter_Window::start_shooting()
 {
-  shared_ptr<long> shots = make_shared<long>(0);
-  shared_ptr<long> remaining_shots = make_shared<long>(d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value() );
-  
+  long total_shots_number = d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
+  shared_ptr<long> remaining_shots = make_shared<long>(total_shots_number);
+  d->abort_sequence = false;
   auto setWidgetsEnabled = [=](bool enable) {
     d->ui->shoot_mode->setEnabled(enable);
     d->ui->shoot_interval->setEnabled(enable);
     d->ui->images_count->setEnabled(enable);
     d->ui->imageSettings->setEnabled(enable);
+    d->ui->shoot->setEnabled(enable);
   };
-  
+  setWidgetsEnabled(false);
+  d->ui->stopShooting->setVisible(total_shots_number>1);
   d->shoot(remaining_shots, [=]{
+    d->ui->images_count->setValue(*remaining_shots);
     qDebug() << "Checking for dithering...";
     if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
       qDebug() << "Dither enabled: dithering";
       d->guider->dither();
     }
   }, [=]{
+    d->ui->images_count->setValue(total_shots_number);
+    d->ui->stopShooting->setHidden(true);
     setWidgetsEnabled(true);
-    d->ui->shoot->setEnabled(true);
     statusBar()->clearMessage();
   } );
-    return;
-  
-  
-  auto shoot = [=](function<void()> afterEachShot){
-    qDebug() << "Shot #" << *shots;
-    qt_async<QImage>([=]{ return d->imager->shoot();}, [=](const QImage &image) {
-      d->ui->imageContainer->setImage(image);
-      for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
-	widget->setEnabled(!image.isNull());
-      afterEachShot();
-    });
-      ++(*shots);
-  };
-  
-  
-  if(d->ui->shoot_mode->currentIndex() == 0) {
-    setWidgetsEnabled(false);
-    d->ui->shoot->setEnabled(false);
-    shoot([=]{
-     setWidgetsEnabled(true);
-     d->ui->shoot->setEnabled(true);
-    });
-    return;
-  }
-  if(d->ui->images_count->value() == 0) {
-    QMessageBox::warning(this, tr("Invalid Images Count"), tr("You must set a proper images count to start sequenced shooting"));
-    return;
-  }
-  d->ui->shoot->setText("Stop Shooting");
-  QTimer *shootTimer = new QTimer(this);
-  
-
-  
-  setWidgetsEnabled(false);
-  
-  auto stopShooting = [=]{
-    d->ui->shoot->setText("Shoot");
-    setWidgetsEnabled(true);
-    delete shootTimer;
-    d->ui->shoot->disconnect();
-    connect(d->ui->shoot, SIGNAL(clicked(bool)), this, SLOT(start_shooting()));
-  };
-  
-  long total_shots = d->ui->images_count->value() == 0 ? numeric_limits<long>::max() : d->ui->images_count->value();
-  
-  connect(d->ui->shoot, &QPushButton::clicked, stopShooting);
-  long seconds_interval = QTime{0,0,0}.secsTo(d->ui->shoot_interval->time());
-  auto check_dithering = [=] {
-    qDebug() << "Checking for dithering...";
-    if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
-      qDebug() << "Dither enabled: dithering";
-      d->guider->dither();
-    }
-  };
-  auto timer_shooting = [=]{
-    shoot([=]{
-      check_dithering();
-    });
-    d->ui->images_count->setValue(total_shots - *shots);
-    if( *shots >= total_shots) {
-      stopShooting();
-      return;
-    }
-  };
-  connect(shootTimer, &QTimer::timeout, timer_shooting);
-  shootTimer->start(seconds_interval * 1000);
-  timer_shooting();
 }
 
 void DSLR_Shooter_Window::camera_disconnected()
