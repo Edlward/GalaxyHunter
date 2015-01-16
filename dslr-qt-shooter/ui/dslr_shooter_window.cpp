@@ -283,7 +283,7 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
 void DSLR_Shooter_Window::start_shooting()
 {
   long total_shots_number = d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
-  shared_ptr<long> remaining_shots = make_shared<long>(total_shots_number);
+  shared_ptr<long> remaining_shots = make_shared<long>(total_shots_number == 0 ? std::numeric_limits<long>::max() : total_shots_number);
   d->abort_sequence = false;
   auto setWidgetsEnabled = [=](bool enable) {
     d->ui->shoot_mode->setEnabled(enable);
@@ -293,9 +293,10 @@ void DSLR_Shooter_Window::start_shooting()
     d->ui->shoot->setEnabled(enable);
   };
   setWidgetsEnabled(false);
-  d->ui->stopShooting->setVisible(total_shots_number>1);
+  d->ui->stopShooting->setVisible(total_shots_number!=1);
   d->shoot(remaining_shots, [=]{
-    d->ui->images_count->setValue(*remaining_shots);
+    if(total_shots_number > 0)
+      d->ui->images_count->setValue(*remaining_shots);
     qDebug() << "Checking for dithering...";
     if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
       qDebug() << "Dither enabled: dithering";
