@@ -50,6 +50,7 @@ signals:
   void disconnected();
   void message(Imager *, const QString &);
   void error(Imager *,const QString &);
+  void exposure_remaining(int seconds) const;
 protected:
   bool deletePicturesOnCamera = false;
   QString _outputDirectory;

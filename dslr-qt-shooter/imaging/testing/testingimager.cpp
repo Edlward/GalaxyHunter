@@ -61,7 +61,10 @@ QImage TestingImager::shoot() const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 12) + 1);
   qDebug() << "loading image: " << imageFile;
-  QThread::currentThread()->sleep(_settings->manualExposure());
+  for(int i=0; i<_settings->manualExposure(); i++) {
+    emit exposure_remaining(_settings->manualExposure()-i);
+    thread()->msleep(1000);
+  }
   QImage image(imageFile);
   return image;
 }

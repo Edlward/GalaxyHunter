@@ -231,7 +231,10 @@ QImage GPhotoCamera::Private::shootTethered() const
 {
   {
     auto shoot = make_shared<SerialShoot>(serialShootPort);
-    q->thread()->msleep(manualExposure * 1000);
+    for(int i=0; i<manualExposure; i++) {
+      q->exposure_remaining(manualExposure-i);
+      q->thread()->msleep(1000);
+    }
   }
     CameraEventType event;
     void *data;

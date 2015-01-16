@@ -71,12 +71,16 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imager = imager;
     connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
     connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
+    connect(d->imager.get(), &Imager::exposure_remaining, this, [=](int seconds){
+      statusBar()->showMessage(tr("Exposure remaining: %1").arg(QTime(0,0,0).addSecs(seconds).toString()));
+    }, Qt::QueuedConnection);
     d->imager->connect();
   };
 
   connect(d->imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)), Qt::QueuedConnection);
   connect(d->imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)), Qt::QueuedConnection);
   connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
+  
   connect(d->ui->zoomIn, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(1.2); });
   connect(d->ui->zoomOut, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(0.8); });
   connect(d->ui->zoomActualSize, &QPushButton::clicked, [=] { d->ui->imageContainer->normalSize(); });
@@ -126,11 +130,10 @@ DSLR_Shooter_Window::~DSLR_Shooter_Window()
 
 void DSLR_Shooter_Window::update_infos()
 {
-  d->ui->statusbar->clearMessage();
   QString message = d->guider->is_connected() ? "Connected" : "Disconnected";
   if(d->guider->is_connected())
     message += " - " + d->guider->version();
-  d->ui->statusbar->showMessage(message);
+  d->ui->guiderStatus->setText(message);
 }
 
 
@@ -294,6 +297,7 @@ void DSLR_Shooter_Window::start_shooting()
   }, [=]{
     setWidgetsEnabled(true);
     d->ui->shoot->setEnabled(true);
+    statusBar()->clearMessage();
   } );
     return;
   
