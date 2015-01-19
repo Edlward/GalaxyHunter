@@ -72,7 +72,7 @@ public:
     ~FITSImage();
 
     /* Loads FITS image, scales it, and displays it in the GUI */
-//     bool  loadFITS(const QString &filename, QProgressDialog *progress=NULL);
+     bool  loadFITS(const QString &filename, QProgressDialog *progress=NULL);
     /* Save FITS */
 //     int saveFITS(const QString &filename);
     /* Rescale image lineary from image_buffer, fit to window if desired */
@@ -164,6 +164,7 @@ private:
     wcs_point *wcs_coord;
     QList<Edge*> starCenters;
     Edge* maxHFRStar;
+    void checkWCS();
 
 };
 

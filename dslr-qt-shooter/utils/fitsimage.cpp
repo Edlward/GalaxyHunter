@@ -97,7 +97,6 @@ FITSImage::~FITSImage()
 
     }
 }
-/*
 bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress )
 {
     int status=0, nulval=0, anynull=0;
@@ -106,7 +105,7 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
 
     qDeleteAll(starCenters);
     starCenters.clear();
-
+/*
     if (mode == FITS_NORMAL && progress)
     {
         progress->setLabelText(xi18n("Please hold while loading FITS file..."));
@@ -115,7 +114,7 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
 
     if (mode == FITS_NORMAL && progress)
         progress->setValue(30);
-
+*/
     if (fptr)
     {
 
@@ -139,11 +138,13 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
     {
         fits_report_error(stderr, status);
         fits_get_errstatus(status, error_status);
+	/*
         if (progress)
             KMessageBox::error(0, xi18n("Could not open file %1 (fits_get_img_param). Error %2", filename, QString::fromUtf8(error_status)), xi18n("FITS Open"));
+	*/
         return false;
     }
-
+/*
     if (mode == FITS_NORMAL && progress)
         if (progress->wasCanceled())
             return false;
@@ -151,28 +152,33 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
     if (mode == FITS_NORMAL && progress)
         progress->setValue(40);
 
-
+*/
     if (fits_get_img_param(fptr, 2, &(stats.bitpix), &(stats.ndim), naxes, &status))
     {
         fits_report_error(stderr, status);
         fits_get_errstatus(status, error_status);
-
+/*
         if (progress)
             KMessageBox::error(0, xi18n("FITS file open error (fits_get_img_param): %1", QString::fromUtf8(error_status)), xi18n("FITS Open"));
+*/
         return false;
     }
 
     if (stats.ndim < 2)
     {
+      /*
         if (progress)
             KMessageBox::error(0, xi18n("1D FITS images are not supported in KStars."), xi18n("FITS Open"));
+      */
         return false;
     }
 
     if (naxes[0] == 0 || naxes[1] == 0)
     {
+      /*
         if (progress)
             KMessageBox::error(0, xi18n("Image has invalid dimensions %1x%2", naxes[0], naxes[1]), xi18n("FITS Open"));
+      */
         return false;
     }
 
@@ -182,17 +188,20 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
         fits_report_error(stderr, status);
         fits_get_errstatus(status, error_status);
 
+	/*
         if (progress)
             KMessageBox::error(0, xi18n("FITS file open error (fits_get_img_type): %1", QString::fromUtf8(error_status)), xi18n("FITS Open"));
+	*/
         return false;
     }
-
+/*
     if (mode == FITS_NORMAL && progress)
         if (progress->wasCanceled())
             return false;
 
     if (mode == FITS_NORMAL && progress)
         progress->setValue(60);
+*/
 
     stats.dim[0] = naxes[0];
     stats.dim[1] = naxes[1];
@@ -270,14 +279,13 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
 
     qApp->processEvents();
 
+/*
     if (mode == FITS_NORMAL)
     {
-        checkWCS();
-
+        //checkWCS();
         if (progress)
             progress->setValue(90);
     }
-
     if (mode == FITS_NORMAL && progress)
     {
         if (progress->wasCanceled())
@@ -290,12 +298,14 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
 
     if (mode == FITS_NORMAL && progress)
         progress->setValue(100);
-
+*/
     starsSearched = false;
 
     return true;
 
 }
+
+/*
 
 int FITSImage::saveFITS( const QString &newFilename )
 {
@@ -1182,3 +1192,5 @@ void FITSImage::setOriginalImageBuffer(float *buf)
     delete (original_image_buffer);
     original_image_buffer = buf;
 }
+
+
