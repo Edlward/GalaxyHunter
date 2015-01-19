@@ -15,6 +15,7 @@
 #include <QtConcurrent>
 #include <QComboBox>
 #include <QMessageBox>
+#include <QLCDNumber>
 #include "imaging/focus.h"
 
 using namespace std;
@@ -41,7 +42,7 @@ public:
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
     void shoot(std::shared_ptr< long int > remaining, function< void() > afterShot, function< void() > afterSequence);
-    Focus focus;
+    Focus *focus;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -122,10 +123,14 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   autoScan->setSingleShot(true);
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
   
-  connect(&d->focus, &Focus::focus_rate, [=](double r, Focus::Type t){
+  d->focus = new Focus;
+  QThread *focusThread = new QThread;
+  d->focus->moveToThread(focusThread);
+  connect(d->focus, &Focus::focus_rate, this, [=](double r){
     qDebug() << "got focus HFD: " << r;
-  });
-  
+    d->ui->focus_analysis_value->display(r);
+  }, Qt::QueuedConnection);
+  focusThread->start();
   autoScan->start(1000);
 }
 
@@ -282,7 +287,12 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
     qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
       --*remaining;
       ui->imageContainer->setImage(image);
-      focus.analyze(image);
+      if(ui->enable_focus_analysis->isChecked()) {
+	QMetaObject::invokeMethod(focus, "analyze", Qt::QueuedConnection, Q_ARG(QImage, image));
+      } else {
+	ui->focus_analysis_history->clear();
+	ui->focus_analysis_value->display(0);
+      }
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
 	widget->setEnabled(!image.isNull());
       afterShot();

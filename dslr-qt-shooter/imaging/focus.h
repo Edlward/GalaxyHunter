@@ -26,14 +26,13 @@ class Focus : public QObject
 {
     Q_OBJECT
 public:
-  enum Type { HFD };
     ~Focus();
     Focus(QObject* parent = 0);
 public slots:
   void analyze(const QImage &image);
 
 signals:
-  void focus_rate(double, Type);
+  void focus_rate(double);
 private:
 };
 

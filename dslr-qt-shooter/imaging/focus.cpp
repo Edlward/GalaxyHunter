@@ -36,15 +36,20 @@ void Focus::analyze(const QImage& image)
 {
       // Focusing HFR calculation
       FITSImage fits_image;
-      qDebug() << "Loading fit: " << fits_image.loadFITS(image);
+      if(!fits_image.loadFITS(image)) {
+	qDebug() << "Error loading image for HFR analysis";
+	return;
+      }
       FITSHistogram histogram;
       histogram.setImage(&fits_image);
       histogram.constructHistogram(500, 500);
       fits_image.setHistogram(&histogram);
-      qDebug() << "Stars: " << fits_image.findStars();
+      if(!fits_image.findStars() > 0) {
+	qDebug() << "HFR Analysis: error finding stars!";
+	return;
+      }
       auto hfr = fits_image.getHFR();
-      qDebug() << "HFR: " << hfr;
-      emit focus_rate(hfr*2, HFD);
+      emit focus_rate(hfr*2);
 }
 
 #include "focus.moc"
