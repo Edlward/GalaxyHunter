@@ -5,6 +5,8 @@
 #include <QtCore/QTimer>
 #include "imaging/imaging_driver.h"
 #include <utils/qt.h>
+#include <utils/fitsimage.h>
+#include <utils/fitshistogram.h>
 #include <QDebug>
 #include <QThread>
 #include <QScrollBar>
@@ -14,6 +16,7 @@
 #include <QtConcurrent>
 #include <QComboBox>
 #include <QMessageBox>
+#include <Magick++.h>
 
 using namespace std;
 
@@ -275,6 +278,18 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
     qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
       --*remaining;
       ui->imageContainer->setImage(image);
+      
+      image.save("/tmp/tempfile.png");
+      Magick::Image convert_image("/tmp/tempfile.png");
+      convert_image.write("/tmp/tempfile.png.fits");
+      FITSImage fits_image;
+      qDebug() << "Loading fit: " << fits_image.loadFITS("/tmp/tempfile.png.fits");
+      FITSHistogram histogram;
+      histogram.setImage(&fits_image);
+      histogram.constructHistogram(500, 500);
+      fits_image.setHistogram(&histogram);
+      qDebug() << "HFR: " << fits_image.getHFR();
+      
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
 	widget->setEnabled(!image.isNull());
       afterShot();
