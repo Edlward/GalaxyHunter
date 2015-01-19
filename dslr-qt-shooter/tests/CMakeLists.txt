@@ -10,7 +10,7 @@ add_executable(test_raw_conversion testrawconversion.cpp ${CMAKE_SOURCE_DIR}/dsl
 target_link_libraries(test_raw_conversion Qt5::Widgets Qt5::Test ${MAGICK_LDFLAGS})
 add_test(NAME raw_conversion COMMAND test_raw_conversion)
 
-find_package(ROOT REQUIRED)
-include_directories(${ROOT_INCLUDE_DIR})
-add_executable(focusing_testing focusing_test_tool.cpp)
-target_link_libraries(focusing_testing Qt5::Widgets ${ROOT_LIBRARIES})
+#find_package(ROOT REQUIRED)
+#include_directories(${ROOT_INCLUDE_DIR})
+#add_executable(focusing_testing focusing_test_tool.cpp)
+#target_link_libraries(focusing_testing Qt5::Widgets ${ROOT_LIBRARIES})

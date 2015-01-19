@@ -37,6 +37,8 @@
 #endif
 
 #include <fitsio.h>
+#include <Magick++/Blob.h>
+#include <memory>
 
 
 #define INITIAL_W	640
@@ -73,6 +75,7 @@ public:
 
     /* Loads FITS image, scales it, and displays it in the GUI */
      bool  loadFITS(const QString &filename, QProgressDialog *progress=NULL);
+     bool  loadFITS(const QImage &image);
     /* Save FITS */
 //     int saveFITS(const QString &filename);
     /* Rescale image lineary from image_buffer, fit to window if desired */
@@ -138,7 +141,7 @@ public:
 
 
 private:
-
+    std::shared_ptr<Magick::Blob> fits_blob;
 
     bool checkCollision(Edge* s1, Edge*s2);
     double average();

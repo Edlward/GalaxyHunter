@@ -27,9 +27,11 @@
 #include <QLocale>
 #include <QFile>
 #include <QDebug>
+#include <QBuffer>
 #include <QProgressDialog>
 #include "fitshistogram.h"
 
+#include <Magick++.h>
 
 #ifdef HAVE_WCSLIB
 #include <wcshdr.h>
@@ -97,6 +99,116 @@ FITSImage::~FITSImage()
 
     }
 }
+
+bool FITSImage::loadFITS(const QImage& image)
+{
+    int status=0, nulval=0, anynull=0;
+    long nelements, naxes[2];
+    char error_status[512];
+
+    qDeleteAll(starCenters);
+    starCenters.clear();
+    
+    QBuffer buffer;
+    buffer.open(QBuffer::ReadWrite);
+    image.save(&buffer, "PNG");
+    Magick::Blob magick_source(buffer.data().data(), buffer.data().size());
+    Magick::Image magick_image(magick_source);
+    magick_image.write(fits_blob.get(), "FITS");
+    
+    std::size_t memsize = fits_blob->length();
+    void *memptr = const_cast<void*>(fits_blob->data());
+    
+    if (fits_open_memfile(&fptr, nullptr, READONLY, &memptr, &memsize, 0, nullptr, &status))
+    {
+        fits_report_error(stderr, status);
+        fits_get_errstatus(status, error_status);
+        return false;
+    }
+    if (fits_get_img_param(fptr, 2, &(stats.bitpix), &(stats.ndim), naxes, &status))
+    {
+        fits_report_error(stderr, status);
+        fits_get_errstatus(status, error_status);
+        return false;
+    }
+
+    if (stats.ndim < 2)
+    {
+        return false;
+    }
+
+    if (naxes[0] == 0 || naxes[1] == 0)
+    {
+        return false;
+    }
+
+
+    if (fits_get_img_type(fptr, &data_type, &status))
+    {
+        fits_report_error(stderr, status);
+        fits_get_errstatus(status, error_status);
+        return false;
+    }
+
+    stats.dim[0] = naxes[0];
+    stats.dim[1] = naxes[1];
+
+    delete (image_buffer);
+    image_buffer = NULL;
+    delete (original_image_buffer);
+    original_image_buffer = NULL;
+
+    image_buffer = new float[stats.dim[0] * stats.dim[1]];
+
+    if (image_buffer == NULL)
+    {
+        qDebug() << "Not enough memory for image_buffer";
+        return false;
+    }
+
+    original_image_buffer = new float[stats.dim[0] * stats.dim[1]];
+
+    if (original_image_buffer == NULL)
+    {
+        qDebug() << "Not enough memory for original_image_buffer";
+        return false;
+    }
+
+
+    nelements = stats.dim[0] * stats.dim[1];    
+    rotCounter=0;
+    flipHCounter=0;
+    flipVCounter=0;
+
+    qApp->processEvents();
+
+    if (fits_read_2d_flt(fptr, 0, nulval, naxes[0], naxes[0], naxes[1], image_buffer, &anynull, &status))
+    {
+        fprintf(stderr, "fits_read_pix error\n");
+        fits_report_error(stderr, status);
+        return false;
+    }
+
+    if (darkFrame != NULL)
+        subtract(darkFrame);
+
+    memcpy(original_image_buffer, image_buffer, nelements*sizeof(float));
+
+
+    if (darkFrame == NULL)
+        calculateStats();
+
+    //currentWidth  = stats.dim[0];
+   // currentHeight = stats.dim[1];
+
+    qApp->processEvents();
+    starsSearched = false;
+
+    return true;
+
+}
+
+
 bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress )
 {
     int status=0, nulval=0, anynull=0;
@@ -117,7 +229,6 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
 */
     if (fptr)
     {
-
         fits_close_file(fptr, &status);
 
         if (tempFile)
@@ -305,142 +416,6 @@ bool FITSImage::loadFITS ( const QString &inFilename, QProgressDialog *progress 
 
 }
 
-/*
-
-int FITSImage::saveFITS( const QString &newFilename )
-{
-    int status=0, exttype=0;
-    long fpixel[2], nelements;    
-    fitsfile *new_fptr;
-
-    nelements = stats.dim[0] * stats.dim[1];
-    fpixel[0] = 1;
-    fpixel[1] = 1;
-
-
-    /* Create a new File, overwriting existing*/
-    /*
-    if (fits_create_file(&new_fptr, newFilename.toLatin1(), &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    if (fits_movabs_hdu(fptr, 1, &exttype, &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    if (fits_copy_file(fptr, new_fptr, 1, 1, 1, &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    /* close current file */
-    /*
-    if (fits_close_file(fptr, &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    status=0;
-
-    if (tempFile)
-    {
-        QFile::remove(filename);
-        tempFile = false;
-    }
-
-    filename = newFilename;
-
-    fptr = new_fptr;
-
-    // For color images, we return for now.
-    if (stats.ndim > 2)
-        return status;
-
-    if (fits_movabs_hdu(fptr, 1, &exttype, &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-
-    /* Write Data */
-/*
-    if (fits_write_pix(fptr, TFLOAT, fpixel, nelements, image_buffer, &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    /* Write keywords */
-/*
-    // Minimum
-    if (fits_update_key(fptr, TDOUBLE, "DATAMIN", &(stats.min), "Minimum value", &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    // Maximum
-    if (fits_update_key(fptr, TDOUBLE, "DATAMAX", &(stats.max), "Maximum value", &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    // NAXIS1
-    if (fits_update_key(fptr, TINT, "NAXIS1", &(stats.dim[0]), "length of data axis 1", &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    // NAXIS2
-    if (fits_update_key(fptr, TINT, "NAXIS2", &(stats.dim[1]), "length of data axis 2", &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    // ISO Date
-    if (fits_write_date(fptr, &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    QString history = QString("Modified by KStars on %1").arg(QDateTime::currentDateTime().toString("yyyy-MM-ddThh:mm:ss"));
-    // History
-    if (fits_write_history(fptr, history.toLatin1(), &status))
-    {
-        fits_report_error(stderr, status);
-        return status;
-    }
-
-    int rot=0, mirror=0;
-    if (rotCounter > 0)
-    {
-        rot = (90 * rotCounter) % 360;
-        if (rot < 0)
-            rot += 360;
-    }
-    if (flipHCounter %2 !=0 || flipVCounter % 2 != 0)
-        mirror = 1;
-
-    if (rot || mirror)
-        rotWCSFITS(rot, mirror);
-
-    rotCounter=flipHCounter=flipVCounter=0;
-
-    return status;
-}
-
-*/
 int FITSImage::calculateMinMax(bool refresh)
 {
     int status, nfound=0;

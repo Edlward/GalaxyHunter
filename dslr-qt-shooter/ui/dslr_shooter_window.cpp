@@ -5,8 +5,7 @@
 #include <QtCore/QTimer>
 #include "imaging/imaging_driver.h"
 #include <utils/qt.h>
-#include <utils/fitsimage.h>
-#include <utils/fitshistogram.h>
+
 #include <QDebug>
 #include <QThread>
 #include <QScrollBar>
@@ -16,7 +15,7 @@
 #include <QtConcurrent>
 #include <QComboBox>
 #include <QMessageBox>
-#include <Magick++.h>
+#include "imaging/focus.h"
 
 using namespace std;
 
@@ -42,7 +41,7 @@ public:
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
     void shoot(std::shared_ptr< long int > remaining, function< void() > afterShot, function< void() > afterSequence);
-    
+    Focus focus;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -122,6 +121,11 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QTimer *autoScan = new QTimer(this);
   autoScan->setSingleShot(true);
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
+  
+  connect(&d->focus, &Focus::focus_rate, [=](double r, Focus::Type t){
+    qDebug() << "got focus HFD: " << r;
+  });
+  
   autoScan->start(1000);
 }
 
@@ -278,19 +282,7 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
     qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
       --*remaining;
       ui->imageContainer->setImage(image);
-      
-      image.save("/tmp/tempfile.png");
-      Magick::Image convert_image("/tmp/tempfile.png");
-      convert_image.write("/tmp/tempfile.png.fits");
-      FITSImage fits_image;
-      qDebug() << "Loading fit: " << fits_image.loadFITS("/tmp/tempfile.png.fits");
-      FITSHistogram histogram;
-      histogram.setImage(&fits_image);
-      histogram.constructHistogram(500, 500);
-      fits_image.setHistogram(&histogram);
-      qDebug() << "Stars: " << fits_image.findStars();
-      qDebug() << "HFR: " << fits_image.getHFR();
-      
+      focus.analyze(image);
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
 	widget->setEnabled(!image.isNull());
       afterShot();
