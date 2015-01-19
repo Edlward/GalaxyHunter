@@ -10,8 +10,8 @@
 
 using namespace std;
 int main(int argc, char **argv) {
-    QImage image (TESTS_SRC_DIR "/roi-morestars.png");
-    //QImage image (TESTS_SRC_DIR "/roi-1star.png");
+    //QImage image (TESTS_SRC_DIR "/roi-morestars.png");
+    QImage image (TESTS_SRC_DIR "/roi-1star.png");
     if(image.isNull()) {
       cerr << "error loading image!" << endl;
       return 1;
@@ -32,11 +32,11 @@ int main(int argc, char **argv) {
 	i++;
       }
     }
-    TF2 *f2 = new TF2("f2","xygaus(0)",0,image.width(),0,image.height());
-    f2->SetParameters(1,3,1,4,1);
-    graph->Fit(f2);
-    f2->Draw("surf1");
+    //TF2 *f2 = new TF2("f2","xygaus",0,image.width(),0,image.height());
+    //f2->SetParameters(1,3,1,4,1);
+    //graph->Fit(f2);
     graph->Draw("p");
+    //f2->Draw("same sl");
     //th->Fit(f2);
     //th->Draw("*");
     gMyRootApp->Run();
