@@ -288,6 +288,7 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
       histogram.setImage(&fits_image);
       histogram.constructHistogram(500, 500);
       fits_image.setHistogram(&histogram);
+      qDebug() << "Stars: " << fits_image.findStars();
       qDebug() << "HFR: " << fits_image.getHFR();
       
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
