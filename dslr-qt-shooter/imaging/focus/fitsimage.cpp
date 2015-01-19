@@ -113,6 +113,7 @@ bool FITSImage::loadFITS(const QImage& image)
     buffer.open(QBuffer::ReadWrite);
     image.save(&buffer, "PNG");
     Magick::Blob magick_source(buffer.data().data(), buffer.data().size());
+    fits_blob = std::make_shared<Magick::Blob>();
     Magick::Image magick_image(magick_source);
     magick_image.write(fits_blob.get(), "FITS");
     
