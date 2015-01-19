@@ -73,8 +73,6 @@ public:
     FITSImage(FITSMode mode=FITS_NORMAL);
     ~FITSImage();
 
-    /* Loads FITS image, scales it, and displays it in the GUI */
-     bool  loadFITS(const QString &filename, QProgressDialog *progress=NULL);
      bool  loadFITS(const QImage &image);
     /* Save FITS */
 //     int saveFITS(const QString &filename);
