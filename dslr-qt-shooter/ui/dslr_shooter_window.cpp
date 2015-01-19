@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QScreen>
 #include <QSettings>
+#include <QString>
 #include <QtConcurrent>
 #include <QComboBox>
 #include <QMessageBox>
@@ -123,12 +124,22 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   autoScan->setSingleShot(true);
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
   
-  d->focus = new Focus;
+  d->focus = new Focus(10);
   QThread *focusThread = new QThread;
   d->focus->moveToThread(focusThread);
   connect(d->focus, &Focus::focus_rate, this, [=](double r){
     qDebug() << "got focus HFD: " << r;
     d->ui->focus_analysis_value->display(r);
+    QStringList history;
+    bool first = true;
+    std::transform(begin(d->focus->history()), end(d->focus->history()), back_inserter(history), [&first](double d) {
+      if(first) {
+	first = false;
+	return QString("<b>%1</b>").arg(d);
+      }
+      return QString("<i>%1</i>").arg(d);
+    });
+    d->ui->focus_analysis_history->setText(history.join("<br>"));
   }, Qt::QueuedConnection);
   focusThread->start();
   autoScan->start(1000);

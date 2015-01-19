@@ -27,13 +27,16 @@ class Focus : public QObject
     Q_OBJECT
 public:
     ~Focus();
-    Focus(QObject* parent = 0);
+    Focus(int history = 5, QObject* parent = 0);
+    QList<double> history() const { return _history; }
 public slots:
   void analyze(const QImage &image);
 
 signals:
   void focus_rate(double);
 private:
+  int history_size;
+  QList<double> _history;
 };
 
 #endif // FOCUS_H

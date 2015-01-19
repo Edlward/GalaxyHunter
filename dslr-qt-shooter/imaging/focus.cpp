@@ -28,7 +28,7 @@ Focus::~Focus()
 {
 }
 
-Focus::Focus(QObject* parent)
+Focus::Focus(int history, QObject* parent) : history_size(history), QObject(parent)
 {
 }
 
@@ -48,8 +48,11 @@ void Focus::analyze(const QImage& image)
 	qDebug() << "HFR Analysis: error finding stars!";
 	return;
       }
-      auto hfr = fits_image.getHFR();
-      emit focus_rate(hfr*2);
+      auto hfd = fits_image.getHFR()*2;
+      _history.push_front(hfd);
+      while(_history.size() > history_size)
+	_history.removeLast();
+      emit focus_rate(hfd);
 }
 
 #include "focus.moc"

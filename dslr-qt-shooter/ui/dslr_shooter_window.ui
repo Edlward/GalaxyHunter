@@ -143,8 +143,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>281</width>
-           <height>471</height>
+           <width>98</width>
+           <height>38</height>
           </rect>
          </property>
          <attribute name="label">
@@ -178,8 +178,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>281</width>
-           <height>471</height>
+           <width>219</width>
+           <height>414</height>
           </rect>
          </property>
          <attribute name="label">
@@ -386,8 +386,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>281</width>
-           <height>471</height>
+           <width>123</width>
+           <height>96</height>
           </rect>
          </property>
          <attribute name="label">
@@ -431,6 +431,14 @@
          </layout>
         </widget>
         <widget class="QWidget" name="focusing_page">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>306</width>
+           <height>482</height>
+          </rect>
+         </property>
          <attribute name="label">
           <string>Focusing</string>
          </attribute>
@@ -462,7 +470,7 @@
           <item row="2" column="0" colspan="2">
            <widget class="QLabel" name="label_8">
             <property name="text">
-             <string>Previous Values</string>
+             <string>Focusing History</string>
             </property>
            </widget>
           </item>
