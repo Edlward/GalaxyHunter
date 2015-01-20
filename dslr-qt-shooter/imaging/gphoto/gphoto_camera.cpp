@@ -119,6 +119,7 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
 #define ISO_SETTING "main/settings/iso"
 #define SHUTTER_SPEED_SETTING "main/settings/shutterspeed"
 
+#include <boost/thread.hpp>
 
 void GPhotoCamera::connect()
 {
@@ -229,13 +230,14 @@ QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
 
 QImage GPhotoCamera::Private::shootTethered() const
 {
-  {
+  boost::thread t([=]{
     auto shoot = make_shared<SerialShoot>(serialShootPort);
     for(int i=0; i<manualExposure; i++) {
       q->exposure_remaining(manualExposure-i);
       q->thread()->msleep(1000);
     }
-  }
+  });
+
     CameraEventType event;
     void *data;
     CameraTempFile camera_file;
@@ -243,7 +245,8 @@ QImage GPhotoCamera::Private::shootTethered() const
     CameraFilePath *newfile;
     QImage image;
     gp_api{{
-      sequence_run([&]{ return gp_camera_wait_for_event(camera, 50000, &event, &data, context); }),
+      sequence_run([&]{ return gp_camera_wait_for_event(camera, (manualExposure+120)*1000, &event, &data, context); }),
+      sequence_run([&]{ t.join(); return GP_OK; }),
       sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
       sequence_run([&]{ 
         newfile = reinterpret_cast<CameraFilePath*>(data);
