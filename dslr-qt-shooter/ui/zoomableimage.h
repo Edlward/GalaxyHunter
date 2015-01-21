@@ -53,7 +53,7 @@ private:
   QRubberBand *selection = 0;
   QPoint scrollPoint() const;
   QPointF ratio() const;
-  void scale_selection();
+  void scale_selection(QPointF previousRatio);
 };
 
 #endif // ZOOMABLEIMAGE_H

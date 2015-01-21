@@ -46,17 +46,19 @@ ZoomableImage::ZoomableImage(QWidget* parent)
 
 void ZoomableImage::fitToWindow()
 {
+  QPointF previousRatio = ratio();
   setWidgetResizable(true);
   image->adjustSize();
-  scale_selection();
+  scale_selection(previousRatio);
 }
 
 void ZoomableImage::normalSize()
 {
+  QPointF previousRatio = ratio();
     setWidgetResizable(false);
     image->adjustSize();
     _ratio = 1;
-    scale_selection();
+    scale_selection(previousRatio);
 }
 
 void ZoomableImage::mousePressEvent(QMouseEvent* event)
@@ -141,6 +143,7 @@ void ZoomableImage::scale(double factor)
   Q_ASSERT(image->pixmap());
   setWidgetResizable(false);
 
+  QPointF previousRatio = ratio();
   _ratio *= factor;
   image->resize(_ratio * image->pixmap()->size());
   auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
@@ -148,13 +151,14 @@ void ZoomableImage::scale(double factor)
   };
   adjustScrollBar(horizontalScrollBar(), factor);
   adjustScrollBar(verticalScrollBar(), factor);
-  scale_selection();
+  scale_selection(previousRatio);
 }
 
-void ZoomableImage::scale_selection()
+void ZoomableImage::scale_selection(QPointF previousRatio)
 {
   if(!selection) return;
-  auto _ratio = ratio();
+  
+  QPointF _ratio = {ratio().x() / previousRatio.x(), ratio().y() / previousRatio.y()};
   QRect geometry = selection->geometry();
   selection->setGeometry(
     geometry.x() * _ratio.x(),
