@@ -5,15 +5,22 @@
 #include <QtCore/QTimer>
 #include "imaging/imaging_driver.h"
 #include <utils/qt.h>
+
 #include <QDebug>
 #include <QThread>
 #include <QScrollBar>
 #include <QFileDialog>
 #include <QScreen>
 #include <QSettings>
+#include <QString>
 #include <QtConcurrent>
 #include <QComboBox>
 #include <QMessageBox>
+#include <QLCDNumber>
+#include "imaging/focus.h"
+#include "qwt-src/qwt_plot_curve.h"
+#include <qwt-src/qwt_plot_histogram.h>
+#include <qwt-src/qwt_symbol.h>
 
 using namespace std;
 
@@ -39,7 +46,8 @@ public:
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
     void shoot(std::shared_ptr< long int > remaining, function< void() > afterShot, function< void() > afterSequence);
-    
+    Focus *focus;
+    QwtPlotCurve *focus_curve;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -119,6 +127,23 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QTimer *autoScan = new QTimer(this);
   autoScan->setSingleShot(true);
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
+  
+  d->focus = new Focus;
+  QThread *focusThread = new QThread;
+  d->focus->moveToThread(focusThread);
+  focusThread->start();
+  d->focus_curve= new QwtPlotCurve;
+  d->focus_curve->attach(d->ui->focusing_graph);
+  d->focus_curve->setStyle(QwtPlotCurve::Lines);
+  //d->focus_curve->setCurveAttribute(QwtPlotCurve::Fitted);
+  auto symbol = new QwtSymbol(QwtSymbol::Diamond);
+  symbol->setSize(8, 8);
+  symbol->setBrush(QBrush{Qt::red});
+  d->focus_curve->setSymbol(symbol);
+  d->focus_curve->setBrush(QBrush{Qt::blue});
+  d->ui->focusing_graph->setAutoReplot(true);
+  d->ui->focusing_graph->setAxisAutoScale(true);
+  connect(d->focus, SIGNAL(focus_rate(double)), this, SLOT(focus_received(double)), Qt::QueuedConnection);
   autoScan->start(1000);
 }
 
@@ -129,6 +154,27 @@ void DSLR_Shooter_Window::shootModeChanged(int index)
   d->enableOrDisableShootingModeWidgets();
 }
 
+void DSLR_Shooter_Window::focus_received(double value)
+{
+    qDebug() << "got focus HFD: " << value;
+    d->ui->focus_analysis_value->display(value);
+    auto history = d->focus->history();
+    
+    QStringList latest_history;
+//     bool first = true;
+//     std::transform(begin(d->focus->history()), end(d->focus->history()), back_inserter(history), [&first](double d) {
+//       if(first) {
+// 	first = false;
+// 	return QString("<b>%1</b>").arg(d);
+//       }
+//       return QString("<i>%1</i>").arg(d);
+//     });
+//     d->ui->focus_analysis_history->setText(history.join("<br>"));
+    QVector<QPointF> focusing_samples(history.size());
+    int index=0;
+    std::transform(history.begin(), history.end(), focusing_samples.begin(), [&index](double d){ return QPointF(index++, d); });
+    d->focus_curve->setSamples(focusing_samples);
+}
 
 
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
@@ -275,6 +321,12 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
     qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
       --*remaining;
       ui->imageContainer->setImage(image);
+      if(ui->enable_focus_analysis->isChecked()) {
+	QMetaObject::invokeMethod(focus, "analyze", Qt::QueuedConnection, Q_ARG(QImage, image));
+      } else {
+	ui->focus_analysis_history->clear();
+	ui->focus_analysis_value->display(0);
+      }
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
 	widget->setEnabled(!image.isNull());
       afterShot();

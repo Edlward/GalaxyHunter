@@ -34,6 +34,7 @@ private slots:
   void start_shooting();
 private slots:
   void shootModeChanged(int index);
+  void focus_received(double value);
 private:
   class Private;
   friend class Private;

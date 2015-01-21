@@ -136,7 +136,7 @@
          <bool>true</bool>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>3</number>
         </property>
         <widget class="QWidget" name="camera_info_page">
          <property name="geometry">
@@ -386,8 +386,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>186</width>
-           <height>355</height>
+           <width>111</width>
+           <height>84</height>
           </rect>
          </property>
          <attribute name="label">
@@ -423,6 +423,81 @@
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="guiderStatus">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="focusing_page">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>300</width>
+           <height>473</height>
+          </rect>
+         </property>
+         <attribute name="label">
+          <string>Focusing</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="enable_focus_analysis">
+            <property name="text">
+             <string>Enable focus analysis</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="focus_analysis_type">
+            <property name="text">
+             <string>HFD (lower is better)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLCDNumber" name="focus_analysis_value">
+            <property name="smallDecimalPoint">
+             <bool>false</bool>
+            </property>
+            <property name="segmentStyle">
+             <enum>QLCDNumber::Flat</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Focusing History</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>352</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="3" column="0" colspan="2">
+           <widget class="QwtPlot" name="focusing_graph" native="true"/>
+          </item>
+          <item row="4" column="0" colspan="2">
+           <widget class="QLabel" name="focus_analysis_history">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -529,6 +604,11 @@
   </action>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QwtPlot</class>
+   <extends></extends>
+   <header>qwt-src/qwt_plot.h</header>
+  </customwidget>
   <customwidget>
    <class>ZoomableImage</class>
    <extends>QWidget</extends>
