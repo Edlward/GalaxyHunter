@@ -22,6 +22,7 @@
 
 #include <QScrollArea>
 #include <QRect>
+#include <memory>
 class QLabel;
 class QImage;
 class QRubberBand;
@@ -44,16 +45,10 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent* e);
     virtual void mouseReleaseEvent(QMouseEvent*e);
 private:
-  QPoint point;
-  QLabel *image;
-  double _ratio = 1;
-  bool dragging = false;
-  bool selectionMode = false;
-  QRect selectionRect;
-  QRubberBand *selection = 0;
-  QPoint scrollPoint() const;
-  QPointF ratio() const;
-  void scale_selection(QPointF previousRatio);
+  class Private;
+  friend class Private;
+  const std::unique_ptr<Private> d;
 };
 
 #endif // ZOOMABLEIMAGE_H
+

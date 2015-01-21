@@ -29,109 +29,126 @@
 #include <QMimeData>
 #include <QRubberBand>
 
+
+class ZoomableImage::Private {
+public:
+  Private(ZoomableImage *q) : q(q) {}
+  const ZoomableImage *q;
+  QPoint moveOriginPoint;
+  QLabel *imageWidget;
+  double _ratio = 1;
+  bool dragging = false;
+  bool selectionMode = false;
+  QRect selectionRect;
+  QRubberBand *selection = 0;
+  QPoint scrollPoint() const;
+  QPointF ratio() const;
+  void scale_selection(QPointF previousRatio);
+};
+
 ZoomableImage::~ZoomableImage()
 {
 
 }
 
-ZoomableImage::ZoomableImage(QWidget* parent)
+ZoomableImage::ZoomableImage(QWidget* parent) : d(new Private{this})
 {
-  setWidget(image = new QLabel);
-  image->setBackgroundRole(QPalette::Base);
-  image->setScaledContents(true);
-  image->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+  setWidget(d->imageWidget = new QLabel);
+  d->imageWidget->setBackgroundRole(QPalette::Base);
+  d->imageWidget->setScaledContents(true);
+  d->imageWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
   setWidgetResizable(true);
   setCursor(Qt::OpenHandCursor);
 }
 
 void ZoomableImage::fitToWindow()
 {
-  QPointF previousRatio = ratio();
+  QPointF previousRatio = d->ratio();
   setWidgetResizable(true);
-  image->adjustSize();
-  scale_selection(previousRatio);
+  d->imageWidget->adjustSize();
+  d->scale_selection(previousRatio);
 }
 
 void ZoomableImage::normalSize()
 {
-  QPointF previousRatio = ratio();
+  QPointF previousRatio = d->ratio();
     setWidgetResizable(false);
-    image->adjustSize();
-    _ratio = 1;
-    scale_selection(previousRatio);
+    d->imageWidget->adjustSize();
+    d->_ratio = 1;
+    d->scale_selection(previousRatio);
 }
 
 void ZoomableImage::mousePressEvent(QMouseEvent* event)
 {
-  if(selectionMode) {
-    delete selection;
-    selection = new QRubberBand(QRubberBand::Rectangle, image);
-    selection->move(event->pos() + scrollPoint());
+  if(d->selectionMode) {
+    delete d->selection;
+    d->selection = new QRubberBand(QRubberBand::Rectangle, d->imageWidget);
+    d->selection->move(event->pos() + d->scrollPoint());
 
     return;
   }
     QAbstractScrollArea::mousePressEvent(event);
     if (event->button() == Qt::LeftButton) {
-      dragging = true;
-      point = event->pos();
+      d->dragging = true;
+      d->moveOriginPoint = event->pos();
       QApplication::setOverrideCursor(Qt::ClosedHandCursor);
     }
 }
 
-QPoint ZoomableImage::scrollPoint() const
+QPoint ZoomableImage::Private::scrollPoint() const
 {
-  return {horizontalScrollBar()->value(), verticalScrollBar()->value()};
+  return {q->horizontalScrollBar()->value(), q->verticalScrollBar()->value()};
 }
 
 
 void ZoomableImage::startSelectionMode()
 {
-  selectionMode = true;
+  d->selectionMode = true;
   setCursor(Qt::CrossCursor);
 }
 
 
 void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
 {
-  if(selectionMode) {
-    selection->setGeometry({selection->geometry().topLeft(), e->pos() + scrollPoint()});
-    selection->show();
+  if(d->selectionMode) {
+    d->selection->setGeometry({d->selection->geometry().topLeft(), e->pos() + d->scrollPoint()});
+    d->selection->show();
     return;
   }
-  if(!dragging) return;
+  if(!d->dragging) return;
     QAbstractScrollArea::mouseMoveEvent(e);
-  auto delta = point - e->pos();
+  auto delta = d->moveOriginPoint - e->pos();
   horizontalScrollBar()->setValue( horizontalScrollBar()->value() + delta.x());
   verticalScrollBar()->setValue(verticalScrollBar()->value() + delta.y());
-  point = e->pos();
+  d->moveOriginPoint = e->pos();
 }
 
-QPointF ZoomableImage::ratio() const
+QPointF ZoomableImage::Private::ratio() const
 {
-    double hratio = static_cast<double>(image->width()) / static_cast<double>(image->pixmap()->width());
-    double vratio = static_cast<double>(image->height()) / static_cast<double>(image->pixmap()->height());
+    double hratio = static_cast<double>(imageWidget->width()) / static_cast<double>(imageWidget->pixmap()->width());
+    double vratio = static_cast<double>(imageWidget->height()) / static_cast<double>(imageWidget->pixmap()->height());
     return {hratio, vratio};
 }
 
 void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 {
-  if(selectionMode) {
-    double hratio = ratio().x();
-    double vratio = ratio().y();
-    selectionRect = { selection->geometry().x() / hratio,
-		      selection->geometry().y() / vratio, 
-		      selection->geometry().width() / hratio, 
-		      selection->geometry().height() / vratio
+  if(d->selectionMode) {
+    double hratio = d->ratio().x();
+    double vratio = d->ratio().y();
+    d->selectionRect = { d->selection->geometry().x() / hratio,
+		      d->selection->geometry().y() / vratio, 
+		      d->selection->geometry().width() / hratio, 
+		      d->selection->geometry().height() / vratio
       
     };
-    qDebug() << "selection: " << selectionRect << ", widget size: " << image->size() << ", image size: " << image->pixmap()->size();
+    qDebug() << "selection: " << d->selectionRect << ", widget size: " << d->imageWidget->size() << ", image size: " << d->imageWidget->pixmap()->size();
     qDebug() << "hscroll: " << horizontalScrollBar()->value() << ", vscroll: " << verticalScrollBar()->value();
-    selectionMode = false;
+    d->selectionMode = false;
     setCursor(Qt::OpenHandCursor);
     return;
   }
     QAbstractScrollArea::mouseReleaseEvent(e);
-    dragging = false;
+    d->dragging = false;
     QApplication::restoreOverrideCursor();
 }
 
@@ -140,25 +157,25 @@ void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 
 void ZoomableImage::scale(double factor)
 {
-  Q_ASSERT(image->pixmap());
+  Q_ASSERT(d->imageWidget->pixmap());
   setWidgetResizable(false);
 
-  QPointF previousRatio = ratio();
-  _ratio *= factor;
-  image->resize(_ratio * image->pixmap()->size());
+  QPointF previousRatio = d->ratio();
+  d->_ratio *= factor;
+  d->imageWidget->resize(d->_ratio * d->imageWidget->pixmap()->size());
   auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
     scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
   };
   adjustScrollBar(horizontalScrollBar(), factor);
   adjustScrollBar(verticalScrollBar(), factor);
-  scale_selection(previousRatio);
+  d->scale_selection(previousRatio);
 }
 
-void ZoomableImage::scale_selection(QPointF previousRatio)
+void ZoomableImage::Private::scale_selection(QPointF previousRatio)
 {
   if(!selection) return;
   
-  QPointF _ratio = {ratio().x() / previousRatio.x(), ratio().y() / previousRatio.y()};
+  QPointF _ratio = {ratio().x() / previousRatio.x(),ratio().y() / previousRatio.y()};
   QRect geometry = selection->geometry();
   selection->setGeometry(
     geometry.x() * _ratio.x(),
@@ -171,18 +188,18 @@ void ZoomableImage::scale_selection(QPointF previousRatio)
 
 void ZoomableImage::setImage(const QImage& image)
 {
-  this->image->setPixmap(QPixmap::fromImage(image));
+  this->d->imageWidget->setPixmap(QPixmap::fromImage(image));
 }
 
 QRect ZoomableImage::roi() const
 {
-  return selectionRect;
+  return d->selectionRect;
 }
 
 void ZoomableImage::clearROI()
 {
-  delete selection;
-  selection = 0;
-  selectionRect = {};
+  delete d->selection;
+  d->selection = 0;
+  d->selectionRect = {};
 }
 
