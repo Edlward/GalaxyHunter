@@ -28,7 +28,7 @@ Focus::~Focus()
 {
 }
 
-Focus::Focus(int history, QObject* parent) : history_size(history), QObject(parent)
+Focus::Focus(QObject* parent) : QObject(parent)
 {
 }
 
@@ -49,9 +49,7 @@ void Focus::analyze(const QImage& image)
 	return;
       }
       auto hfd = fits_image.getHFR()*2;
-      _history.push_front(hfd);
-      while(_history.size() > history_size)
-	_history.removeLast();
+      _history.push_back(hfd);
       emit focus_rate(hfd);
 }
 

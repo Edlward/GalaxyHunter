@@ -1,3 +1,19 @@
+/***************************************************************************
+                          fitshistogram.h  -  FITS Historgram
+                          ---------------
+    begin                : Thu Mar 4th 2004
+    copyright            : (C) 2004 by Jasem Mutlaq
+    email                : mutlaqja@ikarustech.com
+ ***************************************************************************/
+ 
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 /*
  * <one line to give the program's name and a brief idea of what it does.>
  * Copyright (C) 2015  Marco Gulino <marco.gulino@bhuman.it>

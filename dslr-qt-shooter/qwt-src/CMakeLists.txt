@@ -2,6 +2,8 @@ find_package(Qt5Svg REQUIRED)
 #find_package(Qt5PrintSupport REQUIRED)
 
 include_directories(${Qt5Svg_INCLUDE_DIRS})
+set(dslr_dependencies ${dslr_dependencies} -lQt5Svg PARENT_SCOPE) # temp fix? should be Qt5::Svg
+
 #include_directories(${Qt5PrintSupport_INCLUDE_DIRS})
 
 file(GLOB qwt_SRC
@@ -104,3 +106,5 @@ qwt_widget_overlay.cpp
 )
 
 add_library(qwt STATIC ${qwt_SRC})
+set(dslr_static_LIBS ${dslr_static_LIBS} qwt PARENT_SCOPE)
+
