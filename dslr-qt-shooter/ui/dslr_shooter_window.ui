@@ -143,8 +143,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>34</height>
+           <width>306</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -178,8 +178,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>198</width>
-           <height>365</height>
+           <width>306</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -386,8 +386,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>111</width>
-           <height>84</height>
+           <width>306</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -435,8 +435,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>300</width>
-           <height>473</height>
+           <width>306</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -450,14 +450,14 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
+          <item row="2" column="0">
            <widget class="QLabel" name="focus_analysis_type">
             <property name="text">
              <string>HFD (lower is better)</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="2" column="1">
            <widget class="QLCDNumber" name="focus_analysis_value">
             <property name="smallDecimalPoint">
              <bool>false</bool>
@@ -467,14 +467,14 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="2">
+          <item row="3" column="0" colspan="2">
            <widget class="QLabel" name="label_8">
             <property name="text">
              <string>Focusing History</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
+          <item row="6" column="1">
            <spacer name="verticalSpacer_4">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -487,10 +487,10 @@
             </property>
            </spacer>
           </item>
-          <item row="3" column="0" colspan="2">
+          <item row="4" column="0" colspan="2">
            <widget class="QwtPlot" name="focusing_graph" native="true"/>
           </item>
-          <item row="4" column="0" colspan="2">
+          <item row="5" column="0" colspan="2">
            <widget class="QLabel" name="focus_analysis_history">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -500,6 +500,23 @@
             </property>
             <property name="text">
              <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="focusing_select_roi">
+            <property name="text">
+             <string>Select ROI</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="focusing_clear_roi">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Clear ROI</string>
             </property>
            </widget>
           </item>
@@ -526,7 +543,7 @@
      <x>0</x>
      <y>0</y>
      <width>955</width>
-     <height>18</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">

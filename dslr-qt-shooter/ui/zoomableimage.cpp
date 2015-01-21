@@ -22,10 +22,12 @@
 #include <QImage>
 #include <QDragMoveEvent>
 #include <QDrag>
+#include <QPaintEngine>
 #include <QScrollBar>
 #include <QApplication>
 #include <QDebug>
 #include <QMimeData>
+#include <QRubberBand>
 
 ZoomableImage::~ZoomableImage()
 {
@@ -57,6 +59,13 @@ void ZoomableImage::normalSize()
 
 void ZoomableImage::mousePressEvent(QMouseEvent* event)
 {
+  if(selectionMode) {
+    delete selection;
+    selection = new QRubberBand(QRubberBand::Rectangle, image);
+    selection->move(event->pos() + scrollPoint());
+
+    return;
+  }
     QAbstractScrollArea::mousePressEvent(event);
     if (event->button() == Qt::LeftButton) {
       dragging = true;
@@ -65,8 +74,26 @@ void ZoomableImage::mousePressEvent(QMouseEvent* event)
     }
 }
 
+QPoint ZoomableImage::scrollPoint() const
+{
+  return {horizontalScrollBar()->value(), verticalScrollBar()->value()};
+}
+
+
+void ZoomableImage::startSelectionMode()
+{
+  selectionMode = true;
+  setCursor(Qt::CrossCursor);
+}
+
+
 void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
 {
+  if(selectionMode) {
+    selection->setGeometry({selection->geometry().topLeft(), e->pos() + scrollPoint()});
+    selection->show();
+    return;
+  }
   if(!dragging) return;
     QAbstractScrollArea::mouseMoveEvent(e);
   auto delta = point - e->pos();
@@ -77,6 +104,21 @@ void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
 
 void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 {
+  if(selectionMode) {
+    double hratio = static_cast<double>(image->width()) / static_cast<double>(image->pixmap()->width());
+    double vratio = static_cast<double>(image->height()) / static_cast<double>(image->pixmap()->height());
+    selectionRect = { selection->geometry().x() / hratio,
+		      selection->geometry().y() / vratio, 
+		      selection->geometry().width() / hratio, 
+		      selection->geometry().height() / vratio
+      
+    };
+    qDebug() << "selection: " << selectionRect << ", widget size: " << image->size() << ", image size: " << image->pixmap()->size();
+    qDebug() << "hscroll: " << horizontalScrollBar()->value() << ", vscroll: " << verticalScrollBar()->value();
+    selectionMode = false;
+    setCursor(Qt::OpenHandCursor);
+    return;
+  }
     QAbstractScrollArea::mouseReleaseEvent(e);
     dragging = false;
     QApplication::restoreOverrideCursor();
@@ -103,3 +145,16 @@ void ZoomableImage::setImage(const QImage& image)
 {
   this->image->setPixmap(QPixmap::fromImage(image));
 }
+
+QRect ZoomableImage::roi() const
+{
+  return selectionRect;
+}
+
+void ZoomableImage::clearROI()
+{
+  delete selection;
+  selection = 0;
+  selectionRect = {};
+}
+

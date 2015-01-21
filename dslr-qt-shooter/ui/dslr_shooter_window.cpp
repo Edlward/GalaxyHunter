@@ -108,6 +108,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     }
   }, Qt::QueuedConnection);
 
+  connect(d->ui->focusing_select_roi, SIGNAL(clicked(bool)), d->ui->imageContainer, SLOT(startSelectionMode()));
   auto outputChanged = [=] (bool save) {
     d->ui->outputDir->setEnabled(save);
     d->ui->outputDirButton->setEnabled(save);
@@ -322,7 +323,7 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
       --*remaining;
       ui->imageContainer->setImage(image);
       if(ui->enable_focus_analysis->isChecked()) {
-	QMetaObject::invokeMethod(focus, "analyze", Qt::QueuedConnection, Q_ARG(QImage, image));
+	QMetaObject::invokeMethod(focus, "analyze", Qt::QueuedConnection, Q_ARG(QImage, ui->imageContainer->roi().isNull() ? image : image.copy(ui->imageContainer->roi())));
       } else {
 	ui->focus_analysis_history->clear();
 	ui->focus_analysis_value->display(0);
@@ -330,7 +331,7 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
       for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
 	widget->setEnabled(!image.isNull());
       afterShot();
-      long seconds_interval = QTime{0,0,0}.secsTo(ui->shoot_interval->time());
+      long seconds_interval = *remaining > 0 ? QTime{0,0,0}.secsTo(ui->shoot_interval->time()) : 0;
       timedLambda(seconds_interval * 1000, [=]{ shoot(remaining, afterShot, afterSequence); }, q);
     });
 }

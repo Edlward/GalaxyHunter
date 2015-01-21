@@ -34,6 +34,7 @@ Focus::Focus(QObject* parent) : QObject(parent)
 
 void Focus::analyze(const QImage& image)
 {
+    qDebug() << "analyzing image: " << image.width() << "x" << image.height();
       // Focusing HFR calculation
       FITSImage fits_image;
       if(!fits_image.loadFITS(image)) {

@@ -21,20 +21,24 @@
 #define ZOOMABLEIMAGE_H
 
 #include <QScrollArea>
-
+#include <QRect>
 class QLabel;
 class QImage;
+class QRubberBand;
 class ZoomableImage : public QScrollArea
 {
 Q_OBJECT
 public:
     ~ZoomableImage();
     ZoomableImage(QWidget* parent);
+  QRect roi() const;
 public slots:
   void setImage(const QImage &image);
   void scale(double factor);
   void fitToWindow();
   void normalSize();
+  void startSelectionMode();
+  void clearROI();
 protected:
     virtual void mousePressEvent(QMouseEvent*e);
     virtual void mouseMoveEvent(QMouseEvent* e);
@@ -44,6 +48,10 @@ private:
   QLabel *image;
   double ratio = 1;
   bool dragging = false;
+  bool selectionMode = false;
+  QRect selectionRect;
+  QRubberBand *selection = 0;
+  QPoint scrollPoint() const;
 };
 
 #endif // ZOOMABLEIMAGE_H
