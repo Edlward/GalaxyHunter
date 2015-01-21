@@ -44,7 +44,44 @@ public:
   QPoint scrollPoint() const;
   QPointF ratio() const;
   void scale_selection(QPointF previousRatio);
+  double image_ratio() const;
 };
+
+
+QPoint ZoomableImage::Private::scrollPoint() const
+{
+  return {q->horizontalScrollBar()->value(), q->verticalScrollBar()->value()};
+}
+
+QPointF ZoomableImage::Private::ratio() const
+{
+    double hratio = static_cast<double>(imageWidget->width()) / static_cast<double>(imageWidget->pixmap()->width());
+    double vratio = static_cast<double>(imageWidget->height()) / static_cast<double>(imageWidget->pixmap()->height());
+    return {hratio, vratio};
+}
+
+void ZoomableImage::Private::scale_selection(QPointF previousRatio)
+{
+  if(!selection) return;
+  
+  QPointF _ratio = {ratio().x() / previousRatio.x(),ratio().y() / previousRatio.y()};
+  QRect geometry = selection->geometry();
+  selection->setGeometry(
+    geometry.x() * _ratio.x(),
+    geometry.y() * _ratio.y(),
+    geometry.width() * _ratio.x(),
+    geometry.height() * _ratio.y()
+  );
+}
+
+double ZoomableImage::Private::image_ratio() const
+{
+  return 
+    static_cast<double>(imageWidget->pixmap()->width()) /
+    static_cast<double>(imageWidget->pixmap()->height());
+}
+
+
 
 ZoomableImage::~ZoomableImage()
 {
@@ -66,7 +103,16 @@ void ZoomableImage::fitToWindow()
   QPointF previousRatio = d->ratio();
   setWidgetResizable(true);
   d->imageWidget->adjustSize();
-  d->scale_selection(previousRatio);
+  QSize imageSize = d->imageWidget->pixmap()->size();
+  QSize widgetSize = d->imageWidget->size();
+//   if(imageSize.width() > imageSize.height()) {
+//     widgetSize.setHeight(widgetSize.width()/d->image_ratio() );
+//   } else {
+//     widgetSize.setWidth(widgetSize.height() * d->image_ratio());
+//   }
+//   setWidgetResizable(false);
+//   d->imageWidget->resize(widgetSize);
+//   d->scale_selection(previousRatio);
 }
 
 void ZoomableImage::normalSize()
@@ -77,6 +123,25 @@ void ZoomableImage::normalSize()
     d->_ratio = 1;
     d->scale_selection(previousRatio);
 }
+
+
+
+void ZoomableImage::scale(double factor)
+{
+  Q_ASSERT(d->imageWidget->pixmap());
+  setWidgetResizable(false);
+
+  QPointF previousRatio = d->ratio();
+  d->_ratio *= factor;
+  d->imageWidget->resize(d->_ratio * d->imageWidget->pixmap()->size());
+  auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
+    scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
+  };
+  adjustScrollBar(horizontalScrollBar(), factor);
+  adjustScrollBar(verticalScrollBar(), factor);
+  d->scale_selection(previousRatio);
+}
+
 
 void ZoomableImage::mousePressEvent(QMouseEvent* event)
 {
@@ -93,11 +158,6 @@ void ZoomableImage::mousePressEvent(QMouseEvent* event)
       d->moveOriginPoint = event->pos();
       QApplication::setOverrideCursor(Qt::ClosedHandCursor);
     }
-}
-
-QPoint ZoomableImage::Private::scrollPoint() const
-{
-  return {q->horizontalScrollBar()->value(), q->verticalScrollBar()->value()};
 }
 
 
@@ -123,12 +183,6 @@ void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
   d->moveOriginPoint = e->pos();
 }
 
-QPointF ZoomableImage::Private::ratio() const
-{
-    double hratio = static_cast<double>(imageWidget->width()) / static_cast<double>(imageWidget->pixmap()->width());
-    double vratio = static_cast<double>(imageWidget->height()) / static_cast<double>(imageWidget->pixmap()->height());
-    return {hratio, vratio};
-}
 
 void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 {
@@ -154,36 +208,6 @@ void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 
 
 
-
-void ZoomableImage::scale(double factor)
-{
-  Q_ASSERT(d->imageWidget->pixmap());
-  setWidgetResizable(false);
-
-  QPointF previousRatio = d->ratio();
-  d->_ratio *= factor;
-  d->imageWidget->resize(d->_ratio * d->imageWidget->pixmap()->size());
-  auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
-    scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
-  };
-  adjustScrollBar(horizontalScrollBar(), factor);
-  adjustScrollBar(verticalScrollBar(), factor);
-  d->scale_selection(previousRatio);
-}
-
-void ZoomableImage::Private::scale_selection(QPointF previousRatio)
-{
-  if(!selection) return;
-  
-  QPointF _ratio = {ratio().x() / previousRatio.x(),ratio().y() / previousRatio.y()};
-  QRect geometry = selection->geometry();
-  selection->setGeometry(
-    geometry.x() * _ratio.x(),
-    geometry.y() * _ratio.y(),
-    geometry.width() * _ratio.x(),
-    geometry.height() * _ratio.y()
-  );
-}
 
 
 void ZoomableImage::setImage(const QImage& image)

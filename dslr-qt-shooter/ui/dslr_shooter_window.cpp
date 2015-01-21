@@ -108,7 +108,14 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     }
   }, Qt::QueuedConnection);
 
-  connect(d->ui->focusing_select_roi, SIGNAL(clicked(bool)), d->ui->imageContainer, SLOT(startSelectionMode()));
+  connect(d->ui->focusing_select_roi, &QPushButton::clicked,[=]{
+    d->ui->imageContainer->startSelectionMode();
+    d->ui->focusing_clear_roi->setEnabled(true);
+  });
+  connect(d->ui->focusing_clear_roi, &QPushButton::clicked,[=]{
+    d->ui->imageContainer->clearROI();
+    d->ui->focusing_clear_roi->setEnabled(false);
+  });
   auto outputChanged = [=] (bool save) {
     d->ui->outputDir->setEnabled(save);
     d->ui->outputDirButton->setEnabled(save);
