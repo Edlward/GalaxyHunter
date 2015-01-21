@@ -48,13 +48,15 @@ void ZoomableImage::fitToWindow()
 {
   setWidgetResizable(true);
   image->adjustSize();
+  scale_selection();
 }
 
 void ZoomableImage::normalSize()
 {
     setWidgetResizable(false);
     image->adjustSize();
-    ratio = 1;
+    _ratio = 1;
+    scale_selection();
 }
 
 void ZoomableImage::mousePressEvent(QMouseEvent* event)
@@ -102,11 +104,18 @@ void ZoomableImage::mouseMoveEvent(QMouseEvent* e)
   point = e->pos();
 }
 
+QPointF ZoomableImage::ratio() const
+{
+    double hratio = static_cast<double>(image->width()) / static_cast<double>(image->pixmap()->width());
+    double vratio = static_cast<double>(image->height()) / static_cast<double>(image->pixmap()->height());
+    return {hratio, vratio};
+}
+
 void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 {
   if(selectionMode) {
-    double hratio = static_cast<double>(image->width()) / static_cast<double>(image->pixmap()->width());
-    double vratio = static_cast<double>(image->height()) / static_cast<double>(image->pixmap()->height());
+    double hratio = ratio().x();
+    double vratio = ratio().y();
     selectionRect = { selection->geometry().x() / hratio,
 		      selection->geometry().y() / vratio, 
 		      selection->geometry().width() / hratio, 
@@ -132,14 +141,29 @@ void ZoomableImage::scale(double factor)
   Q_ASSERT(image->pixmap());
   setWidgetResizable(false);
 
-  ratio *= factor;
-  image->resize(ratio * image->pixmap()->size());
+  _ratio *= factor;
+  image->resize(_ratio * image->pixmap()->size());
   auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
     scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
   };
   adjustScrollBar(horizontalScrollBar(), factor);
   adjustScrollBar(verticalScrollBar(), factor);
+  scale_selection();
 }
+
+void ZoomableImage::scale_selection()
+{
+  if(!selection) return;
+  auto _ratio = ratio();
+  QRect geometry = selection->geometry();
+  selection->setGeometry(
+    geometry.x() * _ratio.x(),
+    geometry.y() * _ratio.y(),
+    geometry.width() * _ratio.x(),
+    geometry.height() * _ratio.y()
+  );
+}
+
 
 void ZoomableImage::setImage(const QImage& image)
 {

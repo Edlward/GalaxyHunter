@@ -46,12 +46,14 @@ protected:
 private:
   QPoint point;
   QLabel *image;
-  double ratio = 1;
+  double _ratio = 1;
   bool dragging = false;
   bool selectionMode = false;
   QRect selectionRect;
   QRubberBand *selection = 0;
   QPoint scrollPoint() const;
+  QPointF ratio() const;
+  void scale_selection();
 };
 
 #endif // ZOOMABLEIMAGE_H
