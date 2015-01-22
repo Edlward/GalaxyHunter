@@ -44,7 +44,6 @@ public:
   QPoint scrollPoint() const;
   QPointF ratio() const;
   void scale_selection(QPointF previousRatio);
-  double image_ratio() const;
 };
 
 
@@ -74,13 +73,6 @@ void ZoomableImage::Private::scale_selection(QPointF previousRatio)
   );
 }
 
-double ZoomableImage::Private::image_ratio() const
-{
-  return 
-    static_cast<double>(imageWidget->pixmap()->width()) /
-    static_cast<double>(imageWidget->pixmap()->height());
-}
-
 
 
 ZoomableImage::~ZoomableImage()
@@ -103,16 +95,21 @@ void ZoomableImage::fitToWindow()
   QPointF previousRatio = d->ratio();
   setWidgetResizable(true);
   d->imageWidget->adjustSize();
-  QSize imageSize = d->imageWidget->pixmap()->size();
-  QSize widgetSize = d->imageWidget->size();
-//   if(imageSize.width() > imageSize.height()) {
-//     widgetSize.setHeight(widgetSize.width()/d->image_ratio() );
-//   } else {
-//     widgetSize.setWidth(widgetSize.height() * d->image_ratio());
-//   }
-//   setWidgetResizable(false);
-//   d->imageWidget->resize(widgetSize);
-//   d->scale_selection(previousRatio);
+  auto size_ratio = [](const QSize &s) { return static_cast<double>(s.width()) / static_cast<double>(s.height()); };
+  
+  auto widgetSize = d->imageWidget->size();
+  auto imageSize = d->imageWidget->pixmap()->size();
+  
+  double image_ratio = size_ratio(d->imageWidget->pixmap()->size());
+  double widget_ratio = size_ratio(d->imageWidget->size());
+  if( image_ratio > widget_ratio ) {
+    widgetSize.setHeight(widgetSize.width()/image_ratio );
+  } else {
+    widgetSize.setWidth(widgetSize.height() * image_ratio);
+  }
+  setWidgetResizable(false);
+  d->imageWidget->resize(widgetSize);
+  d->scale_selection(previousRatio);
 }
 
 void ZoomableImage::normalSize()
