@@ -143,8 +143,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>306</width>
-           <height>482</height>
+           <width>314</width>
+           <height>473</height>
           </rect>
          </property>
          <attribute name="label">
@@ -178,8 +178,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>306</width>
-           <height>482</height>
+           <width>314</width>
+           <height>473</height>
           </rect>
          </property>
          <attribute name="label">
@@ -386,8 +386,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>306</width>
-           <height>482</height>
+           <width>314</width>
+           <height>473</height>
           </rect>
          </property>
          <attribute name="label">
@@ -435,8 +435,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>306</width>
-           <height>482</height>
+           <width>314</width>
+           <height>473</height>
           </rect>
          </property>
          <attribute name="label">
@@ -488,7 +488,20 @@
            </spacer>
           </item>
           <item row="4" column="0" colspan="2">
-           <widget class="QwtPlot" name="focusing_graph" native="true"/>
+           <widget class="QwtPlot" name="focusing_graph" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
           </item>
           <item row="5" column="0" colspan="2">
            <widget class="QLabel" name="focus_analysis_history">
@@ -505,6 +518,9 @@
           </item>
           <item row="1" column="0">
            <widget class="QPushButton" name="focusing_select_roi">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Select ROI</string>
             </property>
@@ -543,12 +559,12 @@
      <x>0</x>
      <y>0</y>
      <width>955</width>
-     <height>20</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
     <property name="title">
-     <string>Camera</string>
+     <string>&amp;Camera</string>
     </property>
     <addaction name="actionScan"/>
     <addaction name="actionSet_Camera"/>
@@ -556,12 +572,12 @@
    </widget>
    <widget class="QMenu" name="menuGuider">
     <property name="title">
-     <string>Guider</string>
+     <string>&amp;Guider</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Fi&amp;le</string>
     </property>
     <addaction name="actionClean_Log_Messages"/>
     <addaction name="actionOpen_Last_Images_Folde"/>
@@ -588,27 +604,27 @@
   </action>
   <action name="actionScan">
    <property name="text">
-    <string>Scan</string>
+    <string>&amp;Scan</string>
    </property>
   </action>
   <action name="actionSet_Camera">
    <property name="text">
-    <string>Set Camera</string>
+    <string>Set &amp;Camera</string>
    </property>
   </action>
   <action name="actionSet_Preview_Interval">
    <property name="text">
-    <string>Set Preview Interval...</string>
+    <string>Set &amp;Preview Interval...</string>
    </property>
   </action>
   <action name="actionClean_Log_Messages">
    <property name="text">
-    <string>Clean Log Messages</string>
+    <string>&amp;Clean Log Messages</string>
    </property>
   </action>
   <action name="actionOpen_Last_Images_Folde">
    <property name="text">
-    <string>Open Last Images Folder</string>
+    <string>&amp;Open Last Images Folder</string>
    </property>
   </action>
   <action name="action_Quit">

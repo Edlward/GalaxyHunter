@@ -152,6 +152,12 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->focusing_graph->setAutoReplot(true);
   d->ui->focusing_graph->setAxisAutoScale(true);
   connect(d->focus, SIGNAL(focus_rate(double)), this, SLOT(focus_received(double)), Qt::QueuedConnection);
+  connect(d->ui->enable_focus_analysis, &QCheckBox::toggled, [=](bool checked) {
+    d->ui->focusing_select_roi->setEnabled(checked);
+    if(!checked)
+      d->ui->imageContainer->clearROI();
+  });
+  //d->ui->focusing_graph->resize(d->ui->toolBox->width(), d->ui->toolBox->width()*1.5);
   autoScan->start(1000);
 }
 

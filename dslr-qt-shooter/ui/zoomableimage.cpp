@@ -33,10 +33,9 @@
 class ZoomableImage::Private {
 public:
   Private(ZoomableImage *q) : q(q) {}
-  const ZoomableImage *q;
+  ZoomableImage *q;
   QPoint moveOriginPoint;
   QLabel *imageWidget;
-  double _ratio = 1;
   bool dragging = false;
   bool selectionMode = false;
   QRect selectionRect;
@@ -44,6 +43,7 @@ public:
   QPoint scrollPoint() const;
   QPointF ratio() const;
   void scale_selection(QPointF previousRatio);
+  void fix_proportions();
 };
 
 
@@ -95,29 +95,35 @@ void ZoomableImage::fitToWindow()
   QPointF previousRatio = d->ratio();
   setWidgetResizable(true);
   d->imageWidget->adjustSize();
+  d->fix_proportions();
+  d->scale_selection(previousRatio);
+}
+
+void ZoomableImage::Private::fix_proportions()
+{
   auto size_ratio = [](const QSize &s) { return static_cast<double>(s.width()) / static_cast<double>(s.height()); };
   
-  auto widgetSize = d->imageWidget->size();
-  auto imageSize = d->imageWidget->pixmap()->size();
+  auto widgetSize = imageWidget->size();
+  auto imageSize = imageWidget->pixmap()->size();
   
-  double image_ratio = size_ratio(d->imageWidget->pixmap()->size());
-  double widget_ratio = size_ratio(d->imageWidget->size());
+  double image_ratio = size_ratio(imageWidget->pixmap()->size());
+  double widget_ratio = size_ratio(imageWidget->size());
   if( image_ratio > widget_ratio ) {
     widgetSize.setHeight(widgetSize.width()/image_ratio );
   } else {
     widgetSize.setWidth(widgetSize.height() * image_ratio);
   }
-  setWidgetResizable(false);
-  d->imageWidget->resize(widgetSize);
-  d->scale_selection(previousRatio);
+  q->setWidgetResizable(false);
+  imageWidget->resize(widgetSize);
 }
+
 
 void ZoomableImage::normalSize()
 {
   QPointF previousRatio = d->ratio();
     setWidgetResizable(false);
     d->imageWidget->adjustSize();
-    d->_ratio = 1;
+    d->fix_proportions();
     d->scale_selection(previousRatio);
 }
 
@@ -129,13 +135,14 @@ void ZoomableImage::scale(double factor)
   setWidgetResizable(false);
 
   QPointF previousRatio = d->ratio();
-  d->_ratio *= factor;
-  d->imageWidget->resize(d->_ratio * d->imageWidget->pixmap()->size());
+  auto newRatio = previousRatio.x() * factor;
+  d->imageWidget->resize(newRatio * d->imageWidget->pixmap()->size());
   auto adjustScrollBar = [=](QScrollBar *scrollBar, double factor){
     scrollBar->setValue(int(factor * scrollBar->value() + ((factor - 1) * scrollBar->pageStep()/2)));
   };
   adjustScrollBar(horizontalScrollBar(), factor);
   adjustScrollBar(verticalScrollBar(), factor);
+  d->fix_proportions();
   d->scale_selection(previousRatio);
 }
 
@@ -209,7 +216,8 @@ void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 
 void ZoomableImage::setImage(const QImage& image)
 {
-  this->d->imageWidget->setPixmap(QPixmap::fromImage(image));
+  d->imageWidget->setPixmap(QPixmap::fromImage(image));
+  d->fix_proportions();
 }
 
 QRect ZoomableImage::roi() const
