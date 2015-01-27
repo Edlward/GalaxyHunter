@@ -21,6 +21,7 @@
 #include "qwt-src/qwt_plot_curve.h"
 #include <qwt-src/qwt_plot_histogram.h>
 #include <qwt-src/qwt_symbol.h>
+#include "telescope/telescopecontrol.h"
 
 using namespace std;
 
@@ -48,6 +49,7 @@ public:
     void shoot(std::shared_ptr< long int > remaining, function< void() > afterShot, function< void() > afterSequence);
     Focus *focus;
     QwtPlotCurve *focus_curve;
+    TelescopeControl *telescopeControl;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -57,6 +59,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent), d(new Private(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() ))
 {
   d->ui->setupUi(this);
+  d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
   connect(d->ui->actionClean_Log_Messages, &QAction::triggered, [=]{ d->ui->logWindow->clear(); });

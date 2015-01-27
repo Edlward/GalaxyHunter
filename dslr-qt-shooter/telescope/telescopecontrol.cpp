@@ -18,6 +18,87 @@
  */
 
 #include "telescopecontrol.h"
+#include "indidevapi.h"
+#include "indicom.h"
+#include "baseclient.h"
+
+class TelescopeControl::Private : public INDI::BaseClient {
+public:
+  Private(TelescopeControl *q);
+  virtual void newBLOB(IBLOB* bp);
+  virtual void newDevice(INDI::BaseDevice* dp);
+  virtual void newLight(ILightVectorProperty* lvp);
+  virtual void newMessage(INDI::BaseDevice* dp, int messageID);
+  virtual void newNumber(INumberVectorProperty* nvp);
+  virtual void newProperty(INDI::Property* property);
+  virtual void newSwitch(ISwitchVectorProperty* svp);
+  virtual void newText(ITextVectorProperty* tvp);
+  virtual void removeProperty(INDI::Property* property);
+  virtual void serverConnected();
+  virtual void serverDisconnected(int exit_code);
+private:
+  TelescopeControl *q;
+};
+
+void TelescopeControl::Private::newBLOB(IBLOB* bp)
+{
+
+}
+
+void TelescopeControl::Private::newDevice(INDI::BaseDevice* dp)
+{
+
+}
+
+void TelescopeControl::Private::newLight(ILightVectorProperty* lvp)
+{
+
+}
+
+void TelescopeControl::Private::newMessage(INDI::BaseDevice* dp, int messageID)
+{
+
+}
+
+void TelescopeControl::Private::newNumber(INumberVectorProperty* nvp)
+{
+
+}
+
+void TelescopeControl::Private::newProperty(INDI::Property* property)
+{
+
+}
+
+void TelescopeControl::Private::newSwitch(ISwitchVectorProperty* svp)
+{
+
+}
+
+void TelescopeControl::Private::newText(ITextVectorProperty* tvp)
+{
+
+}
+
+TelescopeControl::Private::Private(TelescopeControl* q) : q(q)
+{
+
+}
+
+void TelescopeControl::Private::removeProperty(INDI::Property* property)
+{
+
+}
+
+void TelescopeControl::Private::serverConnected()
+{
+
+}
+
+void TelescopeControl::Private::serverDisconnected(int exit_code)
+{
+
+}
 
 TelescopeControl::~TelescopeControl()
 {

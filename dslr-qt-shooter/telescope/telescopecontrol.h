@@ -20,7 +20,8 @@
 #ifndef TELESCOPECONTROL_H
 #define TELESCOPECONTROL_H
 
-#include <qt5/QtCore/QtCore>
+#include <QtCore>
+#include <memory>
 
 class TelescopeControl : public QObject
 {
@@ -31,6 +32,9 @@ public:
     TelescopeControl(QObject* parent = 0);
 
 private:
+  class Private;
+  friend class Private;
+  std::unique_ptr<Private> d;
 };
 
 #endif // TELESCOPECONTROL_H
