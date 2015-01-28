@@ -21,6 +21,7 @@
 #include "indidevapi.h"
 #include "indicom.h"
 #include "baseclient.h"
+#include <QDebug>
 
 class TelescopeControl::Private : public INDI::BaseClient {
 public:
@@ -104,8 +105,15 @@ TelescopeControl::~TelescopeControl()
 {
 }
 
-TelescopeControl::TelescopeControl(QObject* parent)
+TelescopeControl::TelescopeControl(QObject* parent) : d(new Private(this))
 {
 }
+
+void TelescopeControl::open(QString address, int port)
+{
+  d->setServer(address.toLocal8Bit().constData(), port);
+  qDebug() << "Opening INDI server connection: " << d->connectServer();
+}
+
 
 #include "telescopecontrol.moc"

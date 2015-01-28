@@ -17,6 +17,7 @@
 #include <QComboBox>
 #include <QMessageBox>
 #include <QLCDNumber>
+#include <QInputDialog>
 #include "imaging/focus.h"
 #include "qwt-src/qwt_plot_curve.h"
 #include <qwt-src/qwt_plot_histogram.h>
@@ -135,6 +136,14 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->ui->shoot_interval, &QTimeEdit::timeChanged, [=](const QTime &t) { d->settings.setValue("shoot_interval", t); });
   connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool t) { d->settings.setValue("dither_after_each_shot", t); });
   connect(d->ui->shoot_mode, SIGNAL(activated(int)), this, SLOT(shootModeChanged(int)));
+  connect(d->ui->actionConnectTelescope, &QAction::triggered, [=] {
+    QString server = QInputDialog::getText(this, tr("Telescope"), tr("Enter telescope address (example: localhost:7624)"), QLineEdit::Normal, "localhost:7624");
+    if(server != "") {
+      QString address = server.split(":").first();
+      int port = server.split(":").last().toInt();
+      d->telescopeControl->open(address, port);
+    }
+  });
   QTimer *autoScan = new QTimer(this);
   autoScan->setSingleShot(true);
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);

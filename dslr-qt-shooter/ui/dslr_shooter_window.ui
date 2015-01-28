@@ -143,8 +143,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>473</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -178,8 +178,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>473</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -386,8 +386,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>473</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -435,8 +435,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>473</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -559,7 +559,7 @@
      <x>0</x>
      <y>0</y>
      <width>955</width>
-     <height>18</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
@@ -568,24 +568,23 @@
     </property>
     <addaction name="actionScan"/>
     <addaction name="actionSet_Camera"/>
-    <addaction name="actionSet_Preview_Interval"/>
-   </widget>
-   <widget class="QMenu" name="menuGuider">
-    <property name="title">
-     <string>&amp;Guider</string>
-    </property>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>Fi&amp;le</string>
     </property>
     <addaction name="actionClean_Log_Messages"/>
-    <addaction name="actionOpen_Last_Images_Folde"/>
     <addaction name="action_Quit"/>
    </widget>
+   <widget class="QMenu" name="menuTelescope">
+    <property name="title">
+     <string>Telescope</string>
+    </property>
+    <addaction name="actionConnectTelescope"/>
+   </widget>
    <addaction name="menuCamera"/>
-   <addaction name="menuGuider"/>
    <addaction name="menuFile"/>
+   <addaction name="menuTelescope"/>
   </widget>
   <action name="actionConnect_LinGuider">
    <property name="text">
@@ -633,6 +632,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionConnectTelescope">
+   <property name="text">
+    <string>Connect...</string>
    </property>
   </action>
  </widget>

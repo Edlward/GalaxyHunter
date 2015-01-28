@@ -30,6 +30,9 @@ class TelescopeControl : public QObject
 public:
     ~TelescopeControl();
     TelescopeControl(QObject* parent = 0);
+    
+public slots:
+    void open(QString address, int port);
 
 private:
   class Private;
