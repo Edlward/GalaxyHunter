@@ -21,6 +21,7 @@
 #include "indidevapi.h"
 #include "indicom.h"
 #include "baseclient.h"
+#include <basedevice.h>
 #include <QDebug>
 
 class TelescopeControl::Private : public INDI::BaseClient {
@@ -43,64 +44,70 @@ private:
 
 void TelescopeControl::Private::newBLOB(IBLOB* bp)
 {
-
+  qDebug() << __PRETTY_FUNCTION__ << ": blob label: " << bp->label << ", name: " << bp->bvp->name;
 }
 
 void TelescopeControl::Private::newDevice(INDI::BaseDevice* dp)
 {
-
+  qDebug() << __PRETTY_FUNCTION__ << ": device driver: " << dp->getDriverName() << ", name: " << dp->getDeviceName();
 }
 
 void TelescopeControl::Private::newLight(ILightVectorProperty* lvp)
 {
-
+  qDebug() << __PRETTY_FUNCTION__ << ": label: " << lvp->label << ", name: " << lvp->name;
 }
 
 void TelescopeControl::Private::newMessage(INDI::BaseDevice* dp, int messageID)
 {
+  qDebug() << __PRETTY_FUNCTION__ << ": device=" << dp->getDeviceName() << ", messageID: " << messageID;
 
 }
 
 void TelescopeControl::Private::newNumber(INumberVectorProperty* nvp)
 {
+  qDebug() << __PRETTY_FUNCTION__;
 
 }
 
 void TelescopeControl::Private::newProperty(INDI::Property* property)
 {
+  qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getName();
 
 }
 
 void TelescopeControl::Private::newSwitch(ISwitchVectorProperty* svp)
 {
+  qDebug() << __PRETTY_FUNCTION__ << ": label=" << svp->label;
 
 }
 
 void TelescopeControl::Private::newText(ITextVectorProperty* tvp)
 {
-
-}
-
-TelescopeControl::Private::Private(TelescopeControl* q) : q(q)
-{
+  qDebug() << __PRETTY_FUNCTION__ << ": label=" << tvp->label;
 
 }
 
 void TelescopeControl::Private::removeProperty(INDI::Property* property)
 {
-
+  qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getName();
 }
 
 void TelescopeControl::Private::serverConnected()
 {
-
+  qDebug() << __PRETTY_FUNCTION__;
 }
 
 void TelescopeControl::Private::serverDisconnected(int exit_code)
 {
-
+  qDebug() << __PRETTY_FUNCTION__ << ": exit code: " <<exit_code;
 }
 
+
+TelescopeControl::Private::Private(TelescopeControl* q) : q(q)
+{
+  qDebug() << __PRETTY_FUNCTION__;
+
+}
 TelescopeControl::~TelescopeControl()
 {
 }
