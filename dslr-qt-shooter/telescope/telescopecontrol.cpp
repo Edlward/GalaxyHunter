@@ -124,13 +124,5 @@ void TelescopeControl::open(QString address, int port)
   qDebug() << "Opening INDI server connection: " << d->connectServer();
 }
 
-QStringList TelescopeControl::devices() const
-{
-  QStringList t;
-  auto devices = d->getDevices();
-  std::transform(begin(devices), end(devices), std::back_inserter(t), [](INDI::BaseDevice *dev){ return QString{dev->getDeviceName() }; });
-  return t;
-}
-
 
 #include "telescopecontrol.moc"

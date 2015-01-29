@@ -17,21 +17,22 @@
  *
  */
 
-#ifndef TELESCOPECONTROL_H
-#define TELESCOPECONTROL_H
+#ifndef DEVICESPANEL_H
+#define DEVICESPANEL_H
 
-#include <QtCore>
-#include <memory>
+#include <QDialog>
 
-class TelescopeControl : public QObject
+namespace Ui
+{
+class DevicesPanel;
+}
+
+class DevicesPanel : public QDialog
 {
     Q_OBJECT
-
 public:
-    ~TelescopeControl();
-    TelescopeControl(QObject* parent = 0);
-public slots:
-    void open(QString address, int port);
+    ~DevicesPanel();
+    DevicesPanel(class TelescopeControl *telescopeControl, QWidget *parent = 0, Qt::WindowFlags f = 0);
 
 private:
   class Private;
@@ -39,4 +40,4 @@ private:
   std::unique_ptr<Private> d;
 };
 
-#endif // TELESCOPECONTROL_H
+#endif // DEVICESPANEL_H
