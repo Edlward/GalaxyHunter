@@ -5,4 +5,4 @@ include_directories(${LIBINDI_INCLUDE_DIRS})
 
 add_library(dslr_telescope STATIC telescopecontrol.cpp)
 set(dslr_static_LIBS ${dslr_static_LIBS} dslr_telescope PARENT_SCOPE)
-set(dslr_dependencies ${dslr_dependencies} ${LIBINDI_LDFLAGS} ${INDI_CLIENT_LIBRARIES} z PARENT_SCOPE)
+set(dslr_dependencies ${dslr_dependencies} ${LIBINDI_LDFLAGS} ${INDI_CLIENT_LIBRARIES} z pthread PARENT_SCOPE)

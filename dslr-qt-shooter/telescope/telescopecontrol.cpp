@@ -71,7 +71,7 @@ void TelescopeControl::Private::newNumber(INumberVectorProperty* nvp)
 
 void TelescopeControl::Private::newProperty(INDI::Property* property)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getName();
+  qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getLabel() << ", name=" << property->getLabel() << ", type=" << property->getType();
 
 }
 
