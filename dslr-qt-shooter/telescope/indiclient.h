@@ -17,41 +17,29 @@
  *
  */
 
-#include "telescopecontrol.h"
-#include "indiclient.h"
-#include "devicespanel.h"
+#ifndef INDICLIENT_H
+#define INDICLIENT_H
 
-#include <QDebug>
+#include <QObject>
+#include <memory>
+#include <indibase.h>
 
-class TelescopeControl::Private {
+class INDIClient : public QObject
+{
+    Q_OBJECT
+
 public:
-  Private(TelescopeControl *q);
-  std::shared_ptr<INDIClient> indiClient;
+    ~INDIClient();
+    INDIClient(QObject* parent = 0);
+    std::vector< INDI::BaseDevice* > devices() const;
+public slots:
+  void open(const QString &address, int port);
+signals:
+  void devicesUpdated();
 private:
-  TelescopeControl *q;
+  class Private;
+  friend class Private;
+  std::unique_ptr<Private> d;
 };
 
-TelescopeControl::Private::Private(TelescopeControl* q) : q(q)
-{
-}
-
-TelescopeControl::~TelescopeControl()
-{
-}
-
-TelescopeControl::TelescopeControl(QObject* parent) : d(new Private(this))
-{
-  d->indiClient = std::make_shared<INDIClient>();
-}
-
-void TelescopeControl::open(QString address, int port)
-{
-  d->indiClient->open(address, port);
-}
-
-void TelescopeControl::showControlPanel()
-{
-  (new DevicesPanel(d->indiClient))->show();
-}
-
-#include "telescopecontrol.moc"
+#endif // INDICLIENT_H

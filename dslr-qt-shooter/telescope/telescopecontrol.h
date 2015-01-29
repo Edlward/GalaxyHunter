@@ -22,7 +22,7 @@
 
 #include <QtCore>
 #include <memory>
-
+class QDialog;
 class TelescopeControl : public QObject
 {
     Q_OBJECT
@@ -32,7 +32,7 @@ public:
     TelescopeControl(QObject* parent = 0);
 public slots:
     void open(QString address, int port);
-
+    void showControlPanel();
 private:
   class Private;
   friend class Private;

@@ -21,18 +21,20 @@
 #define DEVICESPANEL_H
 
 #include <QDialog>
+#include <memory>
 
 namespace Ui
 {
 class DevicesPanel;
 }
+class INDIClient;
 
 class DevicesPanel : public QDialog
 {
     Q_OBJECT
 public:
     ~DevicesPanel();
-    DevicesPanel(class TelescopeControl *telescopeControl, QWidget *parent = 0, Qt::WindowFlags f = 0);
+    DevicesPanel(const std::shared_ptr<INDIClient> &indiClient, QWidget *parent = 0, Qt::WindowFlags f = 0);
 
 private:
   class Private;

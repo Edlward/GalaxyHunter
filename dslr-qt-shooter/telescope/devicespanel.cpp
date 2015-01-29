@@ -19,19 +19,38 @@
 
 #include "devicespanel.h"
 #include "telescopecontrol.h"
+#include "indiclient.h"
 #include "ui_devicespanel.h"
+#include <QStandardItemModel>
+#include "basedevice.h"
 
 class DevicesPanel::Private {
 public:
-  Private(DevicesPanel *q);
+  Private(const std::shared_ptr<INDIClient> &indiClient, DevicesPanel *q);
+    void populateDevices();
+      std::shared_ptr<INDIClient> indiClient;
       Ui::DevicesPanel* ui;
+      QStandardItemModel devices;
+      template<typename T> long long l_ptr(T *t) const { return reinterpret_cast<long long>(t); }
+      template<typename T> T* ptr_l(long long l) const { return reinterpret_cast<T*>(l); }
+      void showDevicePage(INDI::BaseDevice *device);
 private:
   DevicesPanel *q;
 };
 
-DevicesPanel::Private::Private(DevicesPanel* q) : q(q)
+DevicesPanel::Private::Private(const std::shared_ptr< INDIClient >& indiClient, DevicesPanel* q) : indiClient(indiClient), q(q)
 {
+}
 
+
+void DevicesPanel::Private::populateDevices()
+{
+  devices.clear();
+  for(auto device: indiClient->devices()) {
+    QStandardItem *deviceItem = new QStandardItem(device->getDeviceName());
+    deviceItem->setData(l_ptr(device));
+    devices.appendRow(deviceItem);
+  }
 }
 
 
@@ -39,9 +58,25 @@ DevicesPanel::~DevicesPanel()
 {
 }
 
-DevicesPanel::DevicesPanel(TelescopeControl *telescopeControl, QWidget* parent, Qt::WindowFlags f)
-  : QDialog(parent, f), d(new Private{this})
+DevicesPanel::DevicesPanel(const std::shared_ptr<INDIClient> &indiClient, QWidget* parent, Qt::WindowFlags f)
+  : QDialog(parent, f), d(new Private{indiClient, this})
 {
     d->ui = new Ui::DevicesPanel;
     d->ui->setupUi(this);
+    d->ui->devices->setModel(&d->devices);
+    d->populateDevices();
+    connect(d->indiClient.get(), &INDIClient::devicesUpdated, [=] { d->populateDevices(); });
+    connect(d->ui->devices, &QListView::activated, [=](const QModelIndex &i) {
+      QStandardItem *item = d->devices.itemFromIndex(i);
+      d->showDevicePage( d->ptr_l<INDI::BaseDevice>( item->data().toLongLong() ) );
+    });
 }
+
+void DevicesPanel::Private::showDevicePage(INDI::BaseDevice* device)
+{
+  qDebug() << "On Device: " << device->getDeviceName();
+  for(INDI::Property *property: *device->getProperties()) {
+    qDebug() << "Property: " << property->getLabel();
+  }
+}
+

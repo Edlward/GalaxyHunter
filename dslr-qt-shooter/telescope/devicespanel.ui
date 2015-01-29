@@ -12,7 +12,11 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QListView" name="devices"/>
+    <widget class="QListView" name="devices">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+    </widget>
    </item>
    <item row="0" column="1">
     <widget class="QStackedWidget" name="devicePanel">
