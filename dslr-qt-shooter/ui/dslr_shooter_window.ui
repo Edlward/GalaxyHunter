@@ -143,8 +143,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>34</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -178,8 +178,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>198</width>
-           <height>365</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -386,8 +386,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>111</width>
-           <height>84</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -435,8 +435,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>473</height>
+           <width>319</width>
+           <height>482</height>
           </rect>
          </property>
          <attribute name="label">
@@ -559,7 +559,7 @@
      <x>0</x>
      <y>0</y>
      <width>955</width>
-     <height>18</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
@@ -581,6 +581,7 @@
      <string>&amp;Telescope</string>
     </property>
     <addaction name="actionConnectTelescope"/>
+    <addaction name="action_Devices_Control_Panel"/>
    </widget>
    <addaction name="menuCamera"/>
    <addaction name="menuFile"/>
@@ -637,6 +638,11 @@
   <action name="actionConnectTelescope">
    <property name="text">
     <string>&amp;Connect Server...</string>
+   </property>
+  </action>
+  <action name="action_Devices_Control_Panel">
+   <property name="text">
+    <string>Control Panel</string>
    </property>
   </action>
  </widget>

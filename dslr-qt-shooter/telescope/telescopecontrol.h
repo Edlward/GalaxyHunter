@@ -30,7 +30,7 @@ class TelescopeControl : public QObject
 public:
     ~TelescopeControl();
     TelescopeControl(QObject* parent = 0);
-    
+    QStringList devices() const;
 public slots:
     void open(QString address, int port);
 

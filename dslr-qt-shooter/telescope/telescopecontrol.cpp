@@ -22,6 +22,7 @@
 #include "indicom.h"
 #include "baseclient.h"
 #include <basedevice.h>
+#include <inditelescope.h>
 #include <QDebug>
 
 class TelescopeControl::Private : public INDI::BaseClient {
@@ -38,6 +39,7 @@ public:
   virtual void removeProperty(INDI::Property* property);
   virtual void serverConnected();
   virtual void serverDisconnected(int exit_code);
+
 private:
   TelescopeControl *q;
 };
@@ -120,6 +122,14 @@ void TelescopeControl::open(QString address, int port)
 {
   d->setServer(address.toLocal8Bit().constData(), port);
   qDebug() << "Opening INDI server connection: " << d->connectServer();
+}
+
+QStringList TelescopeControl::devices() const
+{
+  QStringList t;
+  auto devices = d->getDevices();
+  std::transform(begin(devices), end(devices), std::back_inserter(t), [](INDI::BaseDevice *dev){ return QString{dev->getDeviceName() }; });
+  return t;
 }
 
 
