@@ -131,5 +131,10 @@ vector< INDI::BaseDevice *> INDIClient::devices() const
   return d->getDevices();
 }
 
+void INDIClient::sendNewSwitch(ISwitchVectorProperty* s)
+{
+  d->sendNewSwitch(s);
+}
+
 
 #include "indiclient.moc"

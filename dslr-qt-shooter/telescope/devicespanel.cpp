@@ -20,6 +20,7 @@
 #include "devicespanel.h"
 #include "telescopecontrol.h"
 #include "indiclient.h"
+#include "devicepage.h"
 #include "ui_devicespanel.h"
 #include <QStandardItemModel>
 #include "basedevice.h"
@@ -34,6 +35,7 @@ public:
       template<typename T> long long l_ptr(T *t) const { return reinterpret_cast<long long>(t); }
       template<typename T> T* ptr_l(long long l) const { return reinterpret_cast<T*>(l); }
       void showDevicePage(INDI::BaseDevice *device);
+      QMap<INDI::BaseDevice*, DevicePage*> pages;
 private:
   DevicesPanel *q;
 };
@@ -69,14 +71,27 @@ DevicesPanel::DevicesPanel(const std::shared_ptr<INDIClient> &indiClient, QWidge
     connect(d->ui->devices, &QListView::activated, [=](const QModelIndex &i) {
       QStandardItem *item = d->devices.itemFromIndex(i);
       d->showDevicePage( d->ptr_l<INDI::BaseDevice>( item->data().toLongLong() ) );
-    });
+    });  
 }
 
 void DevicesPanel::Private::showDevicePage(INDI::BaseDevice* device)
 {
+  if(pages.count(device) == 0) {
+    pages[device] = new DevicePage{device, indiClient};
+    ui->devicePanel->addWidget(pages[device]);
+  }
+  ui->devicePanel->setCurrentWidget(pages[device]);
   qDebug() << "On Device: " << device->getDeviceName();
+  static std::map<INDI_TYPE, QString> types {
+    {INDI_NUMBER, "INDI_NUMBER"}, /*!< INumberVectorProperty. */
+    {INDI_SWITCH, "INDI_SWITCH"}, /*!< ISwitchVectorProperty. */
+    {INDI_TEXT, "INDI_TEXT"},   /*!< ITextVectorProperty. */
+    {INDI_LIGHT, "INDI_LIGHT"},  /*!< ILightVectorProperty. */
+    {INDI_BLOB, "INDI_BLOB"},    /*!< IBLOBVectorProperty. */
+    {INDI_UNKNOWN, "INDI_UNKNOWN"}
+  };
   for(INDI::Property *property: *device->getProperties()) {
-    qDebug() << "Property: " << property->getLabel();
+    qDebug() << "Property: " << property->getLabel() << ", type: " << types[property->getType()];
   }
 }
 

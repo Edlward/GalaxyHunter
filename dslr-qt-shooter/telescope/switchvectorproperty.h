@@ -1,6 +1,6 @@
 /*
  * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2015  Marco Gulino <marco.gulino@bhuman.it>
+ * Copyright (C) 2015  Marco Gulino <email>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,30 +17,27 @@
  *
  */
 
-#ifndef INDICLIENT_H
-#define INDICLIENT_H
+#ifndef SWITCHVECTORPROPERTY_H
+#define SWITCHVECTORPROPERTY_H
 
-#include <QObject>
-#include <memory>
-#include <indibase.h>
+#include <QWidget>
+#include <indiapi.h>
+#include "vectorproperty.h"
 
-class INDIClient : public QObject
+namespace Ui
+{
+class SwitchVectorProperty;
+}
+
+class SwitchVectorProperty : public VectorProperty
 {
     Q_OBJECT
-
 public:
-    ~INDIClient();
-    INDIClient(QObject* parent = 0);
-    std::vector< INDI::BaseDevice* > devices() const;
-    void sendNewSwitch(ISwitchVectorProperty *s);
-public slots:
-  void open(const QString &address, int port);
-signals:
-  void devicesUpdated();
+    ~SwitchVectorProperty();
+    SwitchVectorProperty(ISwitchVectorProperty* property, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent = 0);
+
 private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> d;
+  std::vector<std::shared_ptr<Ui::SwitchVectorProperty*>> uis;
 };
 
-#endif // INDICLIENT_H
+#endif // SWITCHVECTORPROPERTY_H

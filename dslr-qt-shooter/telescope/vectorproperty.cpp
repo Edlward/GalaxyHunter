@@ -1,6 +1,6 @@
 /*
  * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2015  Marco Gulino <marco.gulino@bhuman.it>
+ * Copyright (C) 2015  Marco Gulino <email>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,30 +17,15 @@
  *
  */
 
-#ifndef INDICLIENT_H
-#define INDICLIENT_H
+#include "vectorproperty.h"
 
-#include <QObject>
-#include <memory>
-#include <indibase.h>
-
-class INDIClient : public QObject
+VectorProperty::VectorProperty(const QString& title, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent) : QGroupBox(title, parent)
 {
-    Q_OBJECT
 
-public:
-    ~INDIClient();
-    INDIClient(QObject* parent = 0);
-    std::vector< INDI::BaseDevice* > devices() const;
-    void sendNewSwitch(ISwitchVectorProperty *s);
-public slots:
-  void open(const QString &address, int port);
-signals:
-  void devicesUpdated();
-private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> d;
-};
+}
 
-#endif // INDICLIENT_H
+VectorProperty::~VectorProperty()
+{
+
+}
+
