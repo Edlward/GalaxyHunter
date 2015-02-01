@@ -37,7 +37,6 @@ NumberVectorProperty::NumberVectorProperty(INumberVectorProperty* property, cons
 QWidget* NumberVectorProperty::propertyWidget(int index)
 {
   INumber sw = _property->np[index];
-  qDebug() << "label: " << sw.label << ", name: " << sw.name;
   
   QWidget *widget = new QWidget;
   QHBoxLayout *layout = new QHBoxLayout(widget);

@@ -35,7 +35,6 @@ LightVectorProperty::LightVectorProperty(ILightVectorProperty* property, const s
 QWidget* LightVectorProperty::propertyWidget(int index)
 {
   ILight sw = _property->lp[index];
-  qDebug() << "label: " << sw.label << ", name: " << sw.name;
   
   QWidget *widget = new QWidget;
   QHBoxLayout *layout = new QHBoxLayout(widget);

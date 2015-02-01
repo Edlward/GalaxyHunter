@@ -39,7 +39,6 @@ SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::
 QPushButton* SwitchVectorProperty::propertyWidget(int index)
 {
     auto sw = _property->sp[index];
-    qDebug() << "label: " << sw.label << ", name: " << sw.name;
     auto button = new QPushButton(sw.label, this);
     button->setCheckable(true);
     button->setChecked(sw.s == ISS_ON);

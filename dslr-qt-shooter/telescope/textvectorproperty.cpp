@@ -37,7 +37,6 @@ TextVectorProperty::TextVectorProperty(ITextVectorProperty* property, const std:
 QWidget* TextVectorProperty::propertyWidget(int index)
 {
   IText sw = _property->tp[index];
-  qDebug() << "label: " << sw.label << ", name: " << sw.name;
   
   QWidget *widget = new QWidget;
   QHBoxLayout *layout = new QHBoxLayout(widget);
