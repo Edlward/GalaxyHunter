@@ -42,6 +42,7 @@ signals:
   void newSwitch(ISwitchVectorProperty*);
   void newText(ITextVectorProperty*);
   void newNumber(INumberVectorProperty*);
+  void newLight(ILightVectorProperty*);
   void propertyRemoved(INDI::Property*);
   void propertyAdded(INDI::Property*);
 private:

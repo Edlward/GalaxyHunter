@@ -81,17 +81,5 @@ void DevicesPanel::Private::showDevicePage(INDI::BaseDevice* device)
     ui->devicePanel->addWidget(pages[device]);
   }
   ui->devicePanel->setCurrentWidget(pages[device]);
-  qDebug() << "On Device: " << device->getDeviceName();
-  static std::map<INDI_TYPE, QString> types {
-    {INDI_NUMBER, "INDI_NUMBER"}, /*!< INumberVectorProperty. */
-    {INDI_SWITCH, "INDI_SWITCH"}, /*!< ISwitchVectorProperty. */
-    {INDI_TEXT, "INDI_TEXT"},   /*!< ITextVectorProperty. */
-    {INDI_LIGHT, "INDI_LIGHT"},  /*!< ILightVectorProperty. */
-    {INDI_BLOB, "INDI_BLOB"},    /*!< IBLOBVectorProperty. */
-    {INDI_UNKNOWN, "INDI_UNKNOWN"}
-  };
-  for(INDI::Property *property: *device->getProperties()) {
-    qDebug() << "Property: " << property->getLabel() << ", type: " << types[property->getType()];
-  }
 }
 

@@ -14,6 +14,7 @@ add_library(dslr_telescope STATIC
   switchvectorproperty.cpp
   textvectorproperty.cpp
   numbervectorproperty.cpp
+  lightvectorproperty.cpp
   devicepage.cpp
   ${dslr_telescope_UI}
 )

@@ -58,7 +58,7 @@ void INDIClient::Private::newDevice(INDI::BaseDevice* dp)
 
 void INDIClient::Private::newLight(ILightVectorProperty* lvp)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": label: " << lvp->label << ", name: " << lvp->name;
+  q->newLight(lvp);
 }
 
 void INDIClient::Private::newMessage(INDI::BaseDevice* dp, int messageID)
