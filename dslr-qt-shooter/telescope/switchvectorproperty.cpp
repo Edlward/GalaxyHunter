@@ -31,37 +31,10 @@ SwitchVectorProperty::~SwitchVectorProperty()
 SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent)
   : QGroupBox(parent), VectorProperty(p, indiClient, this)
 {
-  connect(indiClient.get(), SIGNAL(newSwitch(ISwitchVectorProperty*)), this, SLOT(load(ISwitchVectorProperty*)), Qt::QueuedConnection);
+  connect(indiClient.get(), &INDIClient::newSwitch, this, [=](ISwitchVectorProperty *p) { load(p); }, Qt::QueuedConnection);
   load(p);
 }
 
-void SwitchVectorProperty::load(ISwitchVectorProperty* property)
-{
-  if(property != _property)
-    return;
-  for(auto w: buttons) {
-    delete w.second;
-  }
-  buttons.clear();
-  qDebug() << "switch number: " << property->nsp;
-  for(int i=0; i<property->nsp; i++) {
-    auto sw = property->sp[i];
-    qDebug() << "label: " << sw.label << ", name: " << sw.name;
-    auto button = new QPushButton(sw.label, this);
-    buttons[QString{sw.name}] = button;
-    button->setCheckable(true);
-    button->setChecked(sw.s == ISS_ON);
-    connect(button, &QRadioButton::toggled, [=](bool checked) {
-      qDebug() << button->text() << "toggled: " << checked;
-      for(int i=0; i<property->nsp; i++) {
-	bool check = (std::string{sw.name} == std::string{property->sp[i].name}) ? checked : !checked;
-	property->sp[i].s = check ? ISS_ON : ISS_OFF;
-      }
-      _indiClient->sendNewSwitch(property);
-    });
-    _layout->addWidget(button);
-  }
-}
 
 QPushButton* SwitchVectorProperty::propertyWidget(int index)
 {
@@ -79,7 +52,7 @@ QPushButton* SwitchVectorProperty::propertyWidget(int index)
       }
       _indiClient->sendNewSwitch(_property);
     });
-    _layout->addWidget(button);
+    return button;
 }
 
 

@@ -25,6 +25,7 @@
 #include <indiapi.h>
 #include <indiproperty.h>
 #include <QBoxLayout>
+#include <list>
 
 class INDIClient;
 
@@ -43,6 +44,20 @@ protected:
   std::shared_ptr<INDIClient> _indiClient;
   QHBoxLayout *_layout;
   virtual Widget *propertyWidget(int index) = 0;
+  std::list<Widget *> _widgets;
+  void load(T *property) {
+    if(property != _property)
+      return;
+    for(auto widget: _widgets) {
+      delete widget;
+    }
+    _widgets.clear();
+    for(int i=0; i<property->nsp; i++) {
+      auto widget = propertyWidget(i);
+      _widgets.push_back(widget);
+      _layout->addWidget(widget);
+    }
+  }
 };
 
 #endif // VECTORPROPERTY_H

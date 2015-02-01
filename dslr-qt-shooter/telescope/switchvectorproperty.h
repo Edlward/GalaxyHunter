@@ -45,7 +45,6 @@ private:
   std::map<QString, QPushButton*> buttons;
 
 private slots:
-  void load(ISwitchVectorProperty *property);
 };
 
 #endif // SWITCHVECTORPROPERTY_H
