@@ -19,7 +19,6 @@
 
 #include "switchvectorproperty.h"
 #include "indiclient.h"
-#include "ui_switchvectorproperty.h"
 
 #include <QDebug>
 #include <QBoxLayout>
@@ -36,10 +35,6 @@ SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::
   setLayout(layout = new QHBoxLayout);
   auto name = std::string{p->name};
   connect(indiClient.get(), SIGNAL(newSwitch(ISwitchVectorProperty*)), this, SLOT(load(ISwitchVectorProperty*)), Qt::QueuedConnection);
-//   connect(indiClient.get(), &INDIClient::propertyRemoved, this, [=](INDI::Property *removed){
-//     if(removed != reinterpret_cast<INDI::Property*>(_property) ) return;
-//       deleteLater();
-//   }, Qt::QueuedConnection);
   load(p);
 }
 

@@ -5,7 +5,6 @@ include_directories(${LIBINDI_INCLUDE_DIRS})
 include_directories(/usr/include/libnova) # TODO: find_package?
 qt5_wrap_ui(dslr_telescope_UI 
   devicespanel.ui
-  switchvectorproperty.ui
 )
 
 add_library(dslr_telescope STATIC 
