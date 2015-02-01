@@ -40,11 +40,6 @@ public:
 
 protected:
   virtual QPushButton *propertyWidget(int index);
-private:
-  std::vector<std::shared_ptr<Ui::SwitchVectorProperty*>> uis;
-  std::map<QString, QPushButton*> buttons;
-
-private slots:
 };
 
 #endif // SWITCHVECTORPROPERTY_H

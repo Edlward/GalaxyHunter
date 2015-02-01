@@ -26,33 +26,33 @@
 #include <indiproperty.h>
 #include <QBoxLayout>
 #include <list>
+#include "indiclient.h"
 
 class INDIClient;
 
-template<typename T, typename Widget>
+template<typename T, typename Widget, typename Layout = QHBoxLayout>
 class VectorProperty
 {
 public:
     VectorProperty(T *property, const std::shared_ptr<INDIClient> &indiClient, QGroupBox *groupBox) : _property(property), _indiClient(indiClient) {
       groupBox->setTitle(property->label);
-      groupBox->setLayout(_layout = new QHBoxLayout);
-
+      groupBox->setLayout(_layout = new Layout);
     }
     ~VectorProperty() {}
 protected:
   T *_property;
   std::shared_ptr<INDIClient> _indiClient;
-  QHBoxLayout *_layout;
+  Layout *_layout;
   virtual Widget *propertyWidget(int index) = 0;
   std::list<Widget *> _widgets;
-  void load(T *property) {
+  void load(T *property, int subproperties) {
     if(property != _property)
       return;
     for(auto widget: _widgets) {
       delete widget;
     }
     _widgets.clear();
-    for(int i=0; i<property->nsp; i++) {
+    for(int i=0; i<subproperties; i++) {
       auto widget = propertyWidget(i);
       _widgets.push_back(widget);
       _layout->addWidget(widget);

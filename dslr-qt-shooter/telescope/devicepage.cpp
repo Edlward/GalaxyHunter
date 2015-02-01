@@ -20,6 +20,7 @@
 #include "devicepage.h"
 #include "switchvectorproperty.h"
 #include "indiclient.h"
+#include "textvectorproperty.h"
 #include <QBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
@@ -79,7 +80,7 @@ DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClien
     std::map<INDI_TYPE, std::function<QWidget*(INDI::Property *)>> widgetsFactory {
       {INDI_NUMBER, [=](INDI::Property *p){ qDebug() << "INDI_NUMBER NOT MAPPED YET"; return new QWidget; } },
       {INDI_SWITCH, [=](INDI::Property *p){ return new SwitchVectorProperty{property->getSwitch(), indiClient, this}; } },
-      {INDI_TEXT, [=](INDI::Property *p){ qDebug() << "INDI_TEXT NOT MAPPED YET"; return new QWidget; } },
+      {INDI_TEXT, [=](INDI::Property *p){ return new TextVectorProperty(property->getText(), indiClient, this); } },
       {INDI_LIGHT, [=](INDI::Property *p){ qDebug() << "INDI_LIGHT NOT MAPPED YET"; return new QWidget; } },
       {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB NOT MAPPED YET"; return new QWidget; } },
       {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN NOT MAPPED YET"; return new QWidget; } },

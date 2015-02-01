@@ -138,5 +138,10 @@ void INDIClient::sendNewSwitch(ISwitchVectorProperty* s)
   d->sendNewSwitch(s);
 }
 
+void INDIClient::sendNewText(ITextVectorProperty* _property)
+{
+  d->sendNewText(_property);
+}
+
 
 #include "indiclient.moc"

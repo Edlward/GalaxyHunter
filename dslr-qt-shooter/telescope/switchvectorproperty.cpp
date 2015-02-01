@@ -31,8 +31,8 @@ SwitchVectorProperty::~SwitchVectorProperty()
 SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent)
   : QGroupBox(parent), VectorProperty(p, indiClient, this)
 {
-  connect(indiClient.get(), &INDIClient::newSwitch, this, [=](ISwitchVectorProperty *p) { load(p); }, Qt::QueuedConnection);
-  load(p);
+  connect(indiClient.get(), &INDIClient::newSwitch, this, [=](ISwitchVectorProperty *p) { load(p, p->nsp); }, Qt::QueuedConnection);
+  load(_property, _property->nsp);
 }
 
 
@@ -41,7 +41,6 @@ QPushButton* SwitchVectorProperty::propertyWidget(int index)
     auto sw = _property->sp[index];
     qDebug() << "label: " << sw.label << ", name: " << sw.name;
     auto button = new QPushButton(sw.label, this);
-    buttons[QString{sw.name}] = button;
     button->setCheckable(true);
     button->setChecked(sw.s == ISS_ON);
     connect(button, &QRadioButton::toggled, [=](bool checked) {
