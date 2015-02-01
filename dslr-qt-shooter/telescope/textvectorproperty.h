@@ -20,7 +20,7 @@
 #ifndef TEXTVECTORPROPERTY_H
 #define TEXTVECTORPROPERTY_H
 
-#include <qt/QtWidgets/QGroupBox>
+#include <QGroupBox>
 #include "vectorproperty.h"
 
 class TextVectorProperty : public QGroupBox, public VectorProperty<ITextVectorProperty, QWidget, QVBoxLayout>
