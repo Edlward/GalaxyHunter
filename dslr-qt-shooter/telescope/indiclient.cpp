@@ -69,8 +69,7 @@ void INDIClient::Private::newMessage(INDI::BaseDevice* dp, int messageID)
 
 void INDIClient::Private::newNumber(INumberVectorProperty* nvp)
 {
-  qDebug() << __PRETTY_FUNCTION__;
-
+  q->newNumber(nvp);
 }
 
 void INDIClient::Private::newProperty(INDI::Property* property)
@@ -81,15 +80,13 @@ void INDIClient::Private::newProperty(INDI::Property* property)
 
 void INDIClient::Private::newSwitch(ISwitchVectorProperty* svp)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": label=" << svp->label;
   q->newSwitch(svp);
 
 }
 
 void INDIClient::Private::newText(ITextVectorProperty* tvp)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": label=" << tvp->label;
-
+  q->newText(tvp);
 }
 
 void INDIClient::Private::removeProperty(INDI::Property* property)
@@ -141,6 +138,11 @@ void INDIClient::sendNewSwitch(ISwitchVectorProperty* s)
 void INDIClient::sendNewText(ITextVectorProperty* _property)
 {
   d->sendNewText(_property);
+}
+
+void INDIClient::sendNewNumber(INumberVectorProperty* _property)
+{
+  d->sendNewNumber(_property);
 }
 
 

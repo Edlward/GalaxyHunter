@@ -21,31 +21,39 @@
 #include "switchvectorproperty.h"
 #include "indiclient.h"
 #include "textvectorproperty.h"
+#include "numbervectorproperty.h"
 #include <QBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QScrollArea>
 #include <QMap>
 #include <QDebug>
 
 
-class TabPage : public QWidget {
+class TabPage : public QScrollArea {
   Q_OBJECT
 public:
   TabPage(QWidget *parent = 0);
   void addPropertyWidget(QWidget *widget);
 private:
-  QVBoxLayout *layout;
+  QVBoxLayout *_layout;
   QSpacerItem *spacer;
+  QWidget *_widget;
 };
 
-TabPage::TabPage(QWidget* parent): QWidget(parent)
+TabPage::TabPage(QWidget* parent): QScrollArea(parent)
 {
-  setLayout(layout = new QVBoxLayout);
-  layout->addSpacerItem(spacer = new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
+  _widget = new QWidget;
+  _widget->setLayout(_layout = new QVBoxLayout);
+  setWidget(_widget);
+  setWidgetResizable(true);
+ _layout->addSpacerItem(spacer = new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
 }
+
 void TabPage::addPropertyWidget(QWidget* widget)
 {
-  layout->insertWidget(layout->count()-1, widget);
+//     _layout->addWidget(widget);
+  _layout->insertWidget(_layout->count()-1, widget);
 }
 
 
@@ -62,7 +70,8 @@ private:
 };
 
 
-DevicePage::Private::Private(INDI::BaseDevice* device, const std::shared_ptr< INDIClient >& client, DevicePage* q) : device(device), client(client), q(q)
+DevicePage::Private::Private(INDI::BaseDevice* device, const std::shared_ptr< INDIClient >& client, DevicePage* q) 
+  : device(device), client(client), q(q)
 {
 
 }
@@ -74,18 +83,18 @@ DevicePage::~DevicePage()
 
 DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClient> &indiClient, QWidget* parent) : QTabWidget(parent), d(new Private{device, indiClient, this})
 {
+  std::map<INDI_TYPE, std::function<QWidget*(INDI::Property *)>> widgetsFactory {
+    {INDI_NUMBER, [=](INDI::Property *p){ return new NumberVectorProperty{p->getNumber(), indiClient}; } },
+    {INDI_SWITCH, [=](INDI::Property *p){ return new SwitchVectorProperty{p->getSwitch(), indiClient}; } },
+    {INDI_TEXT, [=](INDI::Property *p){ return new TextVectorProperty{p->getText(), indiClient}; } },
+    {INDI_LIGHT, [=](INDI::Property *p){ qDebug() << "INDI_LIGHT NOT MAPPED YET"; return new QWidget; } },
+    {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB NOT MAPPED YET"; return new QWidget; } },
+    {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN NOT MAPPED YET"; return new QWidget; } },
+  };
   auto addProperty = [=](INDI::Property *property) {
     if(d->properties.count(property))
       return;
-    std::map<INDI_TYPE, std::function<QWidget*(INDI::Property *)>> widgetsFactory {
-      {INDI_NUMBER, [=](INDI::Property *p){ qDebug() << "INDI_NUMBER NOT MAPPED YET"; return new QWidget; } },
-      {INDI_SWITCH, [=](INDI::Property *p){ return new SwitchVectorProperty{property->getSwitch(), indiClient, this}; } },
-      {INDI_TEXT, [=](INDI::Property *p){ return new TextVectorProperty(property->getText(), indiClient, this); } },
-      {INDI_LIGHT, [=](INDI::Property *p){ qDebug() << "INDI_LIGHT NOT MAPPED YET"; return new QWidget; } },
-      {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB NOT MAPPED YET"; return new QWidget; } },
-      {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN NOT MAPPED YET"; return new QWidget; } },
-    };
-    d->properties[property] = widgetsFactory[property->getType()](property);
+    d->properties[property] = widgetsFactory.at(property->getType())(property);
     d->page(property->getGroupName())->addPropertyWidget(d->properties[property]);
   };
   

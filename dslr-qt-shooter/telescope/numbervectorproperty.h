@@ -17,37 +17,22 @@
  *
  */
 
-#ifndef INDICLIENT_H
-#define INDICLIENT_H
+#ifndef NUMBERVECTORPROPERTY_H
+#define NUMBERVECTORPROPERTY_H
 
-#include <QObject>
-#include <memory>
-#include <indibase.h>
+#include <QGroupBox>
+#include "vectorproperty.h"
 
-class INDIClient : public QObject
+class NumberVectorProperty : public QGroupBox, public VectorProperty<INumberVectorProperty, QWidget, QVBoxLayout>
 {
     Q_OBJECT
 
 public:
-    ~INDIClient();
-    INDIClient(QObject* parent = 0);
-    std::vector< INDI::BaseDevice* > devices() const;
-    void sendNewSwitch(ISwitchVectorProperty *s);
-    void sendNewText(ITextVectorProperty* _property);
-    void sendNewNumber(INumberVectorProperty* _property);
-public slots:
-  void open(const QString &address, int port);
-signals:
-  void devicesUpdated();
-  void newSwitch(ISwitchVectorProperty*);
-  void newText(ITextVectorProperty*);
-  void newNumber(INumberVectorProperty*);
-  void propertyRemoved(INDI::Property*);
-  void propertyAdded(INDI::Property*);
+    ~NumberVectorProperty();
+    NumberVectorProperty(INumberVectorProperty* property, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent = 0);
+protected:
+    virtual QWidget* propertyWidget(int index);
 private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> d;
 };
 
-#endif // INDICLIENT_H
+#endif // NUMBERVECTORPROPERTY_H
