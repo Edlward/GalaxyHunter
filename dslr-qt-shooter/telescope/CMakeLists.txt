@@ -10,8 +10,7 @@ qt5_wrap_ui(dslr_telescope_UI
 add_library(dslr_telescope STATIC 
   telescopecontrol.cpp
   devicespanel.cpp
-  indiclient.cpp
-  vectorproperty.cpp 
+  indiclient.cpp 
   switchvectorproperty.cpp
   devicepage.cpp
   ${dslr_telescope_UI}

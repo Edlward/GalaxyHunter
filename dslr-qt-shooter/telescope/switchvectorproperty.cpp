@@ -21,7 +21,6 @@
 #include "indiclient.h"
 
 #include <QDebug>
-#include <QBoxLayout>
 #include <QRadioButton>
 #include <QPushButton>
 #include <indiproperty.h>
@@ -30,10 +29,8 @@ SwitchVectorProperty::~SwitchVectorProperty()
 }
 
 SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent)
-  : VectorProperty(p->label, indiClient, parent), _property(p), indiClient(indiClient)
+  : QGroupBox(parent), VectorProperty(p, indiClient, this)
 {
-  setLayout(layout = new QHBoxLayout);
-  auto name = std::string{p->name};
   connect(indiClient.get(), SIGNAL(newSwitch(ISwitchVectorProperty*)), this, SLOT(load(ISwitchVectorProperty*)), Qt::QueuedConnection);
   load(p);
 }
@@ -60,9 +57,29 @@ void SwitchVectorProperty::load(ISwitchVectorProperty* property)
 	bool check = (std::string{sw.name} == std::string{property->sp[i].name}) ? checked : !checked;
 	property->sp[i].s = check ? ISS_ON : ISS_OFF;
       }
-      indiClient->sendNewSwitch(property);
+      _indiClient->sendNewSwitch(property);
     });
-    layout->addWidget(button);
+    _layout->addWidget(button);
   }
 }
+
+QPushButton* SwitchVectorProperty::propertyWidget(int index)
+{
+    auto sw = _property->sp[index];
+    qDebug() << "label: " << sw.label << ", name: " << sw.name;
+    auto button = new QPushButton(sw.label, this);
+    buttons[QString{sw.name}] = button;
+    button->setCheckable(true);
+    button->setChecked(sw.s == ISS_ON);
+    connect(button, &QRadioButton::toggled, [=](bool checked) {
+      qDebug() << button->text() << "toggled: " << checked;
+      for(int i=0; i<_property->nsp; i++) {
+	bool check = (std::string{sw.name} == std::string{_property->sp[i].name}) ? checked : !checked;
+	_property->sp[i].s = check ? ISS_ON : ISS_OFF;
+      }
+      _indiClient->sendNewSwitch(_property);
+    });
+    _layout->addWidget(button);
+}
+
 

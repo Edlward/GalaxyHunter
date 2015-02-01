@@ -31,19 +31,18 @@ namespace Ui
 class SwitchVectorProperty;
 }
 
-class SwitchVectorProperty : public VectorProperty
+class SwitchVectorProperty : public QGroupBox, public VectorProperty<ISwitchVectorProperty, QPushButton>
 {
     Q_OBJECT
 public:
     ~SwitchVectorProperty();
     SwitchVectorProperty(ISwitchVectorProperty* property, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent = 0);
 
+protected:
+  virtual QPushButton *propertyWidget(int index);
 private:
   std::vector<std::shared_ptr<Ui::SwitchVectorProperty*>> uis;
-  ISwitchVectorProperty* _property;
   std::map<QString, QPushButton*> buttons;
-  std::shared_ptr<INDIClient> indiClient;
-  QBoxLayout *layout;
 
 private slots:
   void load(ISwitchVectorProperty *property);

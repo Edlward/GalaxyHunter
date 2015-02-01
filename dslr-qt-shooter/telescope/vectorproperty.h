@@ -24,16 +24,25 @@
 #include <QGroupBox>
 #include <indiapi.h>
 #include <indiproperty.h>
+#include <QBoxLayout>
 
 class INDIClient;
 
-class VectorProperty : public QGroupBox
+template<typename T, typename Widget>
+class VectorProperty
 {
-  Q_OBJECT
 public:
-    VectorProperty(const QString &title, const std::shared_ptr<INDIClient> &indiClient, QWidget *parent = 0);
-    ~VectorProperty();
+    VectorProperty(T *property, const std::shared_ptr<INDIClient> &indiClient, QGroupBox *groupBox) : _property(property), _indiClient(indiClient) {
+      groupBox->setTitle(property->label);
+      groupBox->setLayout(_layout = new QHBoxLayout);
 
+    }
+    ~VectorProperty() {}
+protected:
+  T *_property;
+  std::shared_ptr<INDIClient> _indiClient;
+  QHBoxLayout *_layout;
+  virtual Widget *propertyWidget(int index) = 0;
 };
 
 #endif // VECTORPROPERTY_H
