@@ -22,6 +22,8 @@
 
 #include <memory>
 #include <QGroupBox>
+#include <indiapi.h>
+#include <indiproperty.h>
 
 class INDIClient;
 
@@ -31,8 +33,6 @@ class VectorProperty : public QGroupBox
 public:
     VectorProperty(const QString &title, const std::shared_ptr<INDIClient> &indiClient, QWidget *parent = 0);
     ~VectorProperty();
-
-
 
 };
 

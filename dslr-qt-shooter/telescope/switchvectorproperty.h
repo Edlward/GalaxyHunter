@@ -24,6 +24,8 @@
 #include <indiapi.h>
 #include "vectorproperty.h"
 
+class QBoxLayout;
+class QPushButton;
 namespace Ui
 {
 class SwitchVectorProperty;
@@ -38,6 +40,13 @@ public:
 
 private:
   std::vector<std::shared_ptr<Ui::SwitchVectorProperty*>> uis;
+  ISwitchVectorProperty* _property;
+  std::map<QString, QPushButton*> buttons;
+  std::shared_ptr<INDIClient> indiClient;
+  QBoxLayout *layout;
+
+private slots:
+  void load(ISwitchVectorProperty *property);
 };
 
 #endif // SWITCHVECTORPROPERTY_H

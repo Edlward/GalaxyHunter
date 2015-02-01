@@ -20,12 +20,12 @@
 #ifndef DEVICEPAGE_H
 #define DEVICEPAGE_H
 
-#include <QWidget>
+#include <QTabWidget>
 #include <basedevice.h>
 #include <memory>
 
 class INDIClient;
-class DevicePage : public QWidget
+class DevicePage : public QTabWidget
 {
     Q_OBJECT
 

@@ -75,13 +75,14 @@ void INDIClient::Private::newNumber(INumberVectorProperty* nvp)
 
 void INDIClient::Private::newProperty(INDI::Property* property)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getLabel() << ", name=" << property->getLabel() << ", type=" << property->getType();
-
+  qDebug() << __PRETTY_FUNCTION__ << property << ": label=" << property->getLabel() << ", name=" << property->getLabel() << ", type=" << property->getType();
+  q->propertyAdded(property);
 }
 
 void INDIClient::Private::newSwitch(ISwitchVectorProperty* svp)
 {
   qDebug() << __PRETTY_FUNCTION__ << ": label=" << svp->label;
+  q->newSwitch(svp);
 
 }
 
@@ -94,6 +95,7 @@ void INDIClient::Private::newText(ITextVectorProperty* tvp)
 void INDIClient::Private::removeProperty(INDI::Property* property)
 {
   qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getName();
+  q->propertyRemoved(property);
 }
 
 void INDIClient::Private::serverConnected()

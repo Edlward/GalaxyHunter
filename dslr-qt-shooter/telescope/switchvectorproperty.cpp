@@ -25,17 +25,38 @@
 #include <QBoxLayout>
 #include <QRadioButton>
 #include <QPushButton>
+#include <indiproperty.h>
 SwitchVectorProperty::~SwitchVectorProperty()
 {
 }
 
-SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* property, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent) : VectorProperty(property->label, indiClient, parent)
+SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent)
+  : VectorProperty(p->label, indiClient, parent), _property(p), indiClient(indiClient)
 {
-  QBoxLayout *layout;
   setLayout(layout = new QHBoxLayout);
+  auto name = std::string{p->name};
+  connect(indiClient.get(), SIGNAL(newSwitch(ISwitchVectorProperty*)), this, SLOT(load(ISwitchVectorProperty*)), Qt::QueuedConnection);
+//   connect(indiClient.get(), &INDIClient::propertyRemoved, this, [=](INDI::Property *removed){
+//     if(removed != reinterpret_cast<INDI::Property*>(_property) ) return;
+//       deleteLater();
+//   }, Qt::QueuedConnection);
+  load(p);
+}
+
+void SwitchVectorProperty::load(ISwitchVectorProperty* property)
+{
+  if(property != _property)
+    return;
+  for(auto w: buttons) {
+    delete w.second;
+  }
+  buttons.clear();
+  qDebug() << "switch number: " << property->nsp;
   for(int i=0; i<property->nsp; i++) {
     auto sw = property->sp[i];
+    qDebug() << "label: " << sw.label << ", name: " << sw.name;
     auto button = new QPushButton(sw.label, this);
+    buttons[QString{sw.name}] = button;
     button->setCheckable(true);
     button->setChecked(sw.s == ISS_ON);
     connect(button, &QRadioButton::toggled, [=](bool checked) {
@@ -49,3 +70,4 @@ SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* property, cons
     layout->addWidget(button);
   }
 }
+

@@ -24,12 +24,38 @@
 #include <QLabel>
 #include <qlayoutitem.h>
 #include <QLine>
+#include <QMap>
+
+
+class TabPage : public QWidget {
+  Q_OBJECT
+public:
+  TabPage(QWidget *parent = 0);
+  void addPropertyWidget(QWidget *widget);
+private:
+  QVBoxLayout *layout;
+  QSpacerItem *spacer;
+};
+
+TabPage::TabPage(QWidget* parent): QWidget(parent)
+{
+  setLayout(layout = new QVBoxLayout);
+  layout->addSpacerItem(spacer = new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
+}
+void TabPage::addPropertyWidget(QWidget* widget)
+{
+  layout->insertWidget(layout->count()-1, widget);
+}
+
 
 class DevicePage::Private {
 public:
   Private(INDI::BaseDevice *device, const std::shared_ptr<INDIClient> &client, DevicePage *q);
   INDI::BaseDevice *device;
   std::shared_ptr<INDIClient> client;
+  QMap<INDI::Property*, QWidget*> properties;
+  TabPage *page(const QString &name);
+  QMap<QString, TabPage*> pages;
 private:
   DevicePage *q;
 };
@@ -45,23 +71,47 @@ DevicePage::~DevicePage()
 {
 }
 
-DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClient> &indiClient, QWidget* parent) : QWidget(parent), d(new Private{device, indiClient, this})
+DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClient> &indiClient, QWidget* parent) : QTabWidget(parent), d(new Private{device, indiClient, this})
 {
-  QBoxLayout *layout;
-  setLayout(layout = new QVBoxLayout);
-  layout->addWidget(new QLabel(device->getDeviceName(), this) );
-  auto hLine = new QFrame(this);
-  hLine->setFrameShape(QFrame::HLine);
-  hLine->setFrameShadow(QFrame::Sunken);
-  hLine->setLineWidth(1);
-  layout->addWidget(hLine);
-  for(INDI::Property *property: *device->getProperties()) {
+//   QBoxLayout *layout;
+//   setLayout(layout = new QVBoxLayout);
+//   layout->addWidget(new QLabel(device->getDeviceName(), this) );
+//   auto hLine = new QFrame(this);
+//   hLine->setFrameShape(QFrame::HLine);
+//   hLine->setFrameShadow(QFrame::Sunken);
+//   hLine->setLineWidth(1);
+//   layout->addWidget(hLine);
+  
+  auto addProperty = [=](INDI::Property *property) {
+    if(d->properties.count(property))
+      return;
     if(property->getType() == INDI_SWITCH) {
       SwitchVectorProperty *switchWidget = new SwitchVectorProperty(property->getSwitch(), indiClient, this);
-      layout->addWidget(switchWidget);
+      d->properties[property] = switchWidget;
+      d->page(property->getGroupName())->addPropertyWidget(switchWidget);
     }
+  };
+  
+  connect(indiClient.get(), &INDIClient::propertyAdded, this, addProperty, Qt::AutoConnection);
+  connect(indiClient.get(), &INDIClient::propertyRemoved, this, [=](INDI::Property *p) {
+    delete d->properties.value(p, nullptr);
+    d->properties.remove(p);
+  }, Qt::AutoConnection);
+  
+  for(INDI::Property *property: *device->getProperties()) {
+    addProperty(property);
   }
-  layout->addStretch();
+//   layout->addStretch();
 }
+
+TabPage* DevicePage::Private::page(const QString& name)
+{
+  if(!pages.count(name)) {
+    pages[name] = new TabPage;
+    q->addTab(pages[name], name);
+  }
+  return pages[name];
+}
+
 
 #include "devicepage.moc"

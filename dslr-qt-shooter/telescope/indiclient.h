@@ -37,6 +37,9 @@ public slots:
   void open(const QString &address, int port);
 signals:
   void devicesUpdated();
+  void newSwitch(ISwitchVectorProperty*);
+  void propertyRemoved(INDI::Property*);
+  void propertyAdded(INDI::Property*);
 private:
   class Private;
   friend class Private;
