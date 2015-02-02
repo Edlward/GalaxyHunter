@@ -42,4 +42,5 @@ INDIDouble::INDIDouble(double value, const QString& format) : _value(value)
     return;
   _valid = true;
   _text = QString(s).trimmed();
+  _text.replace(",", ".");
 }
