@@ -18,6 +18,7 @@
  */
 
 #include "lightvectorproperty.h"
+#include "ledindicator.h"
 #include <QLabel>
 #include <QDebug>
 
@@ -32,17 +33,16 @@ LightVectorProperty::LightVectorProperty(ILightVectorProperty* property, const s
   load(property, property->nlp);
 }
 
-QWidget* LightVectorProperty::propertyWidget(int index)
+LedIndicator* LightVectorProperty::propertyWidget(int index)
 {
   ILight sw = _property->lp[index];
-  
-  QWidget *widget = new QWidget;
-  QHBoxLayout *layout = new QHBoxLayout(widget);
-  widget->setLayout(layout);
-  layout->addWidget(new QLabel(sw.label));
-  QLabel *status = new QLabel(QString::number(sw.s));
-  layout->addWidget(status);
-  return widget;
+  static std::map<IPState, LedIndicator::Color> colors {
+    { IPS_BUSY, LedIndicator::Red },
+    { IPS_OK, LedIndicator::Green },
+    { IPS_IDLE, LedIndicator::Blue },
+    { IPS_ALERT, LedIndicator::Yellow },
+  };
+  return new LedIndicator{colors[sw.s], sw.label};
 }
 
 

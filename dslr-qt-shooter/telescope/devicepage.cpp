@@ -22,6 +22,7 @@
 #include "indiclient.h"
 #include "textvectorproperty.h"
 #include "numbervectorproperty.h"
+#include "ledindicator.h"
 #include <QBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>

@@ -16,6 +16,7 @@ add_library(dslr_telescope STATIC
   numbervectorproperty.cpp
   lightvectorproperty.cpp
   devicepage.cpp
+  ledindicator.cpp
   ${dslr_telescope_UI}
 )
 

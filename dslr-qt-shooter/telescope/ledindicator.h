@@ -17,23 +17,26 @@
  *
  */
 
-#ifndef LIGHTVECTORPROPERTY_H
-#define LIGHTVECTORPROPERTY_H
+#ifndef LEDINDICATOR_H
+#define LEDINDICATOR_H
 
-#include <qt5/QtWidgets/QGroupBox>
-#include "vectorproperty.h"
+#include <QWidget>
 
-class LedIndicator;
-class LightVectorProperty : public QGroupBox, public VectorProperty<ILightVectorProperty, LedIndicator, QVBoxLayout>
+class QLabel;
+class LedIndicator : public QWidget
 {
     Q_OBJECT
 
 public:
-    ~LightVectorProperty();
-    LightVectorProperty(ILightVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent = 0);
-protected:
-    virtual LedIndicator* propertyWidget(int index);
+  enum Color { Red, Blue, Green, Yellow };
+    ~LedIndicator();
+    LedIndicator(Color color, const QString &text = {}, QWidget* parent = 0);
+public slots:
+  void setText(const QString &text);
+  void setColor(Color color);
 private:
+  QLabel *text;
+  QLabel *image;
 };
 
-#endif // LIGHTVECTORPROPERTY_H
+#endif // LEDINDICATOR_H
