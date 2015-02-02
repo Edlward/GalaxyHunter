@@ -4,8 +4,16 @@
 class TestINDIDouble : public QObject {
 Q_OBJECT
 private slots:
+  void testInvalidFormat();
   void testDoubleToStringPrintf();
 };
+
+void TestINDIDouble::testInvalidFormat()
+{
+  auto result = INDIDouble(1.5, "abcq123");
+  QVERIFY2(! result, "Result should be not valid");
+}
+
 
 void TestINDIDouble::testDoubleToStringPrintf()
 {

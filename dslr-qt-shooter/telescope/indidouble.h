@@ -36,7 +36,7 @@ public:
 private:
   double _value;
   QString _text;
-  bool _valid;
+  bool _valid = false;
 };
 
 #endif // INDIDOUBLECONVERTER_H

@@ -26,7 +26,10 @@ INDIDouble::INDIDouble(const QString& text) : _text(text)
 
 INDIDouble::INDIDouble(double value, const QString& format) : _value(value)
 {
-  std::string formatted = (boost::format(format.toStdString()) % value).str();
-  _valid = true;
-  _text = QString::fromStdString(formatted);
+  try {
+    std::string formatted = (boost::format(format.toStdString()) % value).str();
+    _valid = true;
+    _text = QString::fromStdString(formatted);
+  } catch(std::exception &e) {
+  }
 }
