@@ -19,17 +19,27 @@
 
 #include "indidouble.h"
 #include <boost/format.hpp>
+#include <iostream>
+#include <sstream>
+#include <libindi/indicom.h>
 
-INDIDouble::INDIDouble(const QString& text) : _text(text)
+INDIDouble::INDIDouble(const QString& text, const QString& format) : _text(text), _value(std::numeric_limits<double>::min())
 {
+  std::stringstream s(text.toStdString());
+  s >> _value;
+  _valid = true;
+//   if(std::numeric_limits<double>::min() == _value) {
+//     _value = 0;
+//     _valid = false;
+//   }
 }
 
 INDIDouble::INDIDouble(double value, const QString& format) : _value(value)
 {
-  try {
-    std::string formatted = (boost::format(format.toStdString()) % value).str();
-    _valid = true;
-    _text = QString::fromStdString(formatted);
-  } catch(std::exception &e) {
-  }
+  char s[256];
+  int size = numberFormat(s, format.toLocal8Bit().constData(), _value);
+  if(size <= 0)
+    return;
+  _valid = true;
+  _text = QString(s).trimmed();
 }

@@ -26,7 +26,7 @@ class INDIDouble
 {
 public:
   INDIDouble(double value, const QString &format);
-  INDIDouble(const QString &text);
+  INDIDouble(const QString &text, const QString &format);
   inline bool valid() const { return _valid; }
   inline double value() const { return _value; }
   inline QString text() const { return _text; }
@@ -34,7 +34,7 @@ public:
   inline operator double() const { return value(); }
   inline operator QString() const { return text(); }
 private:
-  double _value;
+  double _value = 0;
   QString _text;
   bool _valid = false;
 };
