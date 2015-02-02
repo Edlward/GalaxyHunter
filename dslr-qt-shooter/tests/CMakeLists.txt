@@ -6,9 +6,9 @@ add_executable(test_sequence testsequence.cpp)
 target_link_libraries(test_sequence Qt5::Test)
 add_test(NAME sequence COMMAND test_sequence)
 
-add_executable(testindidoubleformat testindidoubleformat.cpp)
-target_link_libraries(testindidoubleformat Qt5::Test)
-add_test(NAME indidoubleformat COMMAND test_sequence)
+add_executable(testindidouble testindidouble.cpp ${CMAKE_SOURCE_DIR}/dslr-qt-shooter/telescope/indidouble.cpp)
+target_link_libraries(testindidouble Qt5::Test)
+add_test(NAME indidouble COMMAND testindidouble)
 
 add_executable(test_raw_conversion testrawconversion.cpp ${CMAKE_SOURCE_DIR}/dslr-qt-shooter/imaging/file2image.cpp)
 target_link_libraries(test_raw_conversion Qt5::Widgets Qt5::Test ${MAGICK_LDFLAGS})
