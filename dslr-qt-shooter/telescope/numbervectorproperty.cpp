@@ -34,9 +34,11 @@ NumberVectorProperty::NumberVectorProperty(INumberVectorProperty* property, cons
   load(property, property->nnp);
 }
 
+#include <iostream>
 QWidget* NumberVectorProperty::propertyWidget(int index)
 {
   INumber sw = _property->np[index];
+  std::cerr << "number=" << sw.value << "; format=\"" << sw.format << "\";" << std::endl;
   
   QWidget *widget = new QWidget;
   QHBoxLayout *layout = new QHBoxLayout(widget);
