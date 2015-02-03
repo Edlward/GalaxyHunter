@@ -23,6 +23,7 @@
 #include "numbervectorproperty.h"
 #include "ui_telescoperemotecontrol.h"
 #include <basedevice.h>
+#include <QStandardItemModel>
 #include <QSqlDatabase>
 
 class TelescopeRemoteControl::Private {
@@ -32,6 +33,7 @@ public:
     std::shared_ptr<INDIClient> client;
     INDI::BaseDevice *device;
     QSqlDatabase db;
+    QStandardItemModel cataloguesModel;
 private:
   TelescopeRemoteControl *q;
 };
@@ -64,4 +66,5 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     QVBoxLayout *coordinatesLayout = new QVBoxLayout;
     d->ui->coordinates->setLayout(coordinatesLayout);
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
+    d->ui->catalogue->setModel(&d->cataloguesModel);
 }
