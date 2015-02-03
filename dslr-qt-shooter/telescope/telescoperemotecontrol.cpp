@@ -30,8 +30,9 @@ TelescopeRemoteControl::~TelescopeRemoteControl()
 }
 
 TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, QWidget* parent)
-  : QDialog(parent), client(client), device(device)
+  : QDialog(parent), client(client), device(device), db(QSqlDatabase::addDatabase("QSQLITE"))
 {
+    db.setDatabaseName(OBJECTS_DATABASE);
     ui = new Ui::TelescopeRemoteControl;
     ui->setupUi(this);
     QVBoxLayout *manualMoveLayout = new QVBoxLayout;

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>590</width>
-    <height>539</height>
+    <height>266</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -30,6 +30,34 @@
      <property name="title">
       <string>Objects</string>
      </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QComboBox" name="catalogue"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="objectName"/>
+      </item>
+      <item row="1" column="0" colspan="3">
+       <widget class="QListView" name="objects_results"/>
+      </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="gotoObject">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>GoTo</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="searchObject">
+        <property name="text">
+         <string>Search</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>
