@@ -47,12 +47,10 @@ private:
 
 void INDIClient::Private::newBLOB(IBLOB* bp)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": blob label: " << bp->label << ", name: " << bp->bvp->name;
 }
 
 void INDIClient::Private::newDevice(INDI::BaseDevice* dp)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": device driver: " << dp->getDriverName() << ", name: " << dp->getDeviceName();
   q->devicesUpdated();
 }
 
@@ -64,7 +62,6 @@ void INDIClient::Private::newLight(ILightVectorProperty* lvp)
 void INDIClient::Private::newMessage(INDI::BaseDevice* dp, int messageID)
 {
   qDebug() << __PRETTY_FUNCTION__ << ": device=" << dp->getDeviceName() << ", messageID: " << messageID;
-
 }
 
 void INDIClient::Private::newNumber(INumberVectorProperty* nvp)
@@ -74,7 +71,6 @@ void INDIClient::Private::newNumber(INumberVectorProperty* nvp)
 
 void INDIClient::Private::newProperty(INDI::Property* property)
 {
-  qDebug() << __PRETTY_FUNCTION__ << property << ": label=" << property->getLabel() << ", name=" << property->getLabel() << ", type=" << property->getType();
   q->propertyAdded(property);
 }
 
@@ -91,7 +87,6 @@ void INDIClient::Private::newText(ITextVectorProperty* tvp)
 
 void INDIClient::Private::removeProperty(INDI::Property* property)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": label=" << property->getName();
   q->propertyRemoved(property);
 }
 

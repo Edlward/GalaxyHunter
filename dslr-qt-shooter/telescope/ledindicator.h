@@ -34,6 +34,7 @@ public:
 public slots:
   void setText(const QString &text);
   void setColor(Color color);
+
 private:
   QLabel *text;
   QLabel *image;

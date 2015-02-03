@@ -23,6 +23,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include "indidouble.h"
+#include <QLayoutItem>
 
 INumberWidget::~INumberWidget()
 {
@@ -75,8 +76,10 @@ INumberWidget::INumberWidget(const QString& label, const QString& format, QWidge
   QBoxLayout *layout = new QHBoxLayout;
   setLayout(layout);
   layout->addWidget(new QLabel{label});
-  layout->addWidget(numberEditor = new NumberEditor{format});
+  layout->addWidget(numberEditor = new NumberEditor{format}, 1);
+  numberEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
   QPushButton *setValue = new QPushButton(tr("set"));
+  layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
   layout->addWidget(setValue);
   connect(setValue, &QPushButton::clicked, [=]{ emit valueChanged(numberEditor->value()); });
 }

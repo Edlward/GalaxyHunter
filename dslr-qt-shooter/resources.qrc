@@ -15,9 +15,9 @@
       <file alias="12.jpg">files/testing/12.jpg</file>
   </qresource>
   <qresource prefix="/telescope">
-    <file alias="led-blue">files/telescope/led-blue-sm.png</file>
-    <file alias="led-green">files/telescope/led-green-sm.png</file>
-    <file alias="led-red">files/telescope/led-red-sm.png</file>
-    <file alias="led-yellow">files/telescope/led-yellow-sm.png</file>
+    <file alias="led-blue">files/telescope/led-blue-xs.png</file>
+    <file alias="led-green">files/telescope/led-green-xs.png</file>
+    <file alias="led-red">files/telescope/led-red-xs.png</file>
+    <file alias="led-yellow">files/telescope/led-yellow-xs.png</file>
   </qresource>
 </RCC>

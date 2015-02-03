@@ -33,7 +33,7 @@ public:
     
 protected:
     virtual QWidget* propertyWidget(int index);
-
+    virtual int property_size(ITextVectorProperty* property) const;
 private:
 };
 

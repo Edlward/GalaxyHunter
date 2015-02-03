@@ -28,6 +28,7 @@
 #include <list>
 #include "indiclient.h"
 #include "ledindicator.h"
+#include <QLayoutItem>
 
 class INDIClient;
 
@@ -35,13 +36,19 @@ template<typename T, typename Widget, typename Layout = QHBoxLayout>
 class VectorProperty
 {
 public:
-    VectorProperty(T *property, const std::shared_ptr<INDIClient> &indiClient, QGroupBox *groupBox) : _property(property), _indiClient(indiClient) {
+    VectorProperty(T *property,
+		   const std::shared_ptr<INDIClient> &indiClient,
+		   void (INDIClient::* update_status_f)(T*),
+		   QGroupBox *groupBox
+		  ) : _property(property), _indiClient(indiClient) {
       groupBox->setTitle(property->label);
       QHBoxLayout *mainLayout = new QHBoxLayout;
       ledIndicator = new LedIndicator(color_for(_property->s));
       groupBox->setLayout(mainLayout);
       mainLayout->addWidget(ledIndicator);
-      mainLayout->addLayout(_layout = new Layout);
+      ledIndicator->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum);
+      mainLayout->addLayout(_layout = new Layout, 1);
+      QObject::connect(indiClient.get(), update_status_f, groupBox, [=](T *p) { updateStatus(p->s); load(p); }, Qt::QueuedConnection);
     }
     ~VectorProperty() {}
 private:
@@ -55,28 +62,27 @@ private:
     };
     return states[state];
   }
+  Layout *_layout;
+  QSpacerItem *_layout_spacer = 0;
 protected:
   T *_property;
   std::shared_ptr<INDIClient> _indiClient;
-  Layout *_layout;
-  virtual Widget *propertyWidget(int index) = 0;
   std::list<Widget *> _widgets;
-  void load(T *property, int subproperties) {
-    if(property != _property)
-      return;
-    for(auto widget: _widgets) {
-      delete widget;
-    }
+  void load(T *property) {
+    if(property != _property) return;
+    for(auto widget: _widgets) delete widget;
     _widgets.clear();
-    for(int i=0; i<subproperties; i++) {
+    for(int i=0; i<property_size(property); i++) {
       auto widget = propertyWidget(i);
       _widgets.push_back(widget);
-      _layout->addWidget(widget);
+      _layout->insertWidget(i, widget);
     }
+    if(!_layout_spacer)
+      _layout->addSpacerItem(_layout_spacer = new QSpacerItem{0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum});
   }
-  void updateStatus(IPState state) {
-    ledIndicator->setColor(color_for(state));
-  }
+  void updateStatus(IPState state) { ledIndicator->setColor(color_for(state)); }
+  virtual int property_size(T *property) const = 0;
+  virtual Widget *propertyWidget(int index) = 0;
 };
 
 #endif // VECTORPROPERTY_H

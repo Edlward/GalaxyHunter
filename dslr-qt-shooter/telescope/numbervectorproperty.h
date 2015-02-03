@@ -32,6 +32,7 @@ public:
     NumberVectorProperty(INumberVectorProperty* property, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent = 0);
 protected:
     virtual QWidget* propertyWidget(int index);
+    virtual int property_size(INumberVectorProperty* property) const;
 private:
 };
 

@@ -32,7 +32,7 @@ LedIndicator::LedIndicator(LedIndicator::Color color, const QString& text, QWidg
   setLayout(layout);
   layout->addWidget(image = new QLabel);
   layout->addWidget(this->text = new QLabel);
-  layout->addSpacerItem(new QSpacerItem{0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum});
+  layout->addSpacerItem(new QSpacerItem{0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum});
   setColor(color);
   setText(text);
 }

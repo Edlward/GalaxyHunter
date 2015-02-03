@@ -29,17 +29,15 @@ NumberVectorProperty::~NumberVectorProperty()
 }
 
 NumberVectorProperty::NumberVectorProperty(INumberVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent)
-  : QGroupBox(parent), VectorProperty(property, indiClient, this)
+  : QGroupBox(parent), VectorProperty(property, indiClient, &INDIClient::newNumber, this)
 {
-  connect(indiClient.get(), &INDIClient::newNumber, this, [=](INumberVectorProperty *p) { updateStatus(p->s); load(p, p->nnp); }, Qt::QueuedConnection);
-  load(property, property->nnp);
+  load(property);
 }
 
 #include <iostream>
 QWidget* NumberVectorProperty::propertyWidget(int index)
 {
   INumber sw = _property->np[index];
-  std::cerr << sw.label << "number=" << sw.value << "; format=\"" << sw.format << "\";" << std::endl;
   INumberWidget *w = new INumberWidget(sw.label, sw.format);
   w->setRange(sw.min, sw.max);
   w->setValue(sw.value);
@@ -49,6 +47,12 @@ QWidget* NumberVectorProperty::propertyWidget(int index)
   });
   return w;
 }
+
+int NumberVectorProperty::property_size(INumberVectorProperty* property) const
+{
+  return property->nnp;
+}
+
 
 
 #include "numbervectorproperty.moc"

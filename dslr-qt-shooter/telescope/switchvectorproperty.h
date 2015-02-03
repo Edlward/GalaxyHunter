@@ -40,6 +40,7 @@ public:
 
 protected:
   virtual QPushButton *propertyWidget(int index);
+  virtual int property_size(ISwitchVectorProperty* property) const;
 };
 
 #endif // SWITCHVECTORPROPERTY_H

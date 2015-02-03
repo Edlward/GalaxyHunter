@@ -27,11 +27,16 @@ LightVectorProperty::~LightVectorProperty()
 }
 
 LightVectorProperty::LightVectorProperty(ILightVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent)
-  : QGroupBox(parent), VectorProperty(property, indiClient, this)
+  : QGroupBox(parent), VectorProperty(property, indiClient, &INDIClient::newLight, this)
 {
-  connect(indiClient.get(), &INDIClient::newLight, this, [=](ILightVectorProperty *p) { updateStatus(p->s); load(p, p->nlp); }, Qt::QueuedConnection);
-  load(property, property->nlp);
+    load(property);
 }
+
+int LightVectorProperty::property_size(ILightVectorProperty* property) const
+{
+  return property->nlp;
+}
+
 
 LedIndicator* LightVectorProperty::propertyWidget(int index)
 {

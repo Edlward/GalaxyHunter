@@ -28,11 +28,16 @@ TextVectorProperty::~TextVectorProperty()
 }
 
 TextVectorProperty::TextVectorProperty(ITextVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent)
-  : QGroupBox(parent), VectorProperty(property, indiClient, this)
+  : QGroupBox(parent), VectorProperty(property, indiClient, &INDIClient::newText, this)
 {
-  connect(indiClient.get(), &INDIClient::newText, this, [=](ITextVectorProperty *p) { updateStatus(p->s); load(p, p->ntp); }, Qt::QueuedConnection);
-  load(property, property->ntp);
+    load(property);
 }
+
+int TextVectorProperty::property_size(ITextVectorProperty* property) const
+{
+  return property->ntp;
+}
+
 
 QWidget* TextVectorProperty::propertyWidget(int index)
 {
@@ -43,8 +48,10 @@ QWidget* TextVectorProperty::propertyWidget(int index)
   widget->setLayout(layout);
   layout->addWidget(new QLabel(sw.label));
   QLineEdit *lineEdit = new QLineEdit(sw.text);
-  layout->addWidget(lineEdit);
+  lineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+  layout->addWidget(lineEdit, 1);
   QPushButton *change = new QPushButton(tr("set"));
+  layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
   layout->addWidget(change);
   connect(change, &QPushButton::clicked, [=]() {
     qDebug() << lineEdit->text() << "set: ";

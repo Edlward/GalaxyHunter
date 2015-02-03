@@ -33,6 +33,7 @@ public:
     LightVectorProperty(ILightVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent = 0);
 protected:
     virtual LedIndicator* propertyWidget(int index);
+    virtual int property_size(ILightVectorProperty* property) const;
 private:
 };
 
