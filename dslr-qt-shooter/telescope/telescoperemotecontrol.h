@@ -17,27 +17,28 @@
  *
  */
 
-#ifndef TELESCOPECONTROL_H
-#define TELESCOPECONTROL_H
+#ifndef TELESCOPEREMOTECONTROL_H
+#define TELESCOPEREMOTECONTROL_H
 
-#include <QtCore>
+#include <QDialog>
 #include <memory>
-class QDialog;
-class TelescopeControl : public QObject
+class INDIClient;
+namespace INDI { class BaseDevice; }
+namespace Ui
+{
+class TelescopeRemoteControl;
+}
+
+class TelescopeRemoteControl : public QDialog
 {
     Q_OBJECT
-
 public:
-    ~TelescopeControl();
-    TelescopeControl(QObject* parent = 0);
-public slots:
-    void open(QString address, int port);
-    void showControlPanel();
-    void showTelescopeRemoteControl();
+    ~TelescopeRemoteControl();
+    TelescopeRemoteControl(const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, QWidget* parent = 0);
 private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> d;
+    Ui::TelescopeRemoteControl* ui;
+    std::shared_ptr<INDIClient> client;
+    INDI::BaseDevice *device;
 };
 
-#endif // TELESCOPECONTROL_H
+#endif // TELESCOPEREMOTECONTROL_H

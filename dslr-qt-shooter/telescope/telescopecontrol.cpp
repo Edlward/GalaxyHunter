@@ -20,8 +20,12 @@
 #include "telescopecontrol.h"
 #include "indiclient.h"
 #include "devicespanel.h"
+#include "telescoperemotecontrol.h"
+#include <basedevice.h>
 
 #include <QDebug>
+#include <QInputDialog>
+#include <QMessageBox>
 
 class TelescopeControl::Private {
 public:
@@ -52,6 +56,22 @@ void TelescopeControl::open(QString address, int port)
 void TelescopeControl::showControlPanel()
 {
   (new DevicesPanel(d->indiClient))->show();
+}
+
+void TelescopeControl::showTelescopeRemoteControl()
+{
+  auto telescopes = d->indiClient->telescopes();
+  if(telescopes.size() == 0) {
+    QMessageBox::warning(nullptr, tr("No Telescopes Found"), tr("No telescopes found by INDI client. Try connecting to a server, and clicking 'connect' on the telescope you want to use, and retry"));
+    return;
+  }
+  QStringList telescopeNames;
+  std::transform(begin(telescopes), end(telescopes), std::back_inserter(telescopeNames), [](INDI::BaseDevice *dev) { return QString{dev->getDeviceName()}; } );
+  QString telescopeName = QInputDialog::getItem(nullptr, tr("Telescope"), tr("Choose telescope"), telescopeNames, 0, false);
+  if(telescopeName.length() == 0)
+    return;
+  auto telescope = telescopes[telescopeNames.indexOf(telescopeName)];
+  (new TelescopeRemoteControl{d->indiClient, telescope})->show();
 }
 
 #include "telescopecontrol.moc"

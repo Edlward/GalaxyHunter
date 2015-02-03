@@ -22,6 +22,7 @@
 
 #include <QObject>
 #include <memory>
+#include <vector>
 #include <indibase.h>
 
 class INDIClient : public QObject
@@ -35,6 +36,7 @@ public:
     void sendNewSwitch(ISwitchVectorProperty *s);
     void sendNewText(ITextVectorProperty* _property);
     void sendNewNumber(INumberVectorProperty* _property);
+    std::vector<INDI::BaseDevice*> telescopes() const;
 public slots:
   void open(const QString &address, int port);
 signals:

@@ -145,6 +145,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     }
   });
   connect(d->ui->action_Devices_Control_Panel, SIGNAL(triggered(bool)), d->telescopeControl, SLOT(showControlPanel()));
+  connect(d->ui->actionRemote_Control, SIGNAL(triggered(bool)), d->telescopeControl, SLOT(showTelescopeRemoteControl()));
   QTimer *autoScan = new QTimer(this);
   autoScan->setSingleShot(true);
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);

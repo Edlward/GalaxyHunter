@@ -91,13 +91,10 @@ DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClien
     {INDI_SWITCH, [=](INDI::Property *p){ return new SwitchVectorProperty{p->getSwitch(), indiClient}; } },
     {INDI_TEXT, [=](INDI::Property *p){ return new TextVectorProperty{p->getText(), indiClient}; } },
     {INDI_LIGHT, [=](INDI::Property *p){ return new LightVectorProperty{p->getLight(), indiClient}; } },
-    {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB (" << p->getName() << ", " << p->getLabel() << ") NOT MAPPED YET"; return new QWidget; } },
-    {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN (" << p->getName() << ", " << p->getLabel() << ") NOT MAPPED YET"; return new QWidget; } },
+    {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB (" << p->getGroupName() << "-" << p->getName() << ", " << p->getLabel() << ") NOT MAPPED YET"; return new QWidget; } },
+    {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN (" << p->getGroupName() << "-" << p->getName() << ", " << p->getLabel() << ") NOT MAPPED YET"; return new QWidget; } },
   };
-  auto addProperty = [=](INDI::Property *property) {
-    if(d->properties.count(property))
-      return;
-    std::map<INDI_TYPE, std::string> types {
+  static std::map<INDI_TYPE, std::string> types {
 	{ INDI_NUMBER, "INDI_NUMBER" },
 	{ INDI_SWITCH, "INDI_SWITCH" },
 	{ INDI_TEXT, "INDI_TEXT" },
@@ -105,7 +102,10 @@ DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClien
 	{ INDI_BLOB, "INDI_BLOB" },
 	{ INDI_UNKNOWN, "INDI_UNKNOWN" },
     };
-    std::cerr << "property: " << property->getName() << ", type: " << types[property->getType()] << ", label: " << property->getLabel() << std::endl;
+  auto addProperty = [=](INDI::Property *property) {
+    if(d->properties.count(property))
+      return;
+    std::cerr << "property: " << property->getGroupName() << "-" << property->getName() << ", type: " << types[property->getType()] << ", label: " << property->getLabel() << std::endl;
     d->properties[property] = widgetsFactory.at(property->getType())(property);
     d->page(property->getGroupName())->addPropertyWidget(d->properties[property]);
   };

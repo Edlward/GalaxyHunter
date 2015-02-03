@@ -582,6 +582,7 @@
     </property>
     <addaction name="actionConnectTelescope"/>
     <addaction name="action_Devices_Control_Panel"/>
+    <addaction name="actionRemote_Control"/>
    </widget>
    <addaction name="menuCamera"/>
    <addaction name="menuFile"/>
@@ -642,7 +643,12 @@
   </action>
   <action name="action_Devices_Control_Panel">
    <property name="text">
-    <string>Control Panel</string>
+    <string>Devices</string>
+   </property>
+  </action>
+  <action name="actionRemote_Control">
+   <property name="text">
+    <string>Telescope Control</string>
    </property>
   </action>
  </widget>

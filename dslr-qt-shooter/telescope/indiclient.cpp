@@ -141,4 +141,18 @@ void INDIClient::sendNewNumber(INumberVectorProperty* _property)
 }
 
 
+std::vector< INDI::BaseDevice* > INDIClient::telescopes() const
+{
+  std::vector< INDI::BaseDevice* > _telescopes;
+  std::copy_if(begin(d->getDevices()), end(d->getDevices()), back_inserter(_telescopes), [](INDI::BaseDevice* device){
+    return 
+      device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER) &&
+      device->getProperty("TELESCOPE_MOTION_NS", INDI_SWITCH) &&
+      device->getProperty("TELESCOPE_MOTION_WE", INDI_SWITCH)
+      ;
+  });
+  return _telescopes;
+}
+
+
 #include "indiclient.moc"

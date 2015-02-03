@@ -5,6 +5,7 @@ include_directories(${LIBINDI_INCLUDE_DIRS})
 include_directories(/usr/include/libnova) # TODO: find_package?
 qt5_wrap_ui(dslr_telescope_UI 
   devicespanel.ui
+  telescoperemotecontrol.ui
 )
 
 add_library(dslr_telescope STATIC 
@@ -19,6 +20,7 @@ add_library(dslr_telescope STATIC
   ledindicator.cpp
   indidouble.cpp
   inumberwidget.cpp
+  telescoperemotecontrol.cpp
   ${dslr_telescope_UI}
 )
 
