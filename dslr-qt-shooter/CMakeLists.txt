@@ -23,11 +23,12 @@ add_subdirectory(qwt-src)
 add_subdirectory(guider)
 add_subdirectory(imaging)
 add_subdirectory(telescope)
+add_subdirectory(files)
 qt5_add_resources(dslr_qt_shooter_RESOURCES_RCC resources.qrc )
 
 ADD_EXECUTABLE(dslr-qt-shooter main.cpp ${dslr_qt_shooter_RESOURCES_RCC} )
 TARGET_LINK_LIBRARIES(dslr-qt-shooter ${dslr_static_LIBS} Qt5::Widgets Qt5::Network Qt5::Concurrent ${MAGICK_LDFLAGS} 
   ${dslr_dependencies} ${CFITSIO_LDFLAGS} ${Boost_LIBRARIES}  )
-
+install(TARGETS dslr-qt-shooter RUNTIME DESTINATION bin)
 add_subdirectory(tests)
 
