@@ -23,20 +23,37 @@
 #include "numbervectorproperty.h"
 #include "ui_telescoperemotecontrol.h"
 #include <basedevice.h>
+#include <QSqlDatabase>
+
+class TelescopeRemoteControl::Private {
+public:
+  Private(Ui::TelescopeRemoteControl* ui, const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, TelescopeRemoteControl *q);
+    std::unique_ptr<Ui::TelescopeRemoteControl> ui;
+    std::shared_ptr<INDIClient> client;
+    INDI::BaseDevice *device;
+    QSqlDatabase db;
+private:
+  TelescopeRemoteControl *q;
+};
+
+TelescopeRemoteControl::Private::Private(Ui::TelescopeRemoteControl* ui, const std::shared_ptr< INDIClient >& client, INDI::BaseDevice* device, TelescopeRemoteControl* q)
+  : ui(ui), client(client), device(device), db(QSqlDatabase::addDatabase("QSQLITE")), q(q)
+{
+
+}
+
 
 TelescopeRemoteControl::~TelescopeRemoteControl()
 {
-    delete ui;
 }
 
 TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, QWidget* parent)
-  : QDialog(parent), client(client), device(device), db(QSqlDatabase::addDatabase("QSQLITE"))
+  : QDialog(parent), d(new Private{new Ui::TelescopeRemoteControl, client, device, this})
 {
-    db.setDatabaseName(OBJECTS_DATABASE);
-    ui = new Ui::TelescopeRemoteControl;
-    ui->setupUi(this);
+    d->db.setDatabaseName(OBJECTS_DATABASE);
+    d->ui->setupUi(this);
     QVBoxLayout *manualMoveLayout = new QVBoxLayout;
-    ui->manualMove->setLayout(manualMoveLayout);
+    d->ui->manualMove->setLayout(manualMoveLayout);
     QHBoxLayout *controlsLayout = new QHBoxLayout;
     manualMoveLayout->addLayout(controlsLayout);
     
@@ -45,6 +62,6 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     controlsLayout->addWidget(new SwitchVectorProperty(device->getProperty("TELESCOPE_ABORT_MOTION", INDI_SWITCH)->getSwitch(), client));
     manualMoveLayout->addWidget(new SwitchVectorProperty(device->getProperty("SLEWMODE", INDI_SWITCH)->getSwitch(), client));
     QVBoxLayout *coordinatesLayout = new QVBoxLayout;
-    ui->coordinates->setLayout(coordinatesLayout);
+    d->ui->coordinates->setLayout(coordinatesLayout);
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
 }

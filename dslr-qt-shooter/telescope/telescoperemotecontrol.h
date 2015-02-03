@@ -22,7 +22,6 @@
 
 #include <QDialog>
 #include <memory>
-#include <QSqlDatabase>
 
 class INDIClient;
 namespace INDI { class BaseDevice; }
@@ -39,10 +38,9 @@ public:
     ~TelescopeRemoteControl();
     TelescopeRemoteControl(const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, QWidget* parent = 0);
 private:
-    Ui::TelescopeRemoteControl* ui;
-    std::shared_ptr<INDIClient> client;
-    INDI::BaseDevice *device;
-    QSqlDatabase db;
+  class Private;
+  friend class Private;
+  std::unique_ptr<Private> d;
 };
 
 #endif // TELESCOPEREMOTECONTROL_H
