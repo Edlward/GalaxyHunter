@@ -25,6 +25,9 @@
 #include <basedevice.h>
 #include <QStandardItemModel>
 #include <QSqlDatabase>
+#include <QSqlRecord>
+#include <QSqlQuery>
+#include <QDebug>
 
 class TelescopeRemoteControl::Private {
 public:
@@ -66,5 +69,14 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     QVBoxLayout *coordinatesLayout = new QVBoxLayout;
     d->ui->coordinates->setLayout(coordinatesLayout);
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
+    d->db.open();
     d->ui->catalogue->setModel(&d->cataloguesModel);
+    QSqlQuery query("SELECT * from catalogues");
+    query.exec();
+    QSqlRecord record = query.record();
+    while (query.next()) {
+      for(int i=0; i<record.count(); i++) {
+	qDebug() << "column " << i << ", name: " << record.fieldName(i) << ", value: " << query.value(i);
+      }
+    }
 }
