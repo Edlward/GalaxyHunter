@@ -25,6 +25,10 @@
 
 INDIDouble::INDIDouble(const QString& text, const QString& format) : _text(text), _value(std::numeric_limits<double>::min())
 {
+  if(format.endsWith("m")) {
+    _valid = f_scansexa(text.toLocal8Bit().constData(), &_value) != -1;
+    return;
+  }
   std::stringstream s(text.toStdString());
   s >> _value;
   _valid = true;

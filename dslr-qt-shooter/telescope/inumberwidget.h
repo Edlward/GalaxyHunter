@@ -1,6 +1,6 @@
 /*
  * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2015  Marco Gulino <marco.gulino@bhuman.it>
+ * Copyright (C) 2015  Marco Gulino <email>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,23 +17,28 @@
  *
  */
 
-#ifndef LIGHTVECTORPROPERTY_H
-#define LIGHTVECTORPROPERTY_H
+#ifndef INUMBERWIDGET_H
+#define INUMBERWIDGET_H
 
-#include <QGroupBox>
-#include "vectorproperty.h"
+#include <QWidget>
 
-class LedIndicator;
-class LightVectorProperty : public QGroupBox, public VectorProperty<ILightVectorProperty, LedIndicator, QVBoxLayout>
+
+class NumberEditor;
+class INumberWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    ~LightVectorProperty();
-    LightVectorProperty(ILightVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent = 0);
-protected:
-    virtual LedIndicator* propertyWidget(int index);
+    ~INumberWidget();
+    INumberWidget(const QString &label, const QString &format, QWidget* parent = 0);
+public slots:
+  void setValue(double value);
+  void setRange(double min, double max);
+signals:
+  void valueChanged(double);
+
 private:
+  NumberEditor *numberEditor;
 };
 
-#endif // LIGHTVECTORPROPERTY_H
+#endif // INUMBERWIDGET_H

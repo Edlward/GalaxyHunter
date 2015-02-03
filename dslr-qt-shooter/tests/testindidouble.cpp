@@ -8,6 +8,7 @@ private slots:
   void testDoubleToStringPrintf();
   void testStringToDoublePrintf();
   void testDoubleToSexagesimal();
+  void testSexagesimalToString();
 };
 
 /* some valid test cases...
@@ -54,6 +55,11 @@ void TestINDIDouble::testStringToDoublePrintf()
 void TestINDIDouble::testDoubleToSexagesimal()
 {
   QCOMPARE(INDIDouble(12.44, "%010.6m").text(), QString("12:26:24"));
+}
+
+void TestINDIDouble::testSexagesimalToString()
+{
+  QCOMPARE(INDIDouble("12:26:24", "%010.6m").value(), 12.44);
 }
 
 

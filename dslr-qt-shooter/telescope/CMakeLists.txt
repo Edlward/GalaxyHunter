@@ -18,6 +18,7 @@ add_library(dslr_telescope STATIC
   devicepage.cpp
   ledindicator.cpp
   indidouble.cpp
+  inumberwidget.cpp
   ${dslr_telescope_UI}
 )
 

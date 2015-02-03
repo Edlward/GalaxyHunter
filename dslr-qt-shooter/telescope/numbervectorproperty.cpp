@@ -18,6 +18,7 @@
  */
 
 #include "numbervectorproperty.h"
+#include "inumberwidget.h"
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QPushButton>
@@ -38,25 +39,32 @@ NumberVectorProperty::NumberVectorProperty(INumberVectorProperty* property, cons
 QWidget* NumberVectorProperty::propertyWidget(int index)
 {
   INumber sw = _property->np[index];
-  std::cerr << "number=" << sw.value << "; format=\"" << sw.format << "\";" << std::endl;
-  
-  QWidget *widget = new QWidget;
-  QHBoxLayout *layout = new QHBoxLayout(widget);
-  widget->setLayout(layout);
-  layout->addWidget(new QLabel(sw.label));
-  QDoubleSpinBox *edit = new QDoubleSpinBox;
-  edit->setValue(sw.value);
-  edit->setMinimum(sw.min);
-  edit->setMaximum(sw.max);
-  edit->setSingleStep(sw.step);
-  layout->addWidget(edit);
-  QPushButton *change = new QPushButton(tr("set"));
-  layout->addWidget(change);
-  connect(change, &QPushButton::clicked, [=]() {
-    _property->np[index].value = edit->value();
+  std::cerr << sw.label << "number=" << sw.value << "; format=\"" << sw.format << "\";" << std::endl;
+  INumberWidget *w = new INumberWidget(sw.label, sw.format);
+  w->setRange(sw.min, sw.max);
+  w->setValue(sw.value);
+  connect(w, &INumberWidget::valueChanged, [=](double v){
+    _property->np[index].value = v;
     _indiClient->sendNewNumber(_property);
   });
-  return widget;
+  return w;
+//   QWidget *widget = new QWidget;
+//   QHBoxLayout *layout = new QHBoxLayout(widget);
+//   widget->setLayout(layout);
+//   layout->addWidget(new QLabel(sw.label));
+//   QDoubleSpinBox *edit = new QDoubleSpinBox;
+//   edit->setValue(sw.value);
+//   edit->setMinimum(sw.min);
+//   edit->setMaximum(sw.max);
+//   edit->setSingleStep(sw.step);
+//   layout->addWidget(edit);
+//   QPushButton *change = new QPushButton(tr("set"));
+//   layout->addWidget(change);
+//   connect(change, &QPushButton::clicked, [=]() {
+//     _property->np[index].value = edit->value();
+//     _indiClient->sendNewNumber(_property);
+//   });
+//   return widget;
 }
 
 
