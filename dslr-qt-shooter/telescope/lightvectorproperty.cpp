@@ -29,7 +29,7 @@ LightVectorProperty::~LightVectorProperty()
 LightVectorProperty::LightVectorProperty(ILightVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent)
   : QGroupBox(parent), VectorProperty(property, indiClient, this)
 {
-  connect(indiClient.get(), &INDIClient::newLight, this, [=](ILightVectorProperty *p) { load(p, p->nlp); }, Qt::QueuedConnection);
+  connect(indiClient.get(), &INDIClient::newLight, this, [=](ILightVectorProperty *p) { updateStatus(p->s); load(p, p->nlp); }, Qt::QueuedConnection);
   load(property, property->nlp);
 }
 

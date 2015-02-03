@@ -23,6 +23,7 @@
 #include "textvectorproperty.h"
 #include "numbervectorproperty.h"
 #include "ledindicator.h"
+#include "lightvectorproperty.h"
 #include <QBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
@@ -88,7 +89,7 @@ DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClien
     {INDI_NUMBER, [=](INDI::Property *p){ return new NumberVectorProperty{p->getNumber(), indiClient}; } },
     {INDI_SWITCH, [=](INDI::Property *p){ return new SwitchVectorProperty{p->getSwitch(), indiClient}; } },
     {INDI_TEXT, [=](INDI::Property *p){ return new TextVectorProperty{p->getText(), indiClient}; } },
-    {INDI_LIGHT, [=](INDI::Property *p){ qDebug() << "INDI_LIGHT NOT MAPPED YET"; return new QWidget; } },
+    {INDI_LIGHT, [=](INDI::Property *p){ return new LightVectorProperty{p->getLight(), indiClient}; } },
     {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB NOT MAPPED YET"; return new QWidget; } },
     {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN NOT MAPPED YET"; return new QWidget; } },
   };

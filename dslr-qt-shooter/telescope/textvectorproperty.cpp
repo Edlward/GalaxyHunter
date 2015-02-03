@@ -30,7 +30,7 @@ TextVectorProperty::~TextVectorProperty()
 TextVectorProperty::TextVectorProperty(ITextVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent)
   : QGroupBox(parent), VectorProperty(property, indiClient, this)
 {
-  connect(indiClient.get(), &INDIClient::newText, this, [=](ITextVectorProperty *p) { load(p, p->ntp); }, Qt::QueuedConnection);
+  connect(indiClient.get(), &INDIClient::newText, this, [=](ITextVectorProperty *p) { updateStatus(p->s); load(p, p->ntp); }, Qt::QueuedConnection);
   load(property, property->ntp);
 }
 

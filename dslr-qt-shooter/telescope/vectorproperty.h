@@ -27,6 +27,7 @@
 #include <QBoxLayout>
 #include <list>
 #include "indiclient.h"
+#include "ledindicator.h"
 
 class INDIClient;
 
@@ -36,9 +37,24 @@ class VectorProperty
 public:
     VectorProperty(T *property, const std::shared_ptr<INDIClient> &indiClient, QGroupBox *groupBox) : _property(property), _indiClient(indiClient) {
       groupBox->setTitle(property->label);
-      groupBox->setLayout(_layout = new Layout);
+      QHBoxLayout *mainLayout = new QHBoxLayout;
+      ledIndicator = new LedIndicator(color_for(_property->s));
+      groupBox->setLayout(mainLayout);
+      mainLayout->addWidget(ledIndicator);
+      mainLayout->addLayout(_layout = new Layout);
     }
     ~VectorProperty() {}
+private:
+  LedIndicator *ledIndicator;
+  LedIndicator::Color color_for(IPState state) {
+  static std::map<IPState, LedIndicator::Color> states = {
+	{IPS_ALERT, LedIndicator::Yellow},
+	{IPS_BUSY, LedIndicator::Red},
+	{IPS_IDLE, LedIndicator::Blue},
+	{IPS_OK, LedIndicator::Green},
+    };
+    return states[state];
+  }
 protected:
   T *_property;
   std::shared_ptr<INDIClient> _indiClient;
@@ -57,6 +73,9 @@ protected:
       _widgets.push_back(widget);
       _layout->addWidget(widget);
     }
+  }
+  void updateStatus(IPState state) {
+    ledIndicator->setColor(color_for(state));
   }
 };
 

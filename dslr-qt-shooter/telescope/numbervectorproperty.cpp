@@ -31,7 +31,7 @@ NumberVectorProperty::~NumberVectorProperty()
 NumberVectorProperty::NumberVectorProperty(INumberVectorProperty* property, const std::shared_ptr< INDIClient >& indiClient, QWidget* parent)
   : QGroupBox(parent), VectorProperty(property, indiClient, this)
 {
-  connect(indiClient.get(), &INDIClient::newNumber, this, [=](INumberVectorProperty *p) { load(p, p->nnp); }, Qt::QueuedConnection);
+  connect(indiClient.get(), &INDIClient::newNumber, this, [=](INumberVectorProperty *p) { updateStatus(p->s); load(p, p->nnp); }, Qt::QueuedConnection);
   load(property, property->nnp);
 }
 
@@ -48,23 +48,6 @@ QWidget* NumberVectorProperty::propertyWidget(int index)
     _indiClient->sendNewNumber(_property);
   });
   return w;
-//   QWidget *widget = new QWidget;
-//   QHBoxLayout *layout = new QHBoxLayout(widget);
-//   widget->setLayout(layout);
-//   layout->addWidget(new QLabel(sw.label));
-//   QDoubleSpinBox *edit = new QDoubleSpinBox;
-//   edit->setValue(sw.value);
-//   edit->setMinimum(sw.min);
-//   edit->setMaximum(sw.max);
-//   edit->setSingleStep(sw.step);
-//   layout->addWidget(edit);
-//   QPushButton *change = new QPushButton(tr("set"));
-//   layout->addWidget(change);
-//   connect(change, &QPushButton::clicked, [=]() {
-//     _property->np[index].value = edit->value();
-//     _indiClient->sendNewNumber(_property);
-//   });
-//   return widget;
 }
 
 

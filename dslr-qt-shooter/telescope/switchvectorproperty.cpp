@@ -31,7 +31,7 @@ SwitchVectorProperty::~SwitchVectorProperty()
 SwitchVectorProperty::SwitchVectorProperty(ISwitchVectorProperty* p, const std::shared_ptr<INDIClient>& indiClient, QWidget* parent)
   : QGroupBox(parent), VectorProperty(p, indiClient, this)
 {
-  connect(indiClient.get(), &INDIClient::newSwitch, this, [=](ISwitchVectorProperty *p) { load(p, p->nsp); }, Qt::QueuedConnection);
+  connect(indiClient.get(), &INDIClient::newSwitch, this, [=](ISwitchVectorProperty *p) { updateStatus(p->s); load(p, p->nsp); }, Qt::QueuedConnection);
   load(_property, _property->nsp);
 }
 
