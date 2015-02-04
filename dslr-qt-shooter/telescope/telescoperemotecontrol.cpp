@@ -130,9 +130,13 @@ inner join objects on objects.id = denominations.objects_id WHERE catalogues.id 
   qDebug() << "query: " << query.exec() << ", results: " << query.size() << ", error: " << query.lastError() << ", executed: " << query.executedQuery();
   QSqlRecord record = query.record();
   while (query.next()) {
+    QList<QStandardItem*> items;
     for(int i=0; i<record.count(); i++) {
       qDebug() << record.fieldName(i) << ": " << query.value(i) << " ";
+      QStandardItem *item = new QStandardItem(query.value(i).toString());
+      items.push_back(item);
     }
+    objectsModel.appendRow(items);
   }
 }
 
