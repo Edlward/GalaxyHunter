@@ -123,11 +123,10 @@ void TelescopeRemoteControl::Private::search(const QString& searchString, long l
   query.prepare(R"(select catalogues.name, denominations.number, denominations.name, 
 		  denominations.comment, objects.ra, objects.dec, objects.magnitude, objects.angular_size, objects.type, objects.constellation_abbrev 
 from denominations inner join catalogues on denominations.catalogues_id = catalogues.id
-inner join objects on objects.id = denominations.objects_id WHERE catalogues.id = ? AND 
-(denominations.name LIKE '%?%' OR denominations.number LIKE '%?%' ) )");
-  query.bindValue(0, catalogue);
-  query.bindValue(1, searchString);
-  query.bindValue(2, searchString);
+inner join objects on objects.id = denominations.objects_id WHERE catalogues.id = :catalogue_id AND 
+(denominations.name LIKE '%' || :search_str || '%' OR denominations.number LIKE '%' || :search_str || '%' ) )");
+  query.bindValue(":catalogue_id", catalogue);
+  query.bindValue(":search_str", searchString);
   qDebug() << "query: " << query.exec() << ", results: " << query.size() << ", error: " << query.lastError() << ", executed: " << query.executedQuery();
   QSqlRecord record = query.record();
   while (query.next()) {
