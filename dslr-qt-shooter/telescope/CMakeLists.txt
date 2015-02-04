@@ -7,7 +7,7 @@ qt5_wrap_ui(dslr_telescope_UI
   devicespanel.ui
   telescoperemotecontrol.ui
 )
-add_definitions(-DOBJECTS_DATABASE="${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/share/objects.db") # TODO: move?
+add_definitions(-DOBJECTS_DATABASE="${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/objects.db") # TODO: move?
 add_library(dslr_telescope STATIC 
   telescopecontrol.cpp
   devicespanel.cpp

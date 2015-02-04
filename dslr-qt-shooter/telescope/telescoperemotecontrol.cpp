@@ -27,6 +27,7 @@
 #include <QSqlDatabase>
 #include <QSqlRecord>
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QDebug>
 
 class TelescopeRemoteControl::Private {
@@ -37,7 +38,9 @@ public:
     INDI::BaseDevice *device;
     QSqlDatabase db;
     QStandardItemModel cataloguesModel;
+    QStandardItemModel objectsModel;
     void loadCatalogues();
+    void search(const QString& searchString, long long int catalogue);
     enum CatalogueColumn {
       id = Qt::UserRole + 1,
       name = Qt::UserRole + 2,
@@ -67,6 +70,7 @@ std::map<TelescopeRemoteControl::Private::CatalogueColumn, QString> TelescopeRem
 
 TelescopeRemoteControl::~TelescopeRemoteControl()
 {
+  qDebug() << "closing database";
   d->db.close();
 }
 
@@ -74,6 +78,7 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
   : QDialog(parent), d(new Private{new Ui::TelescopeRemoteControl, client, device, this})
 {
     d->db.setDatabaseName(OBJECTS_DATABASE);
+    qDebug() << "open database: " << d->db.open();
     d->ui->setupUi(this);
     QVBoxLayout *manualMoveLayout = new QVBoxLayout;
     d->ui->manualMove->setLayout(manualMoveLayout);
@@ -88,7 +93,12 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     d->ui->coordinates->setLayout(coordinatesLayout);
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
     d->ui->catalogue->setModel(&d->cataloguesModel);
-    d->db.open();
+    d->ui->objects_results->setModel(&d->objectsModel);
+    connect(d->ui->objectName, &QLineEdit::textChanged, [=](const QString &s) { d->ui->searchObject->setEnabled(s.size()>0); });
+    connect(d->ui->searchObject, &QPushButton::clicked, [=]{
+      int64_t catalogue = d->cataloguesModel.item(d->ui->catalogue->currentIndex(), 0)->data(Private::id).toLongLong();
+      d->search(d->ui->objectName->text(), catalogue);
+    });
     d->loadCatalogues();
 }
 
@@ -96,9 +106,7 @@ void TelescopeRemoteControl::Private::loadCatalogues()
 {
     cataloguesModel.clear();
     QSqlQuery query("SELECT id, name, code, priority, search_mode, hidden from catalogues order by priority ASC");
-    qDebug() << "running query: " << query.exec();
-    QSqlRecord record = query.record();
-    qDebug() << "results: " << query.size();
+    qDebug() << "running query: " << query.exec() << ", active: " << query.isActive() << ", select: " << query.isSelect() << ", results: " << query.size() << ", lastError: " << query.lastError();
     while (query.next()) {
       auto item = new QStandardItem(query.value("name").toString());
       for(auto col: catalogue_columns)
@@ -106,4 +114,27 @@ void TelescopeRemoteControl::Private::loadCatalogues()
       cataloguesModel.appendRow(item);
     }
 }
+
+void TelescopeRemoteControl::Private::search(const QString& searchString, long long catalogue)
+{
+  objectsModel.clear();
+  qDebug() << "Searching for " << searchString << " in catalogue " << catalogue;
+  QSqlQuery query;
+  query.prepare(R"(select catalogues.name, denominations.number, denominations.name, 
+		  denominations.comment, objects.ra, objects.dec, objects.magnitude, objects.angular_size, objects.type, objects.constellation_abbrev 
+from denominations inner join catalogues on denominations.catalogues_id = catalogues.id
+inner join objects on objects.id = denominations.objects_id WHERE catalogues.id = ? AND 
+(denominations.name LIKE '%?%' OR denominations.number LIKE '%?%' ) )");
+  query.bindValue(0, catalogue);
+  query.bindValue(1, searchString);
+  query.bindValue(2, searchString);
+  qDebug() << "query: " << query.exec() << ", results: " << query.size() << ", error: " << query.lastError() << ", executed: " << query.executedQuery();
+  QSqlRecord record = query.record();
+  while (query.next()) {
+    for(int i=0; i<record.count(); i++) {
+      qDebug() << record.fieldName(i) << ": " << query.value(i) << " ";
+    }
+  }
+}
+
 
