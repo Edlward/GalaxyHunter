@@ -37,6 +37,16 @@ public:
     INDI::BaseDevice *device;
     QSqlDatabase db;
     QStandardItemModel cataloguesModel;
+    void loadCatalogues();
+    enum CatalogueColumn {
+      id = Qt::UserRole + 1,
+      name = Qt::UserRole + 2,
+      code = Qt::UserRole + 3,
+      priority = Qt::UserRole + 4,
+      search_mode = Qt::UserRole + 5,
+      hidden = Qt::UserRole + 6
+    };
+    static std::map<TelescopeRemoteControl::Private::CatalogueColumn, QString> catalogue_columns;
 private:
   TelescopeRemoteControl *q;
 };
@@ -44,12 +54,20 @@ private:
 TelescopeRemoteControl::Private::Private(Ui::TelescopeRemoteControl* ui, const std::shared_ptr< INDIClient >& client, INDI::BaseDevice* device, TelescopeRemoteControl* q)
   : ui(ui), client(client), device(device), db(QSqlDatabase::addDatabase("QSQLITE")), q(q)
 {
-
 }
 
+std::map<TelescopeRemoteControl::Private::CatalogueColumn, QString> TelescopeRemoteControl::Private::catalogue_columns{
+  { CatalogueColumn::id, "id"},
+  { CatalogueColumn::name, "name"},
+  { CatalogueColumn::code, "code"},
+  { CatalogueColumn::priority, "priority"},
+  { CatalogueColumn::search_mode, "search_mode"},
+  { CatalogueColumn::hidden, "hidden"},
+};
 
 TelescopeRemoteControl::~TelescopeRemoteControl()
 {
+  d->db.close();
 }
 
 TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, QWidget* parent)
@@ -69,14 +87,23 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     QVBoxLayout *coordinatesLayout = new QVBoxLayout;
     d->ui->coordinates->setLayout(coordinatesLayout);
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
-    d->db.open();
     d->ui->catalogue->setModel(&d->cataloguesModel);
-    QSqlQuery query("SELECT * from catalogues");
-    query.exec();
+    d->db.open();
+    d->loadCatalogues();
+}
+
+void TelescopeRemoteControl::Private::loadCatalogues()
+{
+    cataloguesModel.clear();
+    QSqlQuery query("SELECT id, name, code, priority, search_mode, hidden from catalogues order by priority ASC");
+    qDebug() << "running query: " << query.exec();
     QSqlRecord record = query.record();
+    qDebug() << "results: " << query.size();
     while (query.next()) {
-      for(int i=0; i<record.count(); i++) {
-	qDebug() << "column " << i << ", name: " << record.fieldName(i) << ", value: " << query.value(i);
-      }
+      auto item = new QStandardItem(query.value("name").toString());
+      for(auto col: catalogue_columns)
+	item->setData(query.value(col.second), col.first);
+      cataloguesModel.appendRow(item);
     }
 }
+
