@@ -30,7 +30,16 @@
 #include <QSqlError>
 #include <QDebug>
 #include <cmath>
-
+/* Partially copied from kstars inditelescope.cpp */
+/*  INDI CCD
+    Copyright (C) 2012 Jasem Mutlaq <mutlaqja@ikarustech.com>
+ 
+    This application is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+ */
+ 
 
 class TelescopeRemoteControl::Private {
 public:
@@ -97,7 +106,6 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
     d->ui->catalogue->setModel(&d->cataloguesModel);
     
-    d->objectsModel.setHorizontalHeaderLabels({"Catalogue", "Number", "Name", "Comment", "RA", "DEC", "Magnitude", "Size", "Type", "Constellation"});
     d->ui->objects_results->setModel(&d->objectsModel);
     connect(d->ui->objectName, &QLineEdit::textChanged, [=](const QString &s) { d->ui->searchObject->setEnabled(s.size()>0); });
     auto searchObject = [=]{
@@ -229,6 +237,7 @@ void TelescopeRemoteControl::Private::loadCatalogues()
 void TelescopeRemoteControl::Private::search(const QString& searchString, long long catalogue)
 {
   objectsModel.clear();
+  objectsModel.setHorizontalHeaderLabels({"Catalogue", "Number", "Name", "Comment", "RA", "DEC", "Magnitude", "Size", "Type", "Constellation"});
   qDebug() << "Searching for " << searchString << " in catalogue " << catalogue;
   QSqlQuery query;
   query.prepare(R"(select objects.id, catalogues.name, denominations.number, denominations.name, 
