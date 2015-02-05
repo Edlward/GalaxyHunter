@@ -30,6 +30,7 @@
 #include <QSqlError>
 #include <QDebug>
 
+
 class TelescopeRemoteControl::Private {
 public:
   Private(Ui::TelescopeRemoteControl* ui, const std::shared_ptr<INDIClient> &client, INDI::BaseDevice *device, TelescopeRemoteControl *q);
@@ -103,6 +104,17 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     };
     connect(d->ui->objectName, &QLineEdit::returnPressed, searchObject);
     connect(d->ui->searchObject, &QPushButton::clicked, searchObject);
+    connect(d->ui->objects_results, &QTreeView::activated, [=](const QModelIndex &index) { d->ui->gotoObject->setEnabled(index.isValid()); });
+    connect(d->ui->gotoObject, &QPushButton::clicked, [=]{
+      auto item = d->objectsModel.itemFromIndex(d->ui->objects_results->currentIndex());
+      auto skyObjectId =  item->data().toLongLong();
+      QSqlQuery query("SELECT ar, dec from objects");
+      if(query.exec() && query.next()) {
+	double ar = query.value("ar").toDouble();
+	double dec = query.value("ar").toDouble();
+	//d->device->Goto(ar, dec);
+      }
+    });
     d->loadCatalogues();
 }
 
@@ -124,7 +136,7 @@ void TelescopeRemoteControl::Private::search(const QString& searchString, long l
   objectsModel.clear();
   qDebug() << "Searching for " << searchString << " in catalogue " << catalogue;
   QSqlQuery query;
-  query.prepare(R"(select catalogues.name, denominations.number, denominations.name, 
+  query.prepare(R"(select objects.id, catalogues.name, denominations.number, denominations.name, 
 		  denominations.comment, objects.ra, objects.dec, objects.magnitude, objects.angular_size, objects.type, objects.constellation_abbrev 
 from denominations inner join catalogues on denominations.catalogues_id = catalogues.id
 inner join objects on objects.id = denominations.objects_id WHERE catalogues.id = :catalogue_id AND 
@@ -135,9 +147,10 @@ inner join objects on objects.id = denominations.objects_id WHERE catalogues.id 
   QSqlRecord record = query.record();
   while (query.next()) {
     QList<QStandardItem*> items;
-    for(int i=0; i<record.count(); i++) {
+    for(int i=1; i<record.count(); i++) {
       qDebug() << record.fieldName(i) << ": " << query.value(i) << " ";
       QStandardItem *item = new QStandardItem(query.value(i).toString());
+      item->setData(query.value(0));
       items.push_back(item);
     }
     objectsModel.appendRow(items);
