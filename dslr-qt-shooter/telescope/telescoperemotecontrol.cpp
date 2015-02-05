@@ -29,6 +29,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include <cmath>
 
 
 class TelescopeRemoteControl::Private {
@@ -113,8 +114,8 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
       query.prepare("SELECT ra, dec from objects WHERE id = :object_id");
       query.bindValue(":object_id", skyObjectId);
       if(query.exec() && query.next()) {
-	double ra = query.value("ra").toDouble();
-	double dec = query.value("ar").toDouble();
+	double ra = query.value("ra").toDouble() * 180. / M_PI;
+	double dec = query.value("dec").toDouble() * 180. / M_PI;
 	d->goTo(ra, dec);
       } else
 	qDebug() << "query failed: " << query.executedQuery() << ", error: " << query.lastError();
