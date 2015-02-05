@@ -39,6 +39,7 @@ QWidget* NumberVectorProperty::propertyWidget(int index)
 {
   INumber sw = _property->np[index];
   INumberWidget *w = new INumberWidget(sw.label, sw.format);
+  w->setEnabled(_property->p != IP_RO);
   w->setRange(sw.min, sw.max);
   w->setValue(sw.value);
   connect(w, &INumberWidget::valueChanged, [=](double v){

@@ -44,6 +44,7 @@ QPushButton* SwitchVectorProperty::propertyWidget(int index)
 {
     auto sw = _property->sp[index];
     auto button = new QPushButton(sw.label, this);
+    button->setEnabled(_property->p != IP_RO);
     button->setCheckable(true);
     button->setChecked(sw.s == ISS_ON);
     connect(button, &QRadioButton::toggled, [=](bool checked) {

@@ -42,7 +42,6 @@ int TextVectorProperty::property_size(ITextVectorProperty* property) const
 QWidget* TextVectorProperty::propertyWidget(int index)
 {
   IText sw = _property->tp[index];
-  
   QWidget *widget = new QWidget;
   QHBoxLayout *layout = new QHBoxLayout(widget);
   widget->setLayout(layout);
@@ -50,14 +49,17 @@ QWidget* TextVectorProperty::propertyWidget(int index)
   QLineEdit *lineEdit = new QLineEdit(sw.text);
   lineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
   layout->addWidget(lineEdit, 1);
-  QPushButton *change = new QPushButton(tr("set"));
-  layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
-  layout->addWidget(change);
-  connect(change, &QPushButton::clicked, [=]() {
-    qDebug() << lineEdit->text() << "set: ";
-    IUSaveText(&_property->tp[index], lineEdit->text().toLocal8Bit().constData());
-    _indiClient->sendNewText(_property);
-  });
+  lineEdit->setEnabled(_property->p != IP_RO);
+  if(lineEdit->isEnabled()) {
+    QPushButton *change = new QPushButton(tr("set"));
+    layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
+    layout->addWidget(change);
+    connect(change, &QPushButton::clicked, [=]() {
+      qDebug() << lineEdit->text() << "set: ";
+      IUSaveText(&_property->tp[index], lineEdit->text().toLocal8Bit().constData());
+      _indiClient->sendNewText(_property);
+    });
+  }
   return widget;
 }
 
