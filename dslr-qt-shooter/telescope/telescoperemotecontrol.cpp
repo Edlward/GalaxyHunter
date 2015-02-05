@@ -51,6 +51,7 @@ public:
       hidden = Qt::UserRole + 6
     };
     static std::map<TelescopeRemoteControl::Private::CatalogueColumn, QString> catalogue_columns;
+    void goTo(double ra, double dec);
 private:
   TelescopeRemoteControl *q;
 };
@@ -108,15 +109,107 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     connect(d->ui->gotoObject, &QPushButton::clicked, [=]{
       auto item = d->objectsModel.itemFromIndex(d->ui->objects_results->currentIndex());
       auto skyObjectId =  item->data().toLongLong();
-      QSqlQuery query("SELECT ar, dec from objects");
+      QSqlQuery query;
+      query.prepare("SELECT ra, dec from objects WHERE id = :object_id");
+      query.bindValue(":object_id", skyObjectId);
       if(query.exec() && query.next()) {
-	double ar = query.value("ar").toDouble();
+	double ra = query.value("ra").toDouble();
 	double dec = query.value("ar").toDouble();
-	//d->device->Goto(ar, dec);
-      }
+	d->goTo(ra, dec);
+      } else
+	qDebug() << "query failed: " << query.executedQuery() << ", error: " << query.lastError();
     });
     d->loadCatalogues();
 }
+
+void TelescopeRemoteControl::Private::goTo(double ra, double dec)
+{
+  qDebug() << __PRETTY_FUNCTION__ << ": ra: " << ra << ", dec=" << dec;
+  ISwitchVectorProperty *motion = device->getSwitch("ON_COORD_SET");
+  if(!motion) return;
+  ISwitch *sw = IUFindSwitch(motion, "TRACK");
+  if(!sw)
+    sw = IUFindSwitch(motion, "SLEW");
+  if(!sw)
+    return;
+  if(sw->s != ISS_ON) {
+    IUResetSwitch(motion);
+    sw->s = ISS_ON;
+    client->sendNewSwitch(motion);
+  }
+
+  INumber *RAEle(NULL), *DecEle(NULL), *AzEle(NULL), *AltEle(NULL);
+  INumberVectorProperty *EqProp(NULL), *HorProp(NULL);
+  double currentRA=0, currentDEC=0, currentAlt=0, currentAz=0;
+  bool useJ2000 (false);
+
+  EqProp = device->getNumber("EQUATORIAL_EOD_COORD");
+  if (EqProp == NULL)
+  {
+  // J2000 Property
+      EqProp = device->getNumber("EQUATORIAL_COORD");
+      if (EqProp)
+	  useJ2000 = true;
+
+  }
+
+  HorProp = device->getNumber("HORIZONTAL_COORD");
+
+  if (EqProp && EqProp->p == IP_RO)
+      EqProp = NULL;
+
+  if (HorProp && HorProp->p == IP_RO)
+	  HorProp = NULL;
+
+//qDebug() << "Skymap click - RA: " << scope_target->ra().toHMSString() << " DEC: " << scope_target->dec().toDMSString();
+
+    if (EqProp)
+    {
+	    RAEle  = IUFindNumber(EqProp, "RA");
+	    if (!RAEle) return;
+	    DecEle = IUFindNumber(EqProp, "DEC");
+		if (!DecEle) return;
+
+// 	if (useJ2000)
+// 	    ScopeTarget->apparentCoord(KStars::Instance()->data()->ut().djd(), (long double) J2000);
+// 
+	  currentRA  = RAEle->value;
+	  currentDEC = DecEle->value;
+	  RAEle->value  = ra;
+	  DecEle->value = dec;
+    }
+
+//     if (HorProp)
+//     {
+// 	    AzEle = IUFindNumber(HorProp, "AZ");
+// 	    if (!AzEle) return false;
+// 	    AltEle = IUFindNumber(HorProp,"ALT");
+// 	    if (!AltEle) return false;
+// 
+// 	currentAz  = AzEle->value;
+// 	currentAlt = AltEle->value;
+// 	AzEle->value  = ScopeTarget->az().Degrees();
+// 	AltEle->value = ScopeTarget->alt().Degrees();
+//     }
+
+    /* Could not find either properties! */
+    if (EqProp == NULL && HorProp == NULL)
+	return;
+
+    if (EqProp)
+    {
+	client->sendNewNumber(EqProp);
+	RAEle->value = currentRA;
+	DecEle->value = currentDEC;
+    }
+//     if (HorProp)
+//     {
+// 	client->sendNewNumber(HorProp);
+// 	AzEle->value  = currentAz;
+// 	AltEle->value = currentAlt;
+//     }
+}
+
 
 void TelescopeRemoteControl::Private::loadCatalogues()
 {
