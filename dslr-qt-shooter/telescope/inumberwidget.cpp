@@ -24,6 +24,7 @@
 #include <QPushButton>
 #include "indidouble.h"
 #include <QLayoutItem>
+#include <QPushButton>
 
 INumberWidget::~INumberWidget()
 {
@@ -48,6 +49,7 @@ QString NumberEditor::textFromValue(double val) const
     return INDIDouble(val, format);
 }
 
+
 QValidator::State NumberEditor::validate(QString& input, int& pos) const
 {
     return INDIDouble(input, format).valid() ? QValidator::Acceptable : QValidator::Invalid;
@@ -70,6 +72,13 @@ void INumberWidget::setRange(double min, double max)
 }
 
 
+void INumberWidget::setEnabled(bool enable)
+{
+  setButton->setVisible(enable);
+  numberEditor->setEnabled(enable);
+}
+
+
 
 INumberWidget::INumberWidget(const QString& label, const QString& format, QWidget* parent): QWidget(parent )
 {
@@ -78,10 +87,10 @@ INumberWidget::INumberWidget(const QString& label, const QString& format, QWidge
   layout->addWidget(new QLabel{label});
   layout->addWidget(numberEditor = new NumberEditor{format}, 1);
   numberEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-  QPushButton *setValue = new QPushButton(tr("set"));
+  setButton = new QPushButton(tr("set"));
   layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
-  layout->addWidget(setValue);
-  connect(setValue, &QPushButton::clicked, [=]{ emit valueChanged(numberEditor->value()); });
+  layout->addWidget(setButton);
+  connect(setButton, &QPushButton::clicked, [=]{ emit valueChanged(numberEditor->value()); });
 }
 
 

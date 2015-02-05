@@ -22,6 +22,7 @@
 
 #include <QWidget>
 
+class QPushButton;
 
 class NumberEditor;
 class INumberWidget : public QWidget
@@ -34,11 +35,13 @@ public:
 public slots:
   void setValue(double value);
   void setRange(double min, double max);
+  void setEnabled(bool enable);
 signals:
   void valueChanged(double);
 
 private:
   NumberEditor *numberEditor;
+  QPushButton *setButton;
 };
 
 #endif // INUMBERWIDGET_H
