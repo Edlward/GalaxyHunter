@@ -95,10 +95,12 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     d->ui->catalogue->setModel(&d->cataloguesModel);
     d->ui->objects_results->setModel(&d->objectsModel);
     connect(d->ui->objectName, &QLineEdit::textChanged, [=](const QString &s) { d->ui->searchObject->setEnabled(s.size()>0); });
-    connect(d->ui->searchObject, &QPushButton::clicked, [=]{
+    auto searchObject = [=]{
       int64_t catalogue = d->cataloguesModel.item(d->ui->catalogue->currentIndex(), 0)->data(Private::id).toLongLong();
       d->search(d->ui->objectName->text(), catalogue);
-    });
+    };
+    connect(d->ui->objectName, &QLineEdit::returnPressed, searchObject);
+    connect(d->ui->searchObject, &QPushButton::clicked, searchObject);
     d->loadCatalogues();
 }
 
