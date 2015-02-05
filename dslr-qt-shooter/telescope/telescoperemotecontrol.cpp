@@ -115,6 +115,7 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
       query.bindValue(":object_id", skyObjectId);
       if(query.exec() && query.next()) {
 	double ra = query.value("ra").toDouble() * 180. / M_PI;
+	ra *= (24./360.);
 	double dec = query.value("dec").toDouble() * 180. / M_PI;
 	d->goTo(ra, dec);
       } else
