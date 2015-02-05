@@ -93,6 +93,8 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     d->ui->coordinates->setLayout(coordinatesLayout);
     coordinatesLayout->addWidget(new NumberVectorProperty(device->getProperty("EQUATORIAL_EOD_COORD", INDI_NUMBER)->getNumber(), client));
     d->ui->catalogue->setModel(&d->cataloguesModel);
+    
+    d->objectsModel.setHorizontalHeaderLabels({"Catalogue", "Number", "Name", "Comment", "RA", "DEC", "Magnitude", "Size", "Type", "Constellation"});
     d->ui->objects_results->setModel(&d->objectsModel);
     connect(d->ui->objectName, &QLineEdit::textChanged, [=](const QString &s) { d->ui->searchObject->setEnabled(s.size()>0); });
     auto searchObject = [=]{
