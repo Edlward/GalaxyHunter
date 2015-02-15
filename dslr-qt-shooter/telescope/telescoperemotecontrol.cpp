@@ -107,7 +107,9 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     d->ui->catalogue->setModel(&d->cataloguesModel);
     
     d->ui->objects_results->setModel(&d->objectsModel);
-    connect(d->ui->objectName, &QLineEdit::textChanged, [=](const QString &s) { d->ui->searchObject->setEnabled(s.size()>0); });
+    auto changeButtonText = [=] { d->ui->searchObject->setText(d->ui->objectName->text().size()>0 ? tr("Search") : tr("View All")); };
+    changeButtonText();
+    connect(d->ui->objectName, &QLineEdit::textChanged, changeButtonText);
     auto searchObject = [=]{
       int64_t catalogue = d->cataloguesModel.item(d->ui->catalogue->currentIndex(), 0)->data(Private::id).toLongLong();
       d->search(d->ui->objectName->text(), catalogue);
@@ -116,7 +118,10 @@ TelescopeRemoteControl::TelescopeRemoteControl(const std::shared_ptr<INDIClient>
     connect(d->ui->searchObject, &QPushButton::clicked, searchObject);
     connect(d->ui->objects_results, &QTreeView::activated, [=](const QModelIndex &index) { d->ui->gotoObject->setEnabled(index.isValid()); });
     connect(d->ui->gotoObject, &QPushButton::clicked, [=]{
-      auto item = d->objectsModel.itemFromIndex(d->ui->objects_results->currentIndex());
+      auto currentIndex = d->ui->objects_results->currentIndex();
+      if(! currentIndex.isValid())
+	return;
+      auto item = d->objectsModel.itemFromIndex(currentIndex);
       auto skyObjectId =  item->data().toLongLong();
       QSqlQuery query;
       query.prepare("SELECT ra, dec from objects WHERE id = :object_id");
