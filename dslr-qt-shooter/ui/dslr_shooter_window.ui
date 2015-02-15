@@ -571,10 +571,11 @@
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>Fi&amp;le</string>
+     <string>Main</string>
     </property>
     <addaction name="actionClean_Log_Messages"/>
     <addaction name="action_Quit"/>
+    <addaction name="action_LogMessages"/>
    </widget>
    <widget class="QMenu" name="menuTelescope">
     <property name="title">
@@ -584,8 +585,8 @@
     <addaction name="action_Devices_Control_Panel"/>
     <addaction name="actionRemote_Control"/>
    </widget>
-   <addaction name="menuCamera"/>
    <addaction name="menuFile"/>
+   <addaction name="menuCamera"/>
    <addaction name="menuTelescope"/>
   </widget>
   <action name="actionConnect_LinGuider">
@@ -649,6 +650,11 @@
   <action name="actionRemote_Control">
    <property name="text">
     <string>Telescope Control</string>
+   </property>
+  </action>
+  <action name="action_LogMessages">
+   <property name="text">
+    <string>Log Messages</string>
    </property>
   </action>
  </widget>

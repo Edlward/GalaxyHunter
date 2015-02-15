@@ -25,11 +25,13 @@ ImagingDriver *ImagingDriver::imagingDriver(QObject *parent) {
 void ImagingDriver::camera_error(Imager* camera, const QString& message)
 {
   emit imager_error(QString("%1: %2").arg(camera->model()).arg(message));
+  emit imager_message(MessageType::Error, camera->model(), message );
 }
 
 void ImagingDriver::camera_message(Imager* camera, const QString& message)
 {
   emit imager_message(QString("%1: %2").arg(camera->model()).arg(message));
+  emit imager_message(MessageType::Info, camera->model(), message );
 }
 
 void ImagingDriver::scan()
