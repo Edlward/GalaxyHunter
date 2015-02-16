@@ -63,7 +63,7 @@ private:
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent), d(new Private(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() ))
 {
-  d->logs.setHorizontalHeaderLabels({tr("Type"), tr("Source"), tr("Message")});
+  d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
   d->ui->setupUi(this);
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
@@ -414,10 +414,12 @@ void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)
 {
 
   qDebug() << __PRETTY_FUNCTION__ << ": " << logMessage;
+  QStandardItem *when = new QStandardItem{logMessage.when.toString(Qt::DateFormat::ISODate)};
+  when->setData(logMessage.when);
   QStandardItem *type = new QStandardItem{logMessage.typeDesc()};
   type->setData(logMessage.type);
   QStandardItem *from_item = new QStandardItem{logMessage.source};
   QStandardItem *message_item = new QStandardItem{logMessage.message};
-  d->logs.appendRow({type, from_item, message_item});
+  d->logs.appendRow({when, type, from_item, message_item});
 }
 

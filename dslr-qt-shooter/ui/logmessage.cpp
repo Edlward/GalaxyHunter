@@ -27,17 +27,17 @@ QDebug& operator<<(QDebug& o, const LogMessage& m)
 }
 LogMessage LogMessage::error(const QString& source, const QString& message)
 {
-  return {Error, source, message};
+  return {Error, source, message, QDateTime::currentDateTime()};
 }
 
 LogMessage LogMessage::info(const QString& source, const QString& message)
 {
-  return {Info, source, message};
+  return {Info, source, message, QDateTime::currentDateTime()};
 }
 
 LogMessage LogMessage::warning(const QString& source, const QString& message)
 {
-  return {Warning, source, message};
+  return {Warning, source, message, QDateTime::currentDateTime()};
 }
 
 

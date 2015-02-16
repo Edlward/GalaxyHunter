@@ -21,6 +21,7 @@
 #define LOGMESSAGE_H
 #include <QMetaType>
 #include <QDebug>
+#include <QDateTime>
 
 struct LogMessage
 {
@@ -32,6 +33,7 @@ struct LogMessage
   Type type;
   QString source;
   QString message;
+  QDateTime when;
   QString typeDesc() const;
   static LogMessage info(const QString &source, const QString &message);
   static LogMessage warning(const QString &source, const QString &message);
