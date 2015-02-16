@@ -21,6 +21,7 @@
 #include "ui_messageswindow.h"
 #include <QAbstractItemModel>
 #include <QSortFilterProxyModel>
+#include <QDebug>
 
 class MessagesWindow::Private {
 public:
@@ -48,4 +49,6 @@ MessagesWindow::MessagesWindow(QAbstractItemModel *logsModel, QWidget* parent) :
   d->ui->logs->setModel(d->logsModel.get());
   connect(d->ui->clearLogs, &QPushButton::clicked, [=]{ logsModel->removeRows(0, logsModel->rowCount()); });
   d->logsModel->setDynamicSortFilter(true);
+  d->logsModel->setSortRole(Qt::UserRole+1);
+  d->logsModel->sort(0, Qt::DescendingOrder);
 }
