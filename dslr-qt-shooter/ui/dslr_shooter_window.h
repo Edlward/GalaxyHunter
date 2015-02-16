@@ -26,10 +26,10 @@ public slots:
 private slots:
   void on_connectLinGuider_clicked();
   void on_dither_clicked();
-  void update_log();
 
   void got_error(const QString &error);
   void got_message(const QString &message);
+  
   void got_message(const LogMessage &logMessage);
   void camera_connected();
   void camera_disconnected();

@@ -62,13 +62,12 @@ void INDIClient::Private::newLight(ILightVectorProperty* lvp)
 
 void INDIClient::Private::newMessage(INDI::BaseDevice* dp, int messageID)
 {
-  qDebug() << __PRETTY_FUNCTION__ << ": device=" << dp->getDeviceName() << ", messageID: " << messageID;
   QString message = QString::fromStdString(dp->messageQueue(messageID));
   QRegExp re("[\\d]{4}-[\\d]{2}-[\\d]{2}T[\\d]{2}:[\\d]{2}:[\\d]{2}: (.*)");
   if(re.indexIn(message) != -1) {
     message = re.cap(1);
   }
-  q->message(LogMessage::info("INDI", message));
+  q->message(LogMessage::info(QString("indi-%1").arg(dp->getDeviceName()), message));
 }
 
 void INDIClient::Private::newNumber(INumberVectorProperty* nvp)

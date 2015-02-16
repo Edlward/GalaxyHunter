@@ -69,7 +69,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
   connect(d->telescopeControl, SIGNAL(message(LogMessage)), this, SLOT(got_message(LogMessage)));
-  connect(d->ui->actionClean_Log_Messages, &QAction::triggered, [=]{ d->ui->logWindow->clear(); });
   connect(d->ui->stopShooting, &QPushButton::clicked, [=]{ d->ui->stopShooting->setDisabled(true); d->abort_sequence = true; });
   connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
   connect(d->ui->action_LogMessages, &QAction::triggered, [=]{ (new MessagesWindow{&d->logs})->show(); });
@@ -86,7 +85,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
   d->ui->imageContainer->setWidgetResizable(true);
   d->ui->camera_splitter->setSizes({height()/10*8, height()/10*2});
-  d->ui->log_splitter->setSizes({height()/10*8, height()/10*2});
   d->ui->stopShooting->setHidden(true);
   
   auto set_imager = [=](const shared_ptr<Imager> &imager) {
@@ -235,34 +233,17 @@ void DSLR_Shooter_Window::on_connectLinGuider_clicked()
 void DSLR_Shooter_Window::on_dither_clicked()
 {
     auto response = d->guider->dither();
-    d->logEntries.prepend({response, QDateTime::currentDateTime()});
-    update_log();
-}
-
-void DSLR_Shooter_Window::update_log()
-{
-    d->ui->logWindow->clear();
-    QStringList log;
-    transform(d->logEntries.begin(), d->logEntries.end(), back_inserter(log), [](const Private::LogEntry &e) { return QString("%1 - %2").arg(e.when.toString(Qt::ISODate)).arg(e.message); } );
-    d->ui->logWindow->setText(log.join("\n"));
+    got_message(LogMessage::info("guider", response));
 }
 
 void DSLR_Shooter_Window::got_error(const QString& error)
 {
-  qDebug() << __PRETTY_FUNCTION__ << " (deprecated): sender: " << sender()->metaObject()->className() << ", message: " << error;
-  if(error.isEmpty())
-    return;
-  d->logEntries.prepend({error, QDateTime::currentDateTime()});
-  update_log();
+  qDebug() << "DEPRECATED_GOT_ERROR: sender: " << sender()->metaObject()->className() << ", message: " << error;
 }
 
 void DSLR_Shooter_Window::got_message(const QString& message)
 {
-  qDebug() << __PRETTY_FUNCTION__ << " (deprecated): sender: " << sender()->metaObject()->className() << ", message: " << message;
-  if(message.isEmpty())
-    return;
-  d->logEntries.prepend({message, QDateTime::currentDateTime()});
-  update_log();
+  qDebug() << "DEPRECATED_GOT_MESSAGE: sender: " << sender()->metaObject()->className() << ", message: " << message;
 }
 
 void DSLR_Shooter_Window::Private::enableOrDisableShootingModeWidgets()

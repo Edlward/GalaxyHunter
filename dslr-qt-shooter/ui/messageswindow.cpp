@@ -20,18 +20,19 @@
 #include "messageswindow.h"
 #include "ui_messageswindow.h"
 #include <QAbstractItemModel>
+#include <QSortFilterProxyModel>
 
 class MessagesWindow::Private {
 public:
-  Private(Ui::MessagesWindow* ui, QAbstractItemModel* logsModel, MessagesWindow* q);
+  Private(MessagesWindow* q);
   std::unique_ptr<Ui::MessagesWindow> ui;
-  QAbstractItemModel *logsModel;
+  std::unique_ptr<QSortFilterProxyModel> logsModel;
 private:
   MessagesWindow *q;
 };
 
-MessagesWindow::Private::Private(Ui::MessagesWindow* ui, QAbstractItemModel *logsModel, MessagesWindow* q)
-  : q(q), logsModel(logsModel), ui(ui)
+MessagesWindow::Private::Private(MessagesWindow* q)
+  : q(q), logsModel(new QSortFilterProxyModel), ui(new Ui::MessagesWindow)
 {
 }
 
@@ -40,8 +41,11 @@ MessagesWindow::~MessagesWindow()
 {
 }
 
-MessagesWindow::MessagesWindow(QAbstractItemModel *logsModel, QWidget* parent) : QWidget(parent), d(new Private{new Ui::MessagesWindow, logsModel, this})
+MessagesWindow::MessagesWindow(QAbstractItemModel *logsModel, QWidget* parent) : QWidget(parent), d(new Private{this})
 {
   d->ui->setupUi(this);
-  d->ui->logs->setModel(logsModel);
+  d->logsModel->setSourceModel(logsModel);
+  d->ui->logs->setModel(d->logsModel.get());
+  connect(d->ui->clearLogs, &QPushButton::clicked, [=]{ logsModel->removeRows(0, logsModel->rowCount()); });
+  d->logsModel->setDynamicSortFilter(true);
 }
