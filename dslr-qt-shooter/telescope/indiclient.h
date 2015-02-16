@@ -25,6 +25,7 @@
 #include <vector>
 #include <indibase.h>
 
+class LogMessage;
 class INDIClient : public QObject
 {
     Q_OBJECT
@@ -47,6 +48,7 @@ signals:
   void newLight(ILightVectorProperty*);
   void propertyRemoved(INDI::Property*);
   void propertyAdded(INDI::Property*);
+  void message(const LogMessage &);
 private:
   class Private;
   friend class Private;

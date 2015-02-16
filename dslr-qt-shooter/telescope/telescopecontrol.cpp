@@ -46,6 +46,7 @@ TelescopeControl::~TelescopeControl()
 TelescopeControl::TelescopeControl(QObject* parent) : d(new Private(this))
 {
   d->indiClient = std::make_shared<INDIClient>();
+  connect(d->indiClient.get(), SIGNAL(message(LogMessage)), this, SIGNAL(message(LogMessage)));
 }
 
 void TelescopeControl::open(QString address, int port)

@@ -18,6 +18,7 @@
  */
 
 #include "indiclient.h"
+#include <ui/logmessage.h>
 
 #include "indidevapi.h"
 #include "indicom.h"
@@ -62,6 +63,8 @@ void INDIClient::Private::newLight(ILightVectorProperty* lvp)
 void INDIClient::Private::newMessage(INDI::BaseDevice* dp, int messageID)
 {
   qDebug() << __PRETTY_FUNCTION__ << ": device=" << dp->getDeviceName() << ", messageID: " << messageID;
+  auto message = dp->messageQueue(messageID);
+  q->message(LogMessage::info("INDI", QString::fromStdString(message)));
 }
 
 void INDIClient::Private::newNumber(INumberVectorProperty* nvp)

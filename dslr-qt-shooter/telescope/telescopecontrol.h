@@ -22,6 +22,8 @@
 
 #include <QtCore>
 #include <memory>
+
+class LogMessage;
 class QDialog;
 class TelescopeControl : public QObject
 {
@@ -34,6 +36,8 @@ public slots:
     void open(QString address, int port);
     void showControlPanel();
     void showTelescopeRemoteControl();
+signals:
+  void message(const LogMessage &);
 private:
   class Private;
   friend class Private;
