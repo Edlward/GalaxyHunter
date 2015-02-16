@@ -1,6 +1,7 @@
 #include "dslr_shooter_window.h"
 #include "imagesettingsdialog.h"
 #include "messageswindow.h"
+#include "logmessage.h"
 #include "ui_dslr_shooter_window.h"
 #include "guider/linguider.h"
 #include <QtCore/QTimer>
@@ -62,6 +63,7 @@ private:
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent), d(new Private(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() ))
 {
+  d->logs.setHorizontalHeaderLabels({tr("Type"), tr("Source"), tr("Message")});
   d->ui->setupUi(this);
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
@@ -98,7 +100,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
 
   connect(d->imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)), Qt::QueuedConnection);
   connect(d->imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)), Qt::QueuedConnection);
-  connect(d->imagingDriver, SIGNAL(imager_message(MessageType, QString, QString)), this, SLOT(got_message(MessageType,QString,QString)), Qt::QueuedConnection);
+  connect(d->imagingDriver, SIGNAL(imager_message(LogMessage)), this, SLOT(got_message(LogMessage)), Qt::QueuedConnection);
   connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
   
   connect(d->ui->zoomIn, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(1.2); });
@@ -246,7 +248,7 @@ void DSLR_Shooter_Window::update_log()
 
 void DSLR_Shooter_Window::got_error(const QString& error)
 {
-  qDebug() << __PRETTY_FUNCTION__ << " (deprecated): sender: " << sender()->metaObject()->className();
+  qDebug() << __PRETTY_FUNCTION__ << " (deprecated): sender: " << sender()->metaObject()->className() << ", message: " << error;
   if(error.isEmpty())
     return;
   d->logEntries.prepend({error, QDateTime::currentDateTime()});
@@ -255,7 +257,7 @@ void DSLR_Shooter_Window::got_error(const QString& error)
 
 void DSLR_Shooter_Window::got_message(const QString& message)
 {
-  qDebug() << __PRETTY_FUNCTION__ << " (deprecated): sender: " << sender()->metaObject()->className();
+  qDebug() << __PRETTY_FUNCTION__ << " (deprecated): sender: " << sender()->metaObject()->className() << ", message: " << message;
   if(message.isEmpty())
     return;
   d->logEntries.prepend({message, QDateTime::currentDateTime()});
@@ -309,7 +311,7 @@ void DSLR_Shooter_Window::camera_connected()
   QString camera_infos = QString("Model: %1\nSummary: %2")
     .arg(d->imager->model())
     .arg(d->imager->summary());
-  got_message(QString("Camera connected: %1").arg(d->imager->model()));
+  got_message(LogMessage::info("General", QString("Camera connected: %1").arg(d->imager->model())));
   d->ui->camera_infos->setText(camera_infos);
   d->ui->shoot->setEnabled(true);
   d->ui->toolBox->setEnabled(true);
@@ -407,18 +409,14 @@ void DSLR_Shooter_Window::camera_disconnected()
   disconnect(d->ui->imageContainer, SLOT(setImage(const QImage &)));
 }
 
-void DSLR_Shooter_Window::got_message(MessageType messageType, const QString& from, const QString& message)
+void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)
 {
-  std::map<MessageType, QString> types {
-    {MessageType::Error, tr("Error")},
-    {MessageType::Warning, tr("Warning")},
-    {MessageType::Info, tr("Info")},
-  };
-  qDebug() << __PRETTY_FUNCTION__ << ": message type " << types[messageType] << ", sender: " << from << ", message: " << message;
-  QStandardItem *type = new QStandardItem{types[messageType]};
-  type->setData(messageType);
-  QStandardItem *from_item = new QStandardItem{from};
-  QStandardItem *message_item = new QStandardItem{message};
+
+  qDebug() << __PRETTY_FUNCTION__ << ": " << logMessage;
+  QStandardItem *type = new QStandardItem{logMessage.typeDesc()};
+  type->setData(logMessage.type);
+  QStandardItem *from_item = new QStandardItem{logMessage.source};
+  QStandardItem *message_item = new QStandardItem{logMessage.message};
   d->logs.appendRow({type, from_item, message_item});
 }
 

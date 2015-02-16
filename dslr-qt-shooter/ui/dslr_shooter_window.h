@@ -4,8 +4,8 @@
 #include <QMainWindow>
 #include <QDateTime>
 #include <imaging/imaging_driver.h>
-#include "common.h"
 
+class LogMessage;
 class LinGuider;
 class QLabel;
 namespace Ui {
@@ -30,7 +30,7 @@ private slots:
 
   void got_error(const QString &error);
   void got_message(const QString &message);
-  void got_message(MessageType messageType, const QString &from, const QString &message);
+  void got_message(const LogMessage &logMessage);
   void camera_connected();
   void camera_disconnected();
   void start_shooting();

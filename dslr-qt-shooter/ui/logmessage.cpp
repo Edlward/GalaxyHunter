@@ -17,31 +17,36 @@
  *
  */
 
-#include "messageswindow.h"
-#include "ui_messageswindow.h"
-#include <QAbstractItemModel>
+#include "logmessage.h"
 
-class MessagesWindow::Private {
-public:
-  Private(Ui::MessagesWindow* ui, QAbstractItemModel* logsModel, MessagesWindow* q);
-  std::unique_ptr<Ui::MessagesWindow> ui;
-  QAbstractItemModel *logsModel;
-private:
-  MessagesWindow *q;
-};
 
-MessagesWindow::Private::Private(Ui::MessagesWindow* ui, QAbstractItemModel *logsModel, MessagesWindow* q)
-  : q(q), logsModel(logsModel), ui(ui)
+QDebug& operator<<(QDebug& o, const LogMessage& m)
 {
+  o << "[type=" << m.typeDesc() << "; source=" << m.source << "; message=" << m.message << "]";
+  return o;
+}
+LogMessage LogMessage::error(const QString& source, const QString& message)
+{
+  return {Error, source, message};
+}
+
+LogMessage LogMessage::info(const QString& source, const QString& message)
+{
+  return {Info, source, message};
+}
+
+LogMessage LogMessage::warning(const QString& source, const QString& message)
+{
+  return {Warning, source, message};
 }
 
 
-MessagesWindow::~MessagesWindow()
+QString LogMessage::typeDesc() const
 {
-}
-
-MessagesWindow::MessagesWindow(QAbstractItemModel *logsModel, QWidget* parent) : QWidget(parent), d(new Private{new Ui::MessagesWindow, logsModel, this})
-{
-  d->ui->setupUi(this);
-  d->ui->logs->setModel(logsModel);
+  static std::map<Type, QString> descs {
+    {Error, "Error"},
+    {Warning, "Warning"},
+    {Info, "Info"},
+  };
+  return descs[type];
 }

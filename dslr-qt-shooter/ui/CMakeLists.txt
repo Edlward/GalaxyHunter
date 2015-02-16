@@ -3,6 +3,7 @@ set(dslr_ui_SOURCES
   imagesettingsdialog.cpp
   zoomableimage.cpp
   messageswindow.cpp
+  logmessage.cpp
   ${CMAKE_SOURCE_DIR}/dslr-qt-shooter/utils/qlambdathread.cpp
 )
 

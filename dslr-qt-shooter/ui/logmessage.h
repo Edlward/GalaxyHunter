@@ -17,31 +17,37 @@
  *
  */
 
-#include "messageswindow.h"
-#include "ui_messageswindow.h"
-#include <QAbstractItemModel>
+#ifndef LOGMESSAGE_H
+#define LOGMESSAGE_H
+#include <QMetaType>
+#include <QDebug>
 
-class MessagesWindow::Private {
-public:
-  Private(Ui::MessagesWindow* ui, QAbstractItemModel* logsModel, MessagesWindow* q);
-  std::unique_ptr<Ui::MessagesWindow> ui;
-  QAbstractItemModel *logsModel;
-private:
-  MessagesWindow *q;
+struct LogMessage
+{
+  enum Type {
+    Info = 0,
+    Warning = 1,
+    Error = 2,
+  };
+  Type type;
+  QString source;
+  QString message;
+  QString typeDesc() const;
+  static LogMessage info(const QString &source, const QString &message);
+  static LogMessage warning(const QString &source, const QString &message);
+  static LogMessage error(const QString &source, const QString &message);
 };
 
-MessagesWindow::Private::Private(Ui::MessagesWindow* ui, QAbstractItemModel *logsModel, MessagesWindow* q)
-  : q(q), logsModel(logsModel), ui(ui)
-{
-}
+
+QDebug &operator<<(QDebug &o, const LogMessage &m);
 
 
-MessagesWindow::~MessagesWindow()
-{
-}
 
-MessagesWindow::MessagesWindow(QAbstractItemModel *logsModel, QWidget* parent) : QWidget(parent), d(new Private{new Ui::MessagesWindow, logsModel, this})
-{
-  d->ui->setupUi(this);
-  d->ui->logs->setModel(logsModel);
-}
+
+namespace {
+  struct ______RegisterLogMessageMetatype {
+    ______RegisterLogMessageMetatype() { qRegisterMetaType<LogMessage>("LogMessage"); }
+  };
+  static ______RegisterLogMessageMetatype ______registerLogMessageMetatype;
+};
+#endif // LOGMESSAGE_H

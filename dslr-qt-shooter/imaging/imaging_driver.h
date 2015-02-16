@@ -5,8 +5,8 @@
 #include <QImage>
 #include <QStringList>
 #include <memory>
-#include <common.h>
 
+class LogMessage;
 
 class QImage;
 
@@ -73,7 +73,7 @@ public slots:
 signals:
   void imager_message(const QString &);
   void imager_error(const QString &);
-  void imager_message(MessageType, const QString &, const QString &);
+  void imager_message(const LogMessage&);
   void camera_connected();
   void scan_finished();
 };
