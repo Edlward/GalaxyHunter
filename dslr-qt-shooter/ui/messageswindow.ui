@@ -6,32 +6,32 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>641</width>
-    <height>438</height>
+    <width>823</width>
+    <height>545</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>534</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
    <item row="0" column="1">
+    <widget class="QComboBox" name="type"/>
+   </item>
+   <item row="0" column="6">
     <widget class="QPushButton" name="clearLogs">
      <property name="text">
       <string>Clear</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
+   <item row="0" column="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Sender</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="5">
+    <widget class="QLineEdit" name="message"/>
+   </item>
+   <item row="1" column="0" colspan="7">
     <widget class="QTreeView" name="logs">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
@@ -48,6 +48,23 @@
      <attribute name="headerHighlightSections">
       <bool>true</bool>
      </attribute>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QComboBox" name="sender"/>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Type</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="4">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Contains</string>
+     </property>
     </widget>
    </item>
   </layout>

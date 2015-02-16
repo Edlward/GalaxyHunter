@@ -22,12 +22,16 @@
 #include <QAbstractItemModel>
 #include <QSortFilterProxyModel>
 #include <QDebug>
+#include <QStringListModel>
+#include <QStandardItemModel>
 
 class MessagesWindow::Private {
 public:
   Private(MessagesWindow* q);
   std::unique_ptr<Ui::MessagesWindow> ui;
   std::unique_ptr<QSortFilterProxyModel> logsModel;
+  QStringListModel filterSender;
+  QStringListModel filterType;
 private:
   MessagesWindow *q;
 };
@@ -51,4 +55,8 @@ MessagesWindow::MessagesWindow(QAbstractItemModel *logsModel, QWidget* parent) :
   d->logsModel->setDynamicSortFilter(true);
   d->logsModel->setSortRole(Qt::UserRole+1);
   d->logsModel->sort(0, Qt::DescendingOrder);
+  d->logsModel->setFilterKeyColumn(3);
+  d->logsModel->setFilterRole(Qt::DisplayRole);
+  d->logsModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+  connect(d->ui->message, &QLineEdit::textChanged, [=](const QString &t){ d->logsModel->setFilterWildcard(t); });
 }
