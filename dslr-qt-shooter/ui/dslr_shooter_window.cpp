@@ -400,6 +400,7 @@ void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)
   QStandardItem *type = new QStandardItem{logMessage.typeDesc()};
   type->setData(logMessage.type);
   QStandardItem *from_item = new QStandardItem{logMessage.source};
+  from_item->setData(logMessage.source);
   QStandardItem *message_item = new QStandardItem{logMessage.message};
   d->logs.appendRow({when, type, from_item, message_item});
 }
