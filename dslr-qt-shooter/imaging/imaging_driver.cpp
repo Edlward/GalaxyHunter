@@ -6,9 +6,10 @@
 #endif
 #ifdef IMAGING_testing
 #include "testing/testingimager.h"
-#include <ui/logmessage.h>
 #warning Using testing backend
 #endif
+
+#include <ui/logmessage.h>
 
 
 ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {
