@@ -42,7 +42,7 @@ QWidget* NumberVectorProperty::propertyWidget(int index)
   w->setEnabled(_property->p != IP_RO);
   w->setRange(sw.min, sw.max);
   w->setValue(sw.value);
-  connect(w, &INumberWidget::valueChanged, [=](double v){
+  w->setOnValueChanged([=](double v){
     _property->np[index].value = v;
     _indiClient->sendNewNumber(_property);
   });

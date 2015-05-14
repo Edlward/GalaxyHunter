@@ -24,6 +24,8 @@
 #include <QPushButton>
 #include "indidouble.h"
 #include <QLayoutItem>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QPushButton>
 
 INumberWidget::~INumberWidget()
@@ -86,11 +88,37 @@ INumberWidget::INumberWidget(const QString& label, const QString& format, QWidge
   setLayout(layout);
   layout->addWidget(new QLabel{label});
   layout->addWidget(numberEditor = new NumberEditor{format}, 1);
+  numberEditor->setReadOnly(true);
   numberEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-  setButton = new QPushButton(tr("set"));
   layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
+  if(!isEnabled())
+    return;
+  setButton = new QPushButton(tr("set"));
   layout->addWidget(setButton);
-  connect(setButton, &QPushButton::clicked, [=]{ emit valueChanged(numberEditor->value()); });
+  connect(setButton, &QPushButton::clicked, [=]{
+    QDialog *dialog = new QDialog;
+    NumberEditor *editor = new NumberEditor{format};
+    editor->setValue(numberEditor->value());
+    QBoxLayout *layout = new QVBoxLayout(dialog);
+    dialog->setLayout(layout);
+    layout->addWidget(editor);
+    dialog->setModal(true);
+    auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                     | QDialogButtonBox::Cancel);
+
+    connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttonBox, &QDialogButtonBox::accepted, [=]{
+      onValueChanged(editor->value());
+    });
+    connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+    layout->addWidget(buttonBox);
+    dialog->show();
+  });
+}
+
+void INumberWidget::setOnValueChanged(std::function<void(double)> onValueChanged)
+{
+  this->onValueChanged = onValueChanged;
 }
 
 
