@@ -184,7 +184,7 @@ string GPhotoCamera::Private::fixedFilename(const string& fileName) const
 }
 
 
-QImage GPhotoCamera::Private::shootPreset() const
+QImage GPhotoCamera::Private::shootPreset()
 {
   CameraTempFile camera_file;
   CameraFilePath camera_remote_file;
@@ -228,7 +228,7 @@ QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
   }
 }
 
-QImage GPhotoCamera::Private::shootTethered() const
+QImage GPhotoCamera::Private::shootTethered()
 {
   boost::thread t([=]{
     auto shoot = make_shared<SerialShoot>(serialShootPort);

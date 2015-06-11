@@ -20,6 +20,7 @@
 #include <QComboBox>
 #include <QMessageBox>
 #include <QLCDNumber>
+#include <QSystemTrayIcon>
 #include <QInputDialog>
 #include "imaging/focus.h"
 #include "qwt-src/qwt_plot_curve.h"
@@ -32,8 +33,7 @@ using namespace std;
 
 class DSLR_Shooter_Window::Private {
 public:
-  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver) : q(q), ui(ui), imagingDriver(imagingDriver),
-    settings("GuLinux", "DSLR-Shooter") {}
+  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver);
     unique_ptr<Ui::DSLR_Shooter_Window> ui;
     LinGuider *guider;
     struct LogEntry {
@@ -55,14 +55,22 @@ public:
     QwtPlotCurve *focus_curve;
     TelescopeControl *telescopeControl;
     QStandardItemModel logs;
+    QSystemTrayIcon trayIcon;
 private:
   DSLR_Shooter_Window *q;
 };
+
+DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriver* imagingDriver)
+ : q(q), ui(ui), imagingDriver(imagingDriver), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
+{
+
+}
 
 
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent), d(new Private(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() ))
 {
+  d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
   d->ui->setupUi(this);
   d->telescopeControl = new TelescopeControl(this);
@@ -404,5 +412,8 @@ void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)
   from_item->setData(logMessage.source);
   QStandardItem *message_item = new QStandardItem{logMessage.message};
   d->logs.appendRow({when, type, from_item, message_item});
+  if(logMessage.type == LogMessage::Error) {
+    d->trayIcon.showMessage(QString("%1 error").arg(logMessage.source), logMessage.message);
+  }
 }
 

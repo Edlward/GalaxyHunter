@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=DSLR-Qt-Shooter
+Comment=Astronomy DSLR Manager, with autoguider and telescope control
+Exec=dslr-qt-shooter
+Icon=dslr-qt-shooter
+Terminal=false
+Categories=Science;Graphics
