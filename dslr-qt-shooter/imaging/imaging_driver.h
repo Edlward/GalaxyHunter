@@ -71,8 +71,6 @@ public slots:
   void camera_message(Imager* camera, const QString& message);
   void camera_error(Imager *camera, const QString &message);
 signals:
-  void imager_message(const QString &);
-  void imager_error(const QString &);
   void imager_message(const LogMessage&);
   void camera_connected();
   void scan_finished();

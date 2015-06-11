@@ -105,8 +105,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imager->connect();
   };
 
-  connect(d->imagingDriver, SIGNAL(imager_error(QString)), this, SLOT(got_error(QString)), Qt::QueuedConnection);
-  connect(d->imagingDriver, SIGNAL(imager_message(QString)), this, SLOT(got_message(QString)), Qt::QueuedConnection);
   connect(d->imagingDriver, SIGNAL(imager_message(LogMessage)), this, SLOT(got_message(LogMessage)), Qt::QueuedConnection);
   connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
   
@@ -242,16 +240,6 @@ void DSLR_Shooter_Window::on_dither_clicked()
 {
     auto response = d->guider->dither();
     got_message(LogMessage::info("guider", response));
-}
-
-void DSLR_Shooter_Window::got_error(const QString& error)
-{
-  qDebug() << "DEPRECATED_GOT_ERROR: sender: " << sender()->metaObject()->className() << ", message: " << error;
-}
-
-void DSLR_Shooter_Window::got_message(const QString& message)
-{
-  qDebug() << "DEPRECATED_GOT_MESSAGE: sender: " << sender()->metaObject()->className() << ", message: " << message;
 }
 
 void DSLR_Shooter_Window::Private::enableOrDisableShootingModeWidgets()
