@@ -22,6 +22,8 @@
 #include <QLabel>
 #include <QDebug>
 #include <QPushButton>
+#include <QDialogButtonBox>
+#include <QDialog>
 
 TextVectorProperty::~TextVectorProperty()
 {
@@ -47,17 +49,32 @@ QWidget* TextVectorProperty::propertyWidget(int index)
   widget->setLayout(layout);
   layout->addWidget(new QLabel(sw.label));
   QLineEdit *lineEdit = new QLineEdit(sw.text);
+  lineEdit->setReadOnly(true);
   lineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
   layout->addWidget(lineEdit, 1);
-  lineEdit->setEnabled(_property->p != IP_RO);
-  if(lineEdit->isEnabled()) {
+  if(_property->p != IP_RO) {
     QPushButton *change = new QPushButton(tr("set"));
     layout->addSpacerItem(new QSpacerItem(0, 0, QSizePolicy::MinimumExpanding, QSizePolicy::Minimum));
     layout->addWidget(change);
     connect(change, &QPushButton::clicked, [=]() {
-      qDebug() << lineEdit->text() << "set: ";
-      IUSaveText(&_property->tp[index], lineEdit->text().toLocal8Bit().constData());
-      _indiClient->sendNewText(_property);
+      QDialog *dialog = new QDialog;
+      QLineEdit *editor = new QLineEdit(lineEdit->text());
+      QBoxLayout *layout = new QVBoxLayout(dialog);
+      dialog->setLayout(layout);
+      layout->addWidget(editor);
+      dialog->setModal(true);
+      auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                      | QDialogButtonBox::Cancel);
+
+      connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+      connect(buttonBox, &QDialogButtonBox::accepted, [=]{
+        qDebug() << editor->text() << "set: ";
+        IUSaveText(&_property->tp[index], editor->text().toLocal8Bit().constData());
+        _indiClient->sendNewText(_property);
+      });
+      connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+      layout->addWidget(buttonBox);
+      dialog->show();
     });
   }
   return widget;

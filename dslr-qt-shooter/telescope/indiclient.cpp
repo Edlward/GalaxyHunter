@@ -41,6 +41,8 @@ public:
   virtual void removeProperty(INDI::Property* property);
   virtual void serverConnected();
   virtual void serverDisconnected(int exit_code);
+  virtual void removeDevice(INDI::BaseDevice *dp) {} // TODO
+
 
 private:
   INDIClient *q;

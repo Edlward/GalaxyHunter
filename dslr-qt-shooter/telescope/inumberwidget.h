@@ -21,6 +21,7 @@
 #define INUMBERWIDGET_H
 
 #include <QWidget>
+#include <functional>
 
 class QPushButton;
 
@@ -32,15 +33,15 @@ class INumberWidget : public QWidget
 public:
     ~INumberWidget();
     INumberWidget(const QString &label, const QString &format, QWidget* parent = 0);
+  void setOnValueChanged(std::function<void(double)> onValueChanged);
 public slots:
   void setValue(double value);
   void setRange(double min, double max);
   void setEnabled(bool enable);
-signals:
-  void valueChanged(double);
 
 private:
   NumberEditor *numberEditor;
+  std::function<void(double)> onValueChanged = [=](double){};
   QPushButton *setButton;
 };
 

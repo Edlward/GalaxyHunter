@@ -30,7 +30,12 @@
 #include <QScrollArea>
 #include <QMap>
 #include <QDebug>
+#include <indiapi.h>
 
+
+#if INDI_VERSION_MAJOR < 1
+#define INDI_PROPERTY_TYPE INDI_TYPE
+#endif
 
 class TabPage : public QScrollArea {
   Q_OBJECT
@@ -86,7 +91,7 @@ DevicePage::~DevicePage()
 #include <iostream>
 DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClient> &indiClient, QWidget* parent) : QTabWidget(parent), d(new Private{device, indiClient, this})
 {
-  std::map<INDI_TYPE, std::function<QWidget*(INDI::Property *)>> widgetsFactory {
+  std::map<INDI_PROPERTY_TYPE, std::function<QWidget*(INDI::Property *)>> widgetsFactory {
     {INDI_NUMBER, [=](INDI::Property *p){ return new NumberVectorProperty{p->getNumber(), indiClient}; } },
     {INDI_SWITCH, [=](INDI::Property *p){ return new SwitchVectorProperty{p->getSwitch(), indiClient}; } },
     {INDI_TEXT, [=](INDI::Property *p){ return new TextVectorProperty{p->getText(), indiClient}; } },
@@ -94,7 +99,7 @@ DevicePage::DevicePage(INDI::BaseDevice *device, const std::shared_ptr<INDIClien
     {INDI_BLOB, [=](INDI::Property *p){ qDebug() << "INDI_BLOB (" << p->getGroupName() << "-" << p->getName() << ", " << p->getLabel() << ") NOT MAPPED YET"; return new QWidget; } },
     {INDI_UNKNOWN, [=](INDI::Property *p){ qDebug() << "INDI_UNKNOWN (" << p->getGroupName() << "-" << p->getName() << ", " << p->getLabel() << ") NOT MAPPED YET"; return new QWidget; } },
   };
-  static std::map<INDI_TYPE, std::string> types {
+  static std::map<INDI_PROPERTY_TYPE, std::string> types {
 	{ INDI_NUMBER, "INDI_NUMBER" },
 	{ INDI_SWITCH, "INDI_SWITCH" },
 	{ INDI_TEXT, "INDI_TEXT" },
