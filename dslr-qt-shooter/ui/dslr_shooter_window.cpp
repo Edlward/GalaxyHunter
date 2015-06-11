@@ -340,6 +340,7 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
     qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
       --*remaining;
       ui->imageContainer->setImage(image);
+      ui->imageContainer->update();
       if(ui->enable_focus_analysis->isChecked()) {
 	QMetaObject::invokeMethod(focus, "analyze", Qt::QueuedConnection, Q_ARG(QImage, ui->imageContainer->roi().isNull() ? image : image.copy(ui->imageContainer->roi())));
       } else {
