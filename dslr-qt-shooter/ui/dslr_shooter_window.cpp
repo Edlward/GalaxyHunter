@@ -73,6 +73,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
   d->ui->setupUi(this);
+  tabifyDockWidget(d->ui->camera_information_dock, d->ui->camera_setup_dock);
+  tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
+  tabifyDockWidget(d->ui->camera_information_dock, d->ui->focus_dock);
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
@@ -80,8 +83,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->ui->stopShooting, &QPushButton::clicked, [=]{ d->ui->stopShooting->setDisabled(true); d->abort_sequence = true; });
   connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
   connect(d->ui->action_LogMessages, &QAction::triggered, [=]{ (new MessagesWindow{&d->logs})->show(); });
-  d->ui->toolBox->setEnabled(false);
-  d->ui->toolBox->setCurrentIndex(0);
   d->guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(update_infos()));
@@ -92,7 +93,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
   d->ui->imageContainer->setWidgetResizable(true);
-  d->ui->camera_splitter->setSizes({height()/10*8, height()/10*2});
   d->ui->stopShooting->setHidden(true);
   
   auto set_imager = [=](const shared_ptr<Imager> &imager) {
@@ -292,7 +292,6 @@ void DSLR_Shooter_Window::camera_connected()
   got_message(LogMessage::info("General", QString("Camera connected: %1").arg(d->imager->model())));
   d->ui->camera_infos->setText(camera_infos);
   d->ui->shoot->setEnabled(true);
-  d->ui->toolBox->setEnabled(true);
 
   d->ui->imageSettings->disconnect();
   
