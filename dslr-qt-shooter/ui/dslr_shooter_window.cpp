@@ -76,6 +76,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->camera_setup_dock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->focus_dock);
+  d->ui->camera_information_dock->raise();
+  restoreState(d->settings.value("windows_settings").toByteArray());
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
@@ -219,6 +221,7 @@ void DSLR_Shooter_Window::focus_received(double value)
 
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
 {
+  d->settings.setValue("windows_settings", saveState());
 }
 
 void DSLR_Shooter_Window::update_infos()
