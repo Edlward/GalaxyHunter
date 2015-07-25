@@ -56,6 +56,7 @@ public:
     TelescopeControl *telescopeControl;
     QStandardItemModel logs;
     QSystemTrayIcon trayIcon;
+    void saveState();
 private:
   DSLR_Shooter_Window *q;
 };
@@ -64,6 +65,12 @@ DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_W
  : q(q), ui(ui), imagingDriver(imagingDriver), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
 {
 
+}
+
+
+void DSLR_Shooter_Window::Private::saveState()
+{
+  settings.setValue("windows_settings", q->saveState());
 }
 
 
@@ -77,6 +84,31 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->focus_dock);
   d->ui->camera_information_dock->raise();
+  
+  auto logsDockWidget = new QDockWidget("Logs");
+  logsDockWidget->setFloating(true);
+  logsDockWidget->setHidden(true);
+  logsDockWidget->setFeatures(QDockWidget::AllDockWidgetFeatures);
+  logsDockWidget->setAllowedAreas(Qt::AllDockWidgetAreas);
+  addDockWidget(Qt::BottomDockWidgetArea, logsDockWidget);
+  logsDockWidget->setWidget(new MessagesWindow{&d->logs});
+  
+  QMap<QDockWidget*, QAction*> dockWidgetsActions {
+    {d->ui->camera_information_dock, d->ui->actionCamera_Information},
+    {d->ui->camera_setup_dock, d->ui->actionCamera_Setup},
+    {d->ui->guider_dock, d->ui->actionGuider},
+    {d->ui->focus_dock, d->ui->actionFocusing},
+    {logsDockWidget, d->ui->actionLogs_Messages},
+  };
+
+  for(auto dockwidget : dockWidgetsActions.keys()) {
+    connect(dockwidget, &QDockWidget::dockLocationChanged, [=]{ d->saveState(); });
+    connect(dockwidget, &QDockWidget::topLevelChanged, [=]{ d->saveState(); });
+    connect(dockwidget, &QDockWidget::visibilityChanged, [=]{ d->saveState(); });
+    connect(dockwidget, &QDockWidget::visibilityChanged, [=](bool visible){ dockWidgetsActions[dockwidget]->setChecked(!dockwidget->isHidden()); });
+    connect(dockWidgetsActions[dockwidget], &QAction::triggered, [=](bool checked){ dockwidget->setHidden(!checked); });
+  }
+  
   restoreState(d->settings.value("windows_settings").toByteArray());
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
@@ -84,7 +116,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->telescopeControl, SIGNAL(message(LogMessage)), this, SLOT(got_message(LogMessage)));
   connect(d->ui->stopShooting, &QPushButton::clicked, [=]{ d->ui->stopShooting->setDisabled(true); d->abort_sequence = true; });
   connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
-  connect(d->ui->action_LogMessages, &QAction::triggered, [=]{ (new MessagesWindow{&d->logs})->show(); });
   d->guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(update_infos()));
@@ -221,7 +252,7 @@ void DSLR_Shooter_Window::focus_received(double value)
 
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
 {
-  d->settings.setValue("windows_settings", saveState());
+  d->saveState();
 }
 
 void DSLR_Shooter_Window::update_infos()
