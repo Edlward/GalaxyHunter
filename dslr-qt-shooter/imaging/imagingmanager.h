@@ -30,18 +30,21 @@ class ImagingManager : public QObject
     Q_OBJECT
 
 public:
-    ImagingManager(const ImagerPtr &imager, QObject *parent = 0);
+    ImagingManager(QObject *parent = 0);
     ~ImagingManager();
-    enum Mode { Single, Sequence, Movie };
+    void setImager(const ImagerPtr &imager);
 public slots:
-  void start();
+  void start(int numberOfShots, double millisecondsDelayBetweenShots = 0);
   void abort();
-  void setMode(Mode mode);
   void setExposure(double milliseconds);
-  void setFileName(const QString &file);
+  void setOutputDirectory(const QString &directory);
+  void setSaveEnabled(bool enabled);
+  void setRemoveOnCameraEnabled(bool enabled);
 signals:
+  void started();
   void finished();
   void saved(const QString &file);
+  void image(const QImage &image);
 private:
   D_PTR
 };

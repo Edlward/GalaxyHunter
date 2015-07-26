@@ -64,7 +64,7 @@ private:
 };
 
 DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriverPtr imagingDriver)
- : q(q), ui(ui), imagingDriver(imagingDriver), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
+ : q(q), ui(ui), imagingDriver(imagingDriver), imagingManager(make_shared<ImagingManager>()), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
 {
 
 }
@@ -122,9 +122,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QTimer *updateTimer = new QTimer();
   connect(updateTimer, SIGNAL(timeout()), this, SLOT(update_infos()));
   updateTimer->start(2000);
-  QThread *imaging_thread = new QThread(this);
-  d->imagingDriver->moveToThread(imaging_thread);
-  imaging_thread->start();
   
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
   d->ui->imageContainer->setWidgetResizable(true);
@@ -132,7 +129,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   
   auto set_imager = [=](const ImagerPtr &imager) {
     d->imager = imager;
-    d->imagingManager = make_shared<ImagingManager>(imager);
+    d->imagingManager->setImager(imager);
     connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
     connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
     connect(d->imager.get(), &Imager::exposure_remaining, this, [=](int seconds){
@@ -152,7 +149,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->ui->actionScan, SIGNAL(triggered(bool)), d->imagingDriver.get(), SLOT(scan()), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{
     setCamera->clear();
-      qDebug() << __PRETTY_FUNCTION__ << ": cameras size: " << d->imagingDriver->imagers().size();
     for(auto camera: d->imagingDriver->imagers()) {
       connect(setCamera->addAction(camera->model()), &QAction::triggered, [=] {
         set_imager(camera);
@@ -221,6 +217,18 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   });
   //d->ui->focusing_graph->resize(d->ui->toolBox->width(), d->ui->toolBox->width()*1.5);
   autoScan->start(1000);
+  
+  // Imaging Manager
+  connect(d->imagingManager.get(), SIGNAL(image(QImage)), this, SLOT(shoot_received(QImage)));
+  auto setWidgetsEnabled = [=](bool enable) {
+    d->ui->shoot_mode->setEnabled(enable);
+    d->ui->shoot_interval->setEnabled(enable);
+    d->ui->images_count->setEnabled(enable);
+    d->ui->imageSettings->setEnabled(enable);
+    d->ui->shoot->setEnabled(enable);
+  };
+  connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
+  connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
 }
 
 // TODO: why doesn't it work with lambda slot?
@@ -387,10 +395,29 @@ void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::f
     });
 }
 
+void DSLR_Shooter_Window::shoot_received(const QImage& image)
+{
+  d->ui->imageContainer->setImage(image);
+  d->ui->imageContainer->update();
+  if(d->ui->enable_focus_analysis->isChecked()) {
+    QMetaObject::invokeMethod(d->focus, "analyze", Qt::QueuedConnection,
+                              Q_ARG(QImage, d->ui->imageContainer->roi().isNull() ? image : image.copy(d->ui->imageContainer->roi())));
+  } else {
+    d->ui->focus_analysis_history->clear();
+    d->ui->focus_analysis_value->display(0);
+  }
+  for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
+    widget->setEnabled(!image.isNull());
+//   afterShot();
+}
+
 
 void DSLR_Shooter_Window::start_shooting()
 {
   long total_shots_number = d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
+  d->imagingManager->start(total_shots_number, QTime{0,0,0}.secsTo(d->ui->shoot_interval->time()) * 1000);
+  return; 
+  
   shared_ptr<long> remaining_shots = make_shared<long>(total_shots_number == 0 ? std::numeric_limits<long>::max() : total_shots_number);
   d->abort_sequence = false;
   auto setWidgetsEnabled = [=](bool enable) {

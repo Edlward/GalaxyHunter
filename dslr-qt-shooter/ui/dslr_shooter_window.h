@@ -35,6 +35,7 @@ private slots:
 private slots:
   void shootModeChanged(int index);
   void focus_received(double value);
+  void shoot_received(const QImage &image);
 private:
   D_PTR
 };

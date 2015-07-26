@@ -18,17 +18,29 @@
  */
 
 #include "imagingmanager.h"
+#include <QtConcurrent/QtConcurrent>
 
 class ImagingManager::Private {
 public:
-  Private(const ImagerPtr &imager, ImagingManager *q) : imager{imager}, q{q} {}
+  Private(ImagingManager *q) : q{q} {}
   ImagerPtr imager;
+  bool remove_on_camera;
+  bool save_enabled;
+  QString outputDirectory;
+  
+  struct SequenceRun {
+    int remaining_shots;
+    double delay_milliseconds;
+    ImagerPtr imager;
+    ImagingManager *q;
+    void start();
+  };
 private:
   ImagingManager *q;
 };
 
 
-ImagingManager::ImagingManager(const ImagerPtr &imager, QObject* parent) : QObject(parent), dpointer(imager, this)
+ImagingManager::ImagingManager(QObject* parent) : QObject(parent), dpointer(this)
 {
 }
 
@@ -36,10 +48,32 @@ ImagingManager::~ImagingManager()
 {
 }
 
-void ImagingManager::start()
+void ImagingManager::setImager(const ImagerPtr& imager)
 {
-
+  d->imager = imager;
 }
+
+void ImagingManager::start(int numberOfShots, double millisecondsDelayBetweenShots)
+{
+  emit started();
+  QtConcurrent::run([=]{
+    Private::SequenceRun sequence{numberOfShots, millisecondsDelayBetweenShots, d->imager, this};
+    sequence.start();
+  });
+}
+
+void ImagingManager::Private::SequenceRun::start()
+{
+  while(remaining_shots > 0) {
+    auto image = imager->shoot();
+    emit q->image(image);
+    remaining_shots--;
+    if(remaining_shots>0)
+      QThread::msleep(delay_milliseconds);
+  }
+  emit q->finished();
+}
+
 
 void ImagingManager::abort()
 {
@@ -49,19 +83,24 @@ void ImagingManager::abort()
 
 void ImagingManager::setExposure(double milliseconds)
 {
-
 }
 
-void ImagingManager::setFileName(const QString& file)
+
+
+void ImagingManager::setOutputDirectory(const QString& directory)
 {
-
+  d->outputDirectory = directory;
 }
 
-void ImagingManager::setMode(ImagingManager::Mode mode)
+void ImagingManager::setRemoveOnCameraEnabled(bool enabled)
 {
-
+  d->remove_on_camera = enabled;
 }
 
+void ImagingManager::setSaveEnabled(bool enabled)
+{
+  d->save_enabled = enabled;
+}
 
 
 #include "imagingmanager.moc"
