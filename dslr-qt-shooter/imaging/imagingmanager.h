@@ -44,7 +44,7 @@ signals:
   void started();
   void finished();
   void saved(const QString &file);
-  void image(const QImage &image);
+  void image(const QImage &image, int remaining);
 private:
   D_PTR
 };

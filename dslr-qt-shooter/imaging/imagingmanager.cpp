@@ -66,8 +66,7 @@ void ImagingManager::Private::SequenceRun::start()
 {
   while(remaining_shots > 0) {
     auto image = imager->shoot();
-    emit q->image(image);
-    remaining_shots--;
+    emit q->image(image, --remaining_shots);
     if(remaining_shots>0)
       QThread::msleep(delay_milliseconds);
   }

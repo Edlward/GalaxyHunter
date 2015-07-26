@@ -52,12 +52,12 @@ public:
     void enableOrDisableShootingModeWidgets();
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
-    void shoot(std::shared_ptr< long int > remaining, function< void() > afterShot, function< void() > afterSequence);
     Focus *focus;
     QwtPlotCurve *focus_curve;
     TelescopeControl *telescopeControl;
     QStandardItemModel logs;
     QSystemTrayIcon trayIcon;
+    QThread* focusThread;
     void saveState();
 private:
   DSLR_Shooter_Window *q;
@@ -66,7 +66,6 @@ private:
 DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriverPtr imagingDriver)
  : q(q), ui(ui), imagingDriver(imagingDriver), imagingManager(make_shared<ImagingManager>()), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
 {
-
 }
 
 
@@ -195,9 +194,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(autoScan, SIGNAL(timeout()), d->imagingDriver.get(), SLOT(scan()), Qt::QueuedConnection);
   
   d->focus = new Focus;
-  QThread *focusThread = new QThread;
-  d->focus->moveToThread(focusThread);
-  focusThread->start();
+  d->focusThread = new QThread;
+  d->focus->moveToThread(d->focusThread);
+  d->focusThread->start();
   d->focus_curve= new QwtPlotCurve;
   d->focus_curve->attach(d->ui->focusing_graph);
   d->focus_curve->setStyle(QwtPlotCurve::Lines);
@@ -219,7 +218,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   autoScan->start(1000);
   
   // Imaging Manager
-  connect(d->imagingManager.get(), SIGNAL(image(QImage)), this, SLOT(shoot_received(QImage)));
+  connect(d->imagingManager.get(), SIGNAL(image(QImage,int)), this, SLOT(shoot_received(QImage,int)));
   auto setWidgetsEnabled = [=](bool enable) {
     d->ui->shoot_mode->setEnabled(enable);
     d->ui->shoot_interval->setEnabled(enable);
@@ -228,7 +227,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->ui->shoot->setEnabled(enable);
   };
   connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
+  connect(d->imagingManager.get(), &ImagingManager::finished, bind(&QPushButton::setHidden, d->ui->stopShooting, true));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
+  connect(d->imagingManager.get(), SIGNAL(finished()), d->ui->statusbar, SLOT(clearMessage()));
 }
 
 // TODO: why doesn't it work with lambda slot?
@@ -264,6 +265,7 @@ void DSLR_Shooter_Window::focus_received(double value)
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
 {
   d->saveState();
+  d->focusThread->quit();
 }
 
 void DSLR_Shooter_Window::update_infos()
@@ -368,37 +370,18 @@ void DSLR_Shooter_Window::camera_connected()
   });
 }
 
-
-void DSLR_Shooter_Window::Private::shoot(std::shared_ptr<long> remaining, std::function< void()> afterShot, std::function< void()> afterSequence)
-{
-    qDebug() << "Shots remaining: " << *remaining;
-    if(*remaining <= 0 || abort_sequence) {
-      afterSequence();
-      ui->stopShooting->setEnabled(true);
-      return;
-    }
-    qt_async<QImage>([=]{ return imager->shoot();}, [=](const QImage &image) {
-      --*remaining;
-      ui->imageContainer->setImage(image);
-      ui->imageContainer->update();
-      if(ui->enable_focus_analysis->isChecked()) {
-	QMetaObject::invokeMethod(focus, "analyze", Qt::QueuedConnection, Q_ARG(QImage, ui->imageContainer->roi().isNull() ? image : image.copy(ui->imageContainer->roi())));
-      } else {
-	ui->focus_analysis_history->clear();
-	ui->focus_analysis_value->display(0);
-      }
-      for(auto widget: vector<QAbstractButton*>{ui->zoomActualSize, ui->zoomFit, ui->zoomIn, ui->zoomOut})
-	widget->setEnabled(!image.isNull());
-      afterShot();
-      long seconds_interval = *remaining > 0 ? QTime{0,0,0}.secsTo(ui->shoot_interval->time()) : 0;
-      timedLambda(seconds_interval * 1000, [=]{ shoot(remaining, afterShot, afterSequence); }, q);
-    });
-}
-
-void DSLR_Shooter_Window::shoot_received(const QImage& image)
+void DSLR_Shooter_Window::shoot_received(const QImage& image, int remaining)
 {
   d->ui->imageContainer->setImage(image);
   d->ui->imageContainer->update();
+  d->ui->images_count->setValue(remaining);
+  qDebug() << "Checking for dithering...";
+  if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
+    got_message(LogMessage::info("main", "starting dithering"));
+    qDebug() << "Dither enabled: dithering";
+    d->guider->dither();
+    got_message(LogMessage::info("main", "dithering command finished"));
+  }
   if(d->ui->enable_focus_analysis->isChecked()) {
     QMetaObject::invokeMethod(d->focus, "analyze", Qt::QueuedConnection,
                               Q_ARG(QImage, d->ui->imageContainer->roi().isNull() ? image : image.copy(d->ui->imageContainer->roi())));
@@ -415,34 +398,9 @@ void DSLR_Shooter_Window::shoot_received(const QImage& image)
 void DSLR_Shooter_Window::start_shooting()
 {
   long total_shots_number = d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
+  d->ui->stopShooting->setVisible(total_shots_number!=1);
   d->imagingManager->start(total_shots_number, QTime{0,0,0}.secsTo(d->ui->shoot_interval->time()) * 1000);
   return; 
-  
-  shared_ptr<long> remaining_shots = make_shared<long>(total_shots_number == 0 ? std::numeric_limits<long>::max() : total_shots_number);
-  d->abort_sequence = false;
-  auto setWidgetsEnabled = [=](bool enable) {
-    d->ui->shoot_mode->setEnabled(enable);
-    d->ui->shoot_interval->setEnabled(enable);
-    d->ui->images_count->setEnabled(enable);
-    d->ui->imageSettings->setEnabled(enable);
-    d->ui->shoot->setEnabled(enable);
-  };
-  setWidgetsEnabled(false);
-  d->ui->stopShooting->setVisible(total_shots_number!=1);
-  d->shoot(remaining_shots, [=]{
-    if(total_shots_number > 0)
-      d->ui->images_count->setValue(*remaining_shots);
-    qDebug() << "Checking for dithering...";
-    if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
-      qDebug() << "Dither enabled: dithering";
-      d->guider->dither();
-    }
-  }, [=]{
-    d->ui->images_count->setValue(total_shots_number);
-    d->ui->stopShooting->setHidden(true);
-    setWidgetsEnabled(true);
-    statusBar()->clearMessage();
-  } );
 }
 
 void DSLR_Shooter_Window::camera_disconnected()
