@@ -24,19 +24,6 @@ ImagingDriver *ImagingDriver::imagingDriver(QObject *parent) {
 #endif
 }
 
-QList<ImagingDriverPtr> ImagingDriver::drivers()
-{
-  return {
-    #ifdef IMAGING_gphoto2
-    make_shared<GPhoto>(),
-#endif
-#ifdef IMAGING_testing
-    make_shared<TestingImagerDriver>(),
-#endif
-  };
-}
-
-
 void ImagingDriver::camera_error(Imager* camera, const QString& message)
 {
   emit imager_message(LogMessage::error(camera->model(), message) );
@@ -57,3 +44,36 @@ void ImagingDriver::scan()
   }
   emit scan_finished();
 }
+
+ImagingDrivers::ImagingDrivers(QObject* parent): ImagingDriver(parent), imagingDrivers(allDrivers())
+{
+  for(auto driver: imagingDrivers) {
+    qDebug() << "driver: " << typeid(*driver).name();
+    connect(driver.get(), SIGNAL(camera_connected()), this, SIGNAL(camera_connected()));
+    connect(driver.get(), SIGNAL(imager_message(LogMessage)), this, SIGNAL(imager_message(LogMessage)));
+  }
+}
+
+QList< ImagingDriverPtr > ImagingDrivers::allDrivers()
+{
+  return {
+    #ifdef IMAGING_gphoto2
+    make_shared<GPhoto>(),
+#endif
+#ifdef IMAGING_testing
+    make_shared<TestingImagerDriver>(),
+#endif
+  };
+}
+
+
+void ImagingDrivers::scan_imagers()
+{
+  _imagers.clear();
+  for(auto driver: imagingDrivers) {
+    driver->scan();
+    auto imagers = driver->imagers();
+    copy(begin(imagers), end(imagers), back_inserter(_imagers));
+  }
+}
+

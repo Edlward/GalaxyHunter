@@ -8,20 +8,19 @@ set(dslr_imaging_SOURCES
   imagingmanager.cpp
   )
 
-set(DEFAULT_IMAGING_BACKEND gphoto2)
-set(IMAGING_BACKEND ${DEFAULT_IMAGING_BACKEND} CACHE STRING "Imaging backend to use (Default: $DEFAULT_IMAGING_BACKEND)")
-add_definitions(-DIMAGING_${IMAGING_BACKEND})
-
-if(IMAGING_BACKEND STREQUAL "gphoto2")
-  add_subdirectory(gphoto)
-elseif(IMAGING_BACKEND STREQUAL "testing")
+option(testing_imager_enabled "Enable testing imager backend" OFF)
+if(testing_imager_enabled)
   add_subdirectory(testing)
-else(IMAGING_BACKEND STREQUAL "gphoto2")
-    message(FATAL_ERROR "Backend ${IMAGING_BACKEND} not recognized.
-Supported values:
-  gphoto2
-  testing")
-endif(IMAGING_BACKEND STREQUAL "gphoto2")
+  add_definitions(-DIMAGING_testing)
+endif(testing_imager_enabled)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GPHOTO2 libgphoto2)
+if(GPHOTO2_FOUND)
+  add_subdirectory(gphoto)
+  add_definitions(-DIMAGING_gphoto2)
+endif(GPHOTO2_FOUND)
+
 
 add_library(dslr_imaging STATIC ${dslr_imaging_SOURCES} ${dslr_imaging_HEADERS_MOC})
 

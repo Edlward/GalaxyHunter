@@ -65,9 +65,8 @@ class ImagingDriver : public QObject {
     Q_OBJECT
 public:
     ImagingDriver(QObject *parent = 0);
-    virtual std::vector<ImagerPtr> imagers() const { return _imagers; }
+    std::vector<ImagerPtr> imagers() const { return _imagers; }
     static ImagingDriver *imagingDriver(QObject *parent = 0);
-    static QList<ImagingDriverPtr> drivers();
 protected:
   std::vector<ImagerPtr> _imagers;
   virtual void scan_imagers() = 0;
@@ -81,4 +80,15 @@ signals:
   void scan_finished();
 };
 
+class ImagingDrivers : public ImagingDriver {
+  Q_OBJECT
+public:
+  ImagingDrivers(QObject *parent = 0);
+  static QList<ImagingDriverPtr> allDrivers();
+
+protected:
+  virtual void scan_imagers();
+private:
+  QList<ImagingDriverPtr> imagingDrivers;
+};
 #endif // IMAGER_DRIVER_H

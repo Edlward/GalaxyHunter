@@ -34,7 +34,7 @@ using namespace std;
 
 class DSLR_Shooter_Window::Private {
 public:
-  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriver *imagingDriver);
+  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriverPtr imagingDriver);
     unique_ptr<Ui::DSLR_Shooter_Window> ui;
     LinGuider *guider;
     struct LogEntry {
@@ -43,7 +43,7 @@ public:
     };
 
     QList<LogEntry> logEntries;
-    ImagingDriver *imagingDriver;
+    ImagingDriverPtr imagingDriver;
     ImagerPtr imager;
     ImagingManagerPtr imagingManager;
     QSettings settings;
@@ -63,7 +63,7 @@ private:
   DSLR_Shooter_Window *q;
 };
 
-DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriver* imagingDriver)
+DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriverPtr imagingDriver)
  : q(q), ui(ui), imagingDriver(imagingDriver), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
 {
 
@@ -77,7 +77,7 @@ void DSLR_Shooter_Window::Private::saveState()
 
 
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
-  QMainWindow(parent), dpointer(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() )
+  QMainWindow(parent), dpointer(this, new Ui::DSLR_Shooter_Window, std::make_shared<ImagingDrivers>() )
 {
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
@@ -141,16 +141,16 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imager->connect();
   };
 
-  connect(d->imagingDriver, SIGNAL(imager_message(LogMessage)), this, SLOT(got_message(LogMessage)), Qt::QueuedConnection);
-  connect(d->imagingDriver, SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
+  connect(d->imagingDriver.get(), SIGNAL(imager_message(LogMessage)), this, SLOT(got_message(LogMessage)), Qt::QueuedConnection);
+  connect(d->imagingDriver.get(), SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
   
   connect(d->ui->zoomIn, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(1.2); });
   connect(d->ui->zoomOut, &QPushButton::clicked, [=] { d->ui->imageContainer->scale(0.8); });
   connect(d->ui->zoomActualSize, &QPushButton::clicked, [=] { d->ui->imageContainer->normalSize(); });
   connect(d->ui->zoomFit, &QPushButton::clicked, [=] { d->ui->imageContainer->fitToWindow(); });
   connect(d->ui->shoot, SIGNAL(clicked(bool)), this, SLOT(start_shooting()));
-  connect(d->ui->actionScan, SIGNAL(triggered(bool)), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
-  connect(d->imagingDriver, &ImagingDriver::scan_finished, this, [=]{
+  connect(d->ui->actionScan, SIGNAL(triggered(bool)), d->imagingDriver.get(), SLOT(scan()), Qt::QueuedConnection);
+  connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{
     setCamera->clear();
       qDebug() << __PRETTY_FUNCTION__ << ": cameras size: " << d->imagingDriver->imagers().size();
     for(auto camera: d->imagingDriver->imagers()) {
@@ -196,7 +196,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->ui->actionRemote_Control, SIGNAL(triggered(bool)), d->telescopeControl, SLOT(showTelescopeRemoteControl()));
   QTimer *autoScan = new QTimer(this);
   autoScan->setSingleShot(true);
-  connect(autoScan, SIGNAL(timeout()), d->imagingDriver, SLOT(scan()), Qt::QueuedConnection);
+  connect(autoScan, SIGNAL(timeout()), d->imagingDriver.get(), SLOT(scan()), Qt::QueuedConnection);
   
   d->focus = new Focus;
   QThread *focusThread = new QThread;
