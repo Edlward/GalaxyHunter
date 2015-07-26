@@ -9,6 +9,8 @@
 class LogMessage;
 
 class QImage;
+class ImagingDriver;
+typedef std::shared_ptr<ImagingDriver> ImagingDriverPtr;
 
 class Imager : public QObject {
   Q_OBJECT
@@ -57,14 +59,17 @@ protected:
   QString _outputDirectory;
 };
 
+typedef std::shared_ptr<Imager> ImagerPtr;
+
 class ImagingDriver : public QObject {
     Q_OBJECT
 public:
     ImagingDriver(QObject *parent = 0);
-    virtual std::vector<std::shared_ptr<Imager>> imagers() const { return _imagers; }
+    virtual std::vector<ImagerPtr> imagers() const { return _imagers; }
     static ImagingDriver *imagingDriver(QObject *parent = 0);
+    static QList<ImagingDriverPtr> drivers();
 protected:
-  std::vector<std::shared_ptr<Imager>> _imagers;
+  std::vector<ImagerPtr> _imagers;
   virtual void scan_imagers() = 0;
 public slots:
   void scan();

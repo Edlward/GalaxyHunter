@@ -10,6 +10,7 @@
 #endif
 
 #include <ui/logmessage.h>
+using namespace std;
 
 ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {
 }
@@ -22,6 +23,19 @@ ImagingDriver *ImagingDriver::imagingDriver(QObject *parent) {
     return new TestingImagerDriver(parent);
 #endif
 }
+
+QList<ImagingDriverPtr> ImagingDriver::drivers()
+{
+  return {
+    #ifdef IMAGING_gphoto2
+    make_shared<GPhoto>(),
+#endif
+#ifdef IMAGING_testing
+    make_shared<TestingImagerDriver>(),
+#endif
+  };
+}
+
 
 void ImagingDriver::camera_error(Imager* camera, const QString& message)
 {

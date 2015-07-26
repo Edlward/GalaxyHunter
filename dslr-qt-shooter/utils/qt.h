@@ -39,4 +39,26 @@ template<typename T> QFutureWatcher<T> *qt_async(std::function<T()> runAsync, st
   futureWatcher->setFuture(QtConcurrent::run(runAsync));
 }
 
+
+
+#include <QString>
+#include <QDebug>
+#ifdef IN_IDE_PARSER
+#define _q + QString()
+#else
+inline QString operator ""_q(const char *s, std::size_t) { return QString{s}; }
+#endif
+
+template<typename T>
+QString operator%(const QString &other, const T &t) {
+  return other.arg(t);
+}
+
+
+template<>
+inline QString operator%(const QString &first, const std::string &second) {
+  return first.arg(QString::fromStdString(second));
+}
+
+
 #endif

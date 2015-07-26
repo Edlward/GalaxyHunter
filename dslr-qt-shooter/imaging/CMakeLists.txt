@@ -5,6 +5,7 @@ set(dslr_imaging_SOURCES
   focus.cpp
   focus/fitshistogram.cpp
   focus/fitsimage.cpp
+  imagingmanager.cpp
   )
 
 set(DEFAULT_IMAGING_BACKEND gphoto2)

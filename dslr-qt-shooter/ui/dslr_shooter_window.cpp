@@ -23,6 +23,7 @@
 #include <QSystemTrayIcon>
 #include <QInputDialog>
 #include "imaging/focus.h"
+#include <imaging/imagingmanager.h>
 #include "qwt-src/qwt_plot_curve.h"
 #include <qwt-src/qwt_plot_histogram.h>
 #include <qwt-src/qwt_symbol.h>
@@ -43,7 +44,8 @@ public:
 
     QList<LogEntry> logEntries;
     ImagingDriver *imagingDriver;
-    shared_ptr<Imager> imager;
+    ImagerPtr imager;
+    ImagingManagerPtr imagingManager;
     QSettings settings;
     bool abort_sequence;
     
@@ -75,7 +77,7 @@ void DSLR_Shooter_Window::Private::saveState()
 
 
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
-  QMainWindow(parent), d(new Private(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() ))
+  QMainWindow(parent), dpointer(this, new Ui::DSLR_Shooter_Window, ImagingDriver::imagingDriver() )
 {
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
@@ -128,8 +130,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->imageContainer->setWidgetResizable(true);
   d->ui->stopShooting->setHidden(true);
   
-  auto set_imager = [=](const shared_ptr<Imager> &imager) {
+  auto set_imager = [=](const ImagerPtr &imager) {
     d->imager = imager;
+    d->imagingManager = make_shared<ImagingManager>(imager);
     connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
     connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
     connect(d->imager.get(), &Imager::exposure_remaining, this, [=](int seconds){

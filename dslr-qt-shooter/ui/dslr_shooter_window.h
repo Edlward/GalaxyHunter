@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDateTime>
 #include <imaging/imaging_driver.h>
+#include "utils/dptr.h"
 
 class LogMessage;
 class LinGuider;
@@ -35,9 +36,7 @@ private slots:
   void shootModeChanged(int index);
   void focus_received(double value);
 private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> const d;
+  D_PTR
 };
 
 #endif // DSLR_SHOOTER_WINDOW_H
