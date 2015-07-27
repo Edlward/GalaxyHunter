@@ -19,6 +19,7 @@
 
 #include "imagingmanager.h"
 #include <QtConcurrent/QtConcurrent>
+using namespace std;
 
 class ImagingManager::Private {
 public:
@@ -27,12 +28,14 @@ public:
   bool remove_on_camera;
   bool save_enabled;
   QString outputDirectory;
+  shared_ptr<bool> abort;
   
   struct SequenceRun {
     int remaining_shots;
     double delay_milliseconds;
     ImagerPtr imager;
     ImagingManager *q;
+    shared_ptr<bool> abort;
     void start();
   };
 private:
@@ -55,16 +58,17 @@ void ImagingManager::setImager(const ImagerPtr& imager)
 
 void ImagingManager::start(int numberOfShots, double millisecondsDelayBetweenShots)
 {
+  d->abort = make_shared<bool>(false);
   emit started();
   QtConcurrent::run([=]{
-    Private::SequenceRun sequence{numberOfShots, millisecondsDelayBetweenShots, d->imager, this};
+    Private::SequenceRun sequence{numberOfShots, millisecondsDelayBetweenShots, d->imager, this, d->abort};
     sequence.start();
   });
 }
 
 void ImagingManager::Private::SequenceRun::start()
 {
-  while(remaining_shots > 0) {
+  while(remaining_shots > 0 && ! *abort) {
     auto image = imager->shoot();
     emit q->image(image, --remaining_shots);
     if(remaining_shots>0)
@@ -76,7 +80,7 @@ void ImagingManager::Private::SequenceRun::start()
 
 void ImagingManager::abort()
 {
-
+  *d->abort = true;
 }
 
 
