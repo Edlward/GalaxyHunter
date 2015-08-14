@@ -138,7 +138,7 @@
      <x>0</x>
      <y>0</y>
      <width>772</width>
-     <height>28</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
@@ -171,6 +171,8 @@
     <addaction name="actionGuider"/>
     <addaction name="actionFocusing"/>
     <addaction name="actionLogs_Messages"/>
+    <addaction name="actionHide_All"/>
+    <addaction name="actionShow_All"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCamera"/>
@@ -675,6 +677,22 @@
    </property>
    <property name="text">
     <string>&amp;Logs Messages</string>
+   </property>
+  </action>
+  <action name="actionHide_All">
+   <property name="text">
+    <string>Hide All</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
+  </action>
+  <action name="actionShow_All">
+   <property name="text">
+    <string>Show All</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+H</string>
    </property>
   </action>
  </widget>

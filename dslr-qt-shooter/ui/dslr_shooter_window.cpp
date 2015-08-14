@@ -30,6 +30,8 @@
 #include "telescope/telescopecontrol.h"
 
 using namespace std;
+using namespace std::placeholders;
+
 
 
 class DSLR_Shooter_Window::Private {
@@ -109,6 +111,13 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     connect(dockwidget, &QDockWidget::visibilityChanged, [=](bool visible){ dockWidgetsActions[dockwidget]->setChecked(!dockwidget->isHidden()); });
     connect(dockWidgetsActions[dockwidget], &QAction::triggered, [=](bool checked){ dockwidget->setHidden(!checked); });
   }
+  
+  auto toggleWidgetsVisibility = [=](bool visible) {
+    auto widgets = dockWidgetsActions.keys();
+    for_each(begin(widgets), end(widgets), bind(&QWidget::setVisible, _1, visible));
+  };
+  connect(d->ui->actionHide_All, &QAction::triggered, bind(toggleWidgetsVisibility, false));
+  connect(d->ui->actionShow_All, &QAction::triggered, bind(toggleWidgetsVisibility, true));
   
   restoreState(d->settings.value("windows_settings").toByteArray());
   d->telescopeControl = new TelescopeControl(this);
