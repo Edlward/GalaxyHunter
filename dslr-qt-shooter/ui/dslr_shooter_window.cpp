@@ -49,7 +49,6 @@ public:
     ImagerPtr imager;
     ImagingManagerPtr imagingManager;
     QSettings settings;
-    bool abort_sequence;
     
     void enableOrDisableShootingModeWidgets();
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
@@ -120,11 +119,12 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->ui->actionShow_All, &QAction::triggered, bind(toggleWidgetsVisibility, true));
   
   restoreState(d->settings.value("windows_settings").toByteArray());
+  
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
   connect(d->telescopeControl, SIGNAL(message(LogMessage)), this, SLOT(got_message(LogMessage)));
-  connect(d->ui->stopShooting, &QPushButton::clicked, [=]{ d->ui->stopShooting->setDisabled(true); d->abort_sequence = true; });
+  connect(d->ui->stopShooting, &QPushButton::clicked, [=]{ d->ui->stopShooting->setDisabled(true); d->imagingManager->abort(); });
   connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
   d->guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
