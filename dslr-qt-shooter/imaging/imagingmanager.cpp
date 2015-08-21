@@ -43,7 +43,7 @@ private:
 };
 
 
-ImagingManager::ImagingManager(QObject* parent) : QObject(parent), dpointer(this)
+ImagingManager::ImagingManager(QObject* parent) : QObject(parent), dptr(this)
 {
 }
 

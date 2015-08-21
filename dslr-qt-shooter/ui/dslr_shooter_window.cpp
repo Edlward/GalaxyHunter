@@ -1,7 +1,9 @@
 #include "dslr_shooter_window.h"
 #include "imagesettingsdialog.h"
 #include "messageswindow.h"
-#include "logmessage.h"
+#include "camerasetup.h"
+#include "commons/logmessage.h"
+#include <commons/shootersettings.h>
 #include "ui_dslr_shooter_window.h"
 #include "guider/linguider.h"
 #include <QtCore/QTimer>
@@ -49,7 +51,7 @@ public:
     ImagerPtr imager;
     ImagingManagerPtr imagingManager;
     QSettings settings;
-    
+    ShooterSettings shooterSettings;
     void enableOrDisableShootingModeWidgets();
     void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
@@ -65,7 +67,7 @@ private:
 };
 
 DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriverPtr imagingDriver)
- : q(q), ui(ui), imagingDriver(imagingDriver), imagingManager(make_shared<ImagingManager>()), settings("GuLinux", "DSLR-Shooter"), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
+ : q(q), ui(ui), imagingDriver(imagingDriver), imagingManager(make_shared<ImagingManager>()), settings("GuLinux", "DSLR-Shooter"), shooterSettings{settings}, trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
 {
 }
 
@@ -77,7 +79,7 @@ void DSLR_Shooter_Window::Private::saveState()
 
 
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
-  QMainWindow(parent), dpointer(this, new Ui::DSLR_Shooter_Window, std::make_shared<ImagingDrivers>() )
+  QMainWindow(parent), dptr(this, new Ui::DSLR_Shooter_Window, std::make_shared<ImagingDrivers>() )
 {
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
@@ -103,6 +105,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     {d->ui->focus_dock, d->ui->actionFocusing},
     {logsDockWidget, d->ui->actionLogs_Messages},
   };
+  
+  
+//   d->ui->camera_setup_dock->setWidget(new CameraSetup{d->shooterSettings});
 
   for(auto dockwidget : dockWidgetsActions.keys()) {
     connect(dockwidget, &QDockWidget::dockLocationChanged, [=]{ d->saveState(); });

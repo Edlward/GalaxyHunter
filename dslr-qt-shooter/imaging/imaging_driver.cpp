@@ -9,7 +9,7 @@
 #warning Using testing backend
 #endif
 
-#include <ui/logmessage.h>
+#include <commons/logmessage.h>
 using namespace std;
 
 ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {

@@ -18,7 +18,7 @@
  */
 
 #include "indiclient.h"
-#include <ui/logmessage.h>
+#include <commons/logmessage.h>
 
 #include "indidevapi.h"
 #include "indicom.h"

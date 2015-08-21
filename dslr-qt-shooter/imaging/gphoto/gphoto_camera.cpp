@@ -232,37 +232,58 @@ QImage GPhotoCamera::Private::shootTethered()
 {
   boost::thread t([=]{
     auto shoot = make_shared<SerialShoot>(serialShootPort);
-    for(int i=0; i<manualExposure; i++) {
-      q->exposure_remaining(manualExposure-i);
-      q->thread()->msleep(1000);
+    QElapsedTimer elapsed;
+    elapsed.start();
+    int elapsed_secs = 0;
+    while(elapsed.elapsed() < manualExposure * 1000) {
+      if(elapsed.elapsed()/1000 > elapsed_secs) {
+	elapsed_secs = elapsed.elapsed()/1000;
+	q->exposure_remaining(manualExposure-elapsed_secs);
+      }
+      q->exposure_remaining(0);
     }
   });
 
     CameraEventType event;
     void *data;
     CameraTempFile camera_file;
-    string filename;
-    CameraFilePath *newfile;
     QImage image;
-    gp_api{{
-      sequence_run([&]{ return gp_camera_wait_for_event(camera, (manualExposure+120)*1000, &event, &data, context); }),
-      sequence_run([&]{ t.join(); return GP_OK; }),
-      sequence_run([&]{ return event == GP_EVENT_FILE_ADDED ? GP_OK : -1; }),
-      sequence_run([&]{ 
-        newfile = reinterpret_cast<CameraFilePath*>(data);
-	filename = fixedFilename(newfile->name);
-        return gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, camera_file, context);
-      }),
-      sequence_run( [&]{ return camera_file.save();} ),
-    }, make_shared<QMutexLocker>(&mutex)}.on_error([=](int errorCode, const std::string &label) {
-      qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
-      q->error(q, gphoto_error(errorCode));
-    }).run_last([&]{
-      camera_file.originalName = QString::fromStdString(filename);
-      qDebug() << "Output directory: " << q->_outputDirectory;
-      deletePicturesOnCamera(*newfile);
-      image = fileToImage(camera_file);
-    });
+    
+    QMap<CameraEventType, QString> eventTypes {
+      	{ GP_EVENT_UNKNOWN,	"< unknown and unhandled event " },
+	{ GP_EVENT_TIMEOUT,	"< timeout, no arguments " },
+	{ GP_EVENT_FILE_ADDED,	"< CameraFilePath* = file path on camfs " },
+	{ GP_EVENT_FOLDER_ADDED,	"< CameraFilePath* = folder on camfs " },
+	{ GP_EVENT_CAPTURE_COMPLETE,	"< last capture is complete " },
+    };
+    int result;
+    for(int i=0; i<3; i++) {
+      result = gp_camera_wait_for_event(camera, (manualExposure*2 + 20)*1000, &event, &data, context);
+      qDebug() << "result=" << result << ", event=" << eventTypes[event];
+      if(result == GP_OK && event == GP_EVENT_FILE_ADDED)
+	break;
+    }
+    t.join();
+    if(event != GP_EVENT_FILE_ADDED)
+    {
+      q->error(q, gphoto_error(result));
+      return {};
+    }
+    CameraFilePath *newfile  = reinterpret_cast<CameraFilePath*>(data);
+    string filename = fixedFilename(newfile->name);
+    if( result = gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, camera_file, context) != GP_OK) {
+      q->error(q, gphoto_error(result));
+      return {};
+    }
+    if( result = camera_file.save() != GP_OK) {
+      q->error(q, gphoto_error(result));
+      return {};
+    }
+
+    camera_file.originalName = QString::fromStdString(filename);
+    qDebug() << "Output directory: " << q->_outputDirectory;
+    deletePicturesOnCamera(*newfile);
+    image = fileToImage(camera_file);
     return image;
 }
 
