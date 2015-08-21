@@ -88,12 +88,13 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->camera_information_dock->raise();
   
   auto logsDockWidget = new QDockWidget("Logs");
-  logsDockWidget->setFloating(true);
+  logsDockWidget->setObjectName("logs");
   logsDockWidget->setHidden(true);
   logsDockWidget->setFeatures(QDockWidget::AllDockWidgetFeatures);
   logsDockWidget->setAllowedAreas(Qt::AllDockWidgetAreas);
-  addDockWidget(Qt::BottomDockWidgetArea, logsDockWidget);
   logsDockWidget->setWidget(new MessagesWindow{&d->logs});
+  addDockWidget(Qt::BottomDockWidgetArea, logsDockWidget);
+  logsDockWidget->setFloating(true);
   
   QMap<QDockWidget*, QAction*> dockWidgetsActions {
     {d->ui->camera_information_dock, d->ui->actionCamera_Information},
