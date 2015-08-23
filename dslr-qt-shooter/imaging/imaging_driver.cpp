@@ -39,16 +39,7 @@ void ImagingDriver::scan()
   emit scan_finished();
 }
 
-ImagingDrivers::ImagingDrivers(ShooterSettings &shooterSettings, QObject* parent): ImagingDriver(parent), imagingDrivers(allDrivers(shooterSettings))
-{
-  for(auto driver: imagingDrivers) {
-    qDebug() << "driver: " << typeid(*driver).name();
-    connect(driver.get(), SIGNAL(camera_connected()), this, SIGNAL(camera_connected()));
-    connect(driver.get(), SIGNAL(imager_message(LogMessage)), this, SIGNAL(imager_message(LogMessage)));
-  }
-}
-
-QList< ImagingDriverPtr > ImagingDrivers::allDrivers(ShooterSettings &shooterSettings)
+QList< ImagingDriverPtr > all_imaging_drivers(ShooterSettings &shooterSettings)
 {
   return {
     #ifdef IMAGING_gphoto2
@@ -59,6 +50,17 @@ QList< ImagingDriverPtr > ImagingDrivers::allDrivers(ShooterSettings &shooterSet
 #endif
   };
 }
+
+
+ImagingDrivers::ImagingDrivers(ShooterSettings &shooterSettings, QObject* parent): ImagingDriver(parent), imagingDrivers(all_imaging_drivers(shooterSettings))
+{
+  for(auto driver: imagingDrivers) {
+    qDebug() << "driver: " << typeid(*driver).name();
+    connect(driver.get(), SIGNAL(camera_connected()), this, SIGNAL(camera_connected()));
+    connect(driver.get(), SIGNAL(imager_message(LogMessage)), this, SIGNAL(imager_message(LogMessage)));
+  }
+}
+
 
 
 void ImagingDrivers::scan_imagers()

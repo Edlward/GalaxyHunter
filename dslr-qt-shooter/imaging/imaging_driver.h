@@ -80,7 +80,6 @@ class ImagingDrivers : public ImagingDriver {
   Q_OBJECT
 public:
   ImagingDrivers(ShooterSettings& shooterSettings, QObject* parent = 0);
-  static QList<ImagingDriverPtr> allDrivers(ShooterSettings& shooterSettings);
 
 protected:
   virtual void scan_imagers();
