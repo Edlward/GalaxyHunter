@@ -21,18 +21,19 @@
 #define ZOOMABLEIMAGE_H
 
 #include <QScrollArea>
+#include <QGraphicsView>
 #include <QRect>
 #include <memory>
 class QLabel;
 class QImage;
 class QRubberBand;
-class ZoomableImage : public QScrollArea
+class ZoomableImage : public QGraphicsView
 {
 Q_OBJECT
 public:
     ~ZoomableImage();
     ZoomableImage(QWidget* parent);
-  QRect roi() const;
+    QRect roi() const;
 public slots:
   void setImage(const QImage &image);
   void scale(double factor);
@@ -41,8 +42,8 @@ public slots:
   void startSelectionMode();
   void clearROI();
 protected:
-    virtual void mousePressEvent(QMouseEvent*e);
-    virtual void mouseMoveEvent(QMouseEvent* e);
+//     virtual void mousePressEvent(QMouseEvent*e);
+//     virtual void mouseMoveEvent(QMouseEvent* e);
     virtual void mouseReleaseEvent(QMouseEvent*e);
 private:
   class Private;

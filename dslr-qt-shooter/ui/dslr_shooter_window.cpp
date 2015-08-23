@@ -16,6 +16,7 @@
 #include <QFileDialog>
 #include <QScreen>
 #include <QStandardItemModel>
+#include <QResizeEvent>
 #include <QSettings>
 #include <QString>
 #include <QtConcurrent>
@@ -71,6 +72,12 @@ DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_W
 {
 }
 
+void DSLR_Shooter_Window::closeEvent(QCloseEvent* e)
+{
+    QWidget::closeEvent(e);
+    e->accept();
+    qApp->quit();
+}
 
 void DSLR_Shooter_Window::Private::saveState()
 {
@@ -138,7 +145,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   updateTimer->start(2000);
   
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
-  d->ui->imageContainer->setWidgetResizable(true);
   d->ui->stopShooting->setHidden(true);
   
   auto set_imager = [=](const ImagerPtr &imager) {
@@ -146,9 +152,10 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imagingManager->setImager(imager);
     connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
     connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
-    connect(d->imager.get(), &Imager::exposure_remaining, this, [=](int seconds){
-      statusBar()->showMessage(tr("Exposure remaining: %1").arg(QTime(0,0,0).addSecs(seconds).toString()));
-    }, Qt::QueuedConnection);
+    // TODO: restore
+//     connect(d->imager.get(), &Imager::exposure_remaining, this, [=](int seconds){
+//       statusBar()->showMessage(tr("Exposure remaining: %1").arg(QTime(0,0,0).addSecs(seconds).toString()));
+//     }, Qt::QueuedConnection);
     d->imager->connect();
   };
 

@@ -110,7 +110,7 @@ setting(saveImage, bool, false)
 setting(sequenceLength, int, 0)
 setting_obj(saveImageDirectory, QString, QStandardPaths::writableLocation(QStandardPaths::PicturesLocation))
 
-setting_obj(serialPort, QString, d->imagerSettings->serialShootPort(), Camera::)
+setting_obj(serialPort, QString, d->imagerSettings->serialShootPort().isEmpty() ? "/dev/ttyUSB0" : d->imagerSettings->serialShootPort(), Camera::)
 setting_obj(iso, QString, d->imagerSettings->iso().current, Camera::)
 setting_obj(imageFormat, QString, d->imagerSettings->imageFormat().current, Camera::)
 setting_obj(shutterSpeed, QString, d->imagerSettings->shutterSpeed().current, Camera::)

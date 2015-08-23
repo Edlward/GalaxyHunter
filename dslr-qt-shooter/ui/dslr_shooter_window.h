@@ -20,7 +20,7 @@ class DSLR_Shooter_Window : public QMainWindow
 public:
     explicit DSLR_Shooter_Window(QWidget *parent = 0);
     ~DSLR_Shooter_Window();
-    
+    virtual void closeEvent(QCloseEvent*);
 public slots:
   void update_infos();
 

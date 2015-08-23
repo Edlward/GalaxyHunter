@@ -238,6 +238,7 @@ QImage GPhotoCamera::Private::shootTethered()
     while(elapsed.elapsed() < manualExposure * 1000) {
       if(elapsed.elapsed()/1000 > elapsed_secs) {
 	elapsed_secs = elapsed.elapsed()/1000;
+	qDebug() << "elapsed=" << elapsed_secs;
 	q->exposure_remaining(manualExposure-elapsed_secs);
       }
       q->exposure_remaining(0);
