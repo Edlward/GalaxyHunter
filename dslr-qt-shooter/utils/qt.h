@@ -60,5 +60,7 @@ inline QString operator%(const QString &first, const std::string &second) {
   return first.arg(QString::fromStdString(second));
 }
 
+#define F_PTR(class, name, ...) static_cast<void (class::*)(__VA_ARGS__)>(&class::name)
+
 
 #endif

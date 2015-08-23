@@ -20,6 +20,7 @@
 #ifndef SHOOTERSETTINGS_H
 #define SHOOTERSETTINGS_H
 #include "utils/dptr.h"
+#include <imaging/imaging_driver.h>
 #include <QString>
 #include <QDateTime>
 
@@ -29,6 +30,27 @@ class ShooterSettings
 public:
     ShooterSettings(QSettings &settings);
     ~ShooterSettings();
+    
+    class Camera {
+    public:
+      ~Camera();
+      QString serialPort() const;
+      void serialPort(const QString &serialPort);
+      QString iso() const;
+      void iso(const QString &iso);
+      QString imageFormat() const;
+      void imageFormat(const QString &imageFormat);
+      QString shutterSpeed() const;
+      void shutterSpeed(const QString &shutterSpeed);
+      qlonglong manualExposure() const;
+      void manualExposure(qlonglong manualExposure);
+    private:
+      friend class ShooterSettings;
+      Camera(const QString name, QSettings &settings, const Imager::Settings::ptr &imagerSettings);
+      D_PTR
+    };
+    
+    typedef std::shared_ptr<Camera> CameraPtr;
     
     enum ShootMode { Single, Repeat };
     
@@ -50,8 +72,10 @@ public:
     QString saveImageDirectory() const;
     void saveImageDirectory(const QString &directory);
     
+    CameraPtr camera(const ImagerPtr& imager, const Imager::Settings::ptr &settings);
 private:
   D_PTR
+  friend class Camera;
 };
 
 #endif // SHOOTERSETTINGS_H

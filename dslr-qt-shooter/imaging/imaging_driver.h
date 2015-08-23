@@ -6,6 +6,8 @@
 #include <QStringList>
 #include <memory>
 
+class ShooterSettings;
+class ShooterSettings;
 class LogMessage;
 
 class QImage;
@@ -21,7 +23,7 @@ public:
     struct ComboSetting {
       QString current;
       QStringList available;
-      operator bool() const { return !current.isEmpty() && !available.empty(); }
+      operator bool() const { return !available.empty(); }
     };
     virtual ~Settings() {};
     virtual ComboSetting shutterSpeed() const = 0;
@@ -32,21 +34,19 @@ public:
     virtual void setISO(const QString &) = 0;
     virtual void setManualExposure(qulonglong seconds) = 0;
     virtual qulonglong manualExposure() const = 0;
-    virtual void setSerialShootPort(const std::string serialShootPort) = 0;
-    virtual std::string serialShootPort() const = 0;
+    virtual void setSerialShootPort(const QString serialShootPort) = 0;
+    virtual QString serialShootPort() const = 0;
   };
   
   virtual QString summary() const = 0; // TODO: documentation
   virtual QString model() const = 0;  // TODO: documentation
   virtual QString about() const = 0; // TODO: documentation
   virtual std::shared_ptr<Settings> settings() = 0;
-    
+      
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
   virtual QImage shoot() const = 0;
-  virtual void setDeletePicturesOnCamera(bool del) { deletePicturesOnCamera = del; }
-  virtual void setOutputDirectory(const QString &directory) { _outputDirectory = directory; }
   
 signals:
   void connected();
@@ -54,9 +54,6 @@ signals:
   void message(Imager *, const QString &);
   void error(Imager *,const QString &);
   void exposure_remaining(int seconds) const;
-protected:
-  bool deletePicturesOnCamera = false;
-  QString _outputDirectory;
 };
 
 typedef std::shared_ptr<Imager> ImagerPtr;
@@ -66,7 +63,6 @@ class ImagingDriver : public QObject {
 public:
     ImagingDriver(QObject *parent = 0);
     std::vector<ImagerPtr> imagers() const { return _imagers; }
-    static ImagingDriver *imagingDriver(QObject *parent = 0);
 protected:
   std::vector<ImagerPtr> _imagers;
   virtual void scan_imagers() = 0;
@@ -83,8 +79,8 @@ signals:
 class ImagingDrivers : public ImagingDriver {
   Q_OBJECT
 public:
-  ImagingDrivers(QObject *parent = 0);
-  static QList<ImagingDriverPtr> allDrivers();
+  ImagingDrivers(ShooterSettings& shooterSettings, QObject* parent = 0);
+  static QList<ImagingDriverPtr> allDrivers(ShooterSettings& shooterSettings);
 
 protected:
   virtual void scan_imagers();

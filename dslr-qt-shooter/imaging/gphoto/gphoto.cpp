@@ -25,7 +25,7 @@
 #include <QThread>
 #include "utils/scope.h"
 
-
+#include "commons/shootersettings.h"
 #include "gphoto_commons.h"
 #include "gphoto_camera.h"
 
@@ -36,7 +36,7 @@ using namespace std;
 
 class GPhoto::Private {
 public:
-  Private() {}
+  Private(ShooterSettings &shooterSettings, GPhoto *q);
   GPContext* context;
   string last_error;
   string last_message;
@@ -44,10 +44,18 @@ public:
   static void gphotoErrorMessage(GPContext *context, const char *, void *);
   void reset_messages();
   QMutex mutex;
+  ShooterSettings &shooterSettings;
+private:
+  GPhoto *q;
 };
 
+GPhoto::Private::Private(ShooterSettings& shooterSettings, GPhoto* q) : shooterSettings{shooterSettings}, q{q}
+{
 
-GPhoto::GPhoto(QObject *parent) : ImagingDriver(parent), d(new Private)
+}
+
+
+GPhoto::GPhoto(ShooterSettings &shooterSettings, QObject *parent) : ImagingDriver(parent), dptr(shooterSettings, this)
 {
   d->context = gp_context_new();
   gp_context_set_error_func(d->context, reinterpret_cast<GPContextErrorFunc>(&Private::gphotoErrorMessage), d.get());
@@ -83,7 +91,7 @@ void GPhoto::scan_imagers()
   }, make_shared<QMutexLocker>(&d->mutex)};
   gp_list_unref(cameras);
   for(auto camera: cameras_info)
-    _imagers.push_back(make_shared<GPhotoCamera>(camera));
+    _imagers.push_back(make_shared<GPhotoCamera>(camera, d->shooterSettings));
 }
 
 void GPhoto::Private::gphotoMessage(GPContext* context, const char* m, void* data)

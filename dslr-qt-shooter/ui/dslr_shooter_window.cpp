@@ -38,7 +38,7 @@ using namespace std::placeholders;
 
 class DSLR_Shooter_Window::Private {
 public:
-  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui, ImagingDriverPtr imagingDriver);
+  Private(DSLR_Shooter_Window *q, Ui::DSLR_Shooter_Window *ui);
     unique_ptr<Ui::DSLR_Shooter_Window> ui;
     LinGuider *guider;
     struct LogEntry {
@@ -46,14 +46,12 @@ public:
        QDateTime when;
     };
 
+    ShooterSettings shooterSettings;
     QList<LogEntry> logEntries;
     ImagingDriverPtr imagingDriver;
     ImagerPtr imager;
     ImagingManagerPtr imagingManager;
     QSettings settings;
-    ShooterSettings shooterSettings;
-    void enableOrDisableShootingModeWidgets();
-    void camera_settings(function<void(Imager::Settings::ptr)> callback);
     
     Focus *focus;
     QwtPlotCurve *focus_curve;
@@ -61,13 +59,15 @@ public:
     QStandardItemModel logs;
     QSystemTrayIcon trayIcon;
     QThread* focusThread;
+    CameraSetup* cameraSetup;
     void saveState();
 private:
   DSLR_Shooter_Window *q;
 };
 
-DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui, ImagingDriverPtr imagingDriver)
- : q(q), ui(ui), imagingDriver(imagingDriver), imagingManager(make_shared<ImagingManager>()), settings("GuLinux", "DSLR-Shooter"), shooterSettings{settings}, trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
+DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui)
+ : q(q), ui(ui), settings("GuLinux", "DSLR-Shooter"), shooterSettings{settings}, 
+ imagingDriver{std::make_shared<ImagingDrivers>(shooterSettings)}, imagingManager(make_shared<ImagingManager>(shooterSettings)), trayIcon{QIcon::fromTheme("dslr-qt-shooter")}
 {
 }
 
@@ -79,7 +79,7 @@ void DSLR_Shooter_Window::Private::saveState()
 
 
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
-  QMainWindow(parent), dptr(this, new Ui::DSLR_Shooter_Window, std::make_shared<ImagingDrivers>() )
+  QMainWindow(parent), dptr(this, new Ui::DSLR_Shooter_Window)
 {
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
@@ -107,7 +107,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   };
   
   
-//   d->ui->camera_setup_dock->setWidget(new CameraSetup{d->shooterSettings});
+  d->ui->camera_setup_dock->setWidget(d->cameraSetup = new CameraSetup{d->shooterSettings});
 
   for(auto dockwidget : dockWidgetsActions.keys()) {
     connect(dockwidget, &QDockWidget::dockLocationChanged, [=]{ d->saveState(); });
@@ -178,22 +178,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->ui->imageContainer->clearROI();
     d->ui->focusing_clear_roi->setEnabled(false);
   });
-  auto outputChanged = [=] (bool save) {
-    d->ui->outputDir->setEnabled(save);
-    d->ui->outputDirButton->setEnabled(save);
-    QMetaObject::invokeMethod(d->imager.get(), "setOutputDirectory", Qt::QueuedConnection, Q_ARG(QString, save ? d->ui->outputDir->text() : QString() ));
-  };
-  connect(d->ui->outputDiscard, &QAbstractButton::toggled, [=](bool dontsave) { outputChanged(!dontsave); });
-  connect(d->ui->outputSave, &QAbstractButton::toggled, outputChanged);
-  connect(d->ui->outputDirButton, &QAbstractButton::clicked, [=]{
-    d->ui->outputDir->setText(QFileDialog::getExistingDirectory());
-    outputChanged(true);
-  });
   
-  
-  connect(d->ui->shoot_interval, &QTimeEdit::timeChanged, [=](const QTime &t) { d->settings.setValue("shoot_interval", t); });
-  connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool t) { d->settings.setValue("dither_after_each_shot", t); });
-  connect(d->ui->shoot_mode, SIGNAL(activated(int)), this, SLOT(shootModeChanged(int)));
   connect(d->ui->actionConnectTelescope, &QAction::triggered, [=] {
     QString server = QInputDialog::getText(this, tr("Telescope"), tr("Enter telescope address (example: localhost:7624)"), QLineEdit::Normal, "localhost:7624");
     if(server != "") {
@@ -235,23 +220,13 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   // Imaging Manager
   connect(d->imagingManager.get(), SIGNAL(image(QImage,int)), this, SLOT(shoot_received(QImage,int)));
   auto setWidgetsEnabled = [=](bool enable) {
-    d->ui->shoot_mode->setEnabled(enable);
-    d->ui->shoot_interval->setEnabled(enable);
-    d->ui->images_count->setEnabled(enable);
-    d->ui->imageSettings->setEnabled(enable);
+    d->cameraSetup->shooting(!enable); // TODO add some kind of "busy" signal?
     d->ui->shoot->setEnabled(enable);
   };
   connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(&QPushButton::setHidden, d->ui->stopShooting, true));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
   connect(d->imagingManager.get(), SIGNAL(finished()), d->ui->statusbar, SLOT(clearMessage()));
-}
-
-// TODO: why doesn't it work with lambda slot?
-void DSLR_Shooter_Window::shootModeChanged(int index)
-{
-  d->settings.setValue("shoot_mode", d->ui->shoot_mode->currentIndex());
-  d->enableOrDisableShootingModeWidgets();
 }
 
 void DSLR_Shooter_Window::focus_received(double value)
@@ -304,94 +279,27 @@ void DSLR_Shooter_Window::on_dither_clicked()
     got_message(LogMessage::info("guider", response));
 }
 
-void DSLR_Shooter_Window::Private::enableOrDisableShootingModeWidgets()
-{
-  auto enable = ui->shoot_mode->currentIndex() == 1;
-  ui->shoot_interval->setEnabled(enable);
-  ui->ditherAfterShot->setEnabled(enable);
-  ui->images_count->setEnabled(enable);
-}
-
-void DSLR_Shooter_Window::Private::camera_settings(function<void(Imager::Settings::ptr)> callback)
-{
-  if(!imager)
-    return;
-  ui->shoot->setDisabled(true);
-  ui->imageSettings->setDisabled(true);
-  qt_async<Imager::Settings::ptr>([=]{ return imager->settings(); }, [=](const Imager::Settings::ptr &settings) {
-    callback(settings);
-    ui->shoot->setEnabled(true);
-    ui->imageSettings->setEnabled(true);
-  });
-}
-
-
 
 void DSLR_Shooter_Window::camera_connected()
 {
-  qDebug() << __PRETTY_FUNCTION__;
   d->ui->camera_infos->clear();
-  
-  d->ui->shoot_mode->setCurrentIndex(d->settings.value("shoot_mode", 0).toInt());
-  d->ui->shoot_interval->setTime(d->settings.value("shoot_interval", QTime(0,0,0)).toTime());
-  d->ui->ditherAfterShot->setChecked(d->settings.value("dither_after_each_shot", false).toBool());
-  
-  d->enableOrDisableShootingModeWidgets();
-  
-  d->camera_settings([=](const Imager::Settings::ptr &settings) {
-    d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
-    settings->setSerialShootPort(d->settings.value("serial_shoot_port", "/dev/ttyUSB0").toString().toStdString());
-    settings->setImageFormat(d->settings.value("image_format", settings->imageFormat().current).toString());
-    settings->setISO(d->settings.value("iso", settings->iso().current).toString());
-    settings->setShutterSpeed(d->settings.value("shutter_speed", settings->shutterSpeed().current).toString());
-    settings->setManualExposure(d->settings.value("manual_exposure_secs", settings->manualExposure()).toULongLong());
-    d->settings.endGroup();
-  });
-  
   QString camera_infos = QString("Model: %1\nSummary: %2")
     .arg(d->imager->model())
     .arg(d->imager->summary());
   got_message(LogMessage::info("General", QString("Camera connected: %1").arg(d->imager->model())));
   d->ui->camera_infos->setText(camera_infos);
   d->ui->shoot->setEnabled(true);
-
-  d->ui->imageSettings->disconnect();
-  
-  auto reloadSettings = [=] {
-    d->camera_settings([=](const Imager::Settings::ptr &settings){
-      d->ui->isoLabel->setText(settings->iso().current);
-      d->ui->imageFormatLabel->setText(settings->imageFormat().current);
-      d->ui->shutterSpeedLabel->setText(settings->shutterSpeed().current);
-      d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(settings->manualExposure()).toString());
-      
-      d->settings.beginGroup(QString("camera %1").arg(d->imager->model()));
-      d->settings.setValue("serial_shoot_port", QString::fromStdString(settings->serialShootPort()));
-      d->settings.setValue("image_format", settings->imageFormat().current);
-      d->settings.setValue("iso", settings->iso().current);
-      d->settings.setValue("shutter_speed", settings->shutterSpeed().current);
-      d->settings.setValue("manual_exposure_secs", settings->manualExposure());
-      d->settings.endGroup();
-    });
-  };
-
-  timedLambda(500, reloadSettings, this);
-  
-  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
-    d->camera_settings([=](const Imager::Settings::ptr &settings){
-      auto dialog = new ImageSettingsDialog{ settings , this};
-      connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); timedLambda(500, reloadSettings, this);});
-      dialog->show();
-    });
-  });
+  d->cameraSetup->setCamera(d->imager);
 }
 
 void DSLR_Shooter_Window::shoot_received(const QImage& image, int remaining)
 {
   d->ui->imageContainer->setImage(image);
   d->ui->imageContainer->update();
-  d->ui->images_count->setValue(remaining);
+  
+  // d->ui->images_count->setValue(remaining); TODO readd a counter
   qDebug() << "Checking for dithering...";
-  if(d->ui->ditherAfterShot->isChecked() && d->guider->is_connected()) {
+  if(d->shooterSettings.ditherAfterEachShot() && d->guider->is_connected()) {
     got_message(LogMessage::info("main", "starting dithering"));
     qDebug() << "Dither enabled: dithering";
     d->guider->dither();
@@ -406,15 +314,15 @@ void DSLR_Shooter_Window::shoot_received(const QImage& image, int remaining)
   }
   for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
     widget->setEnabled(!image.isNull());
-//   afterShot();
 }
 
 
 void DSLR_Shooter_Window::start_shooting()
 {
-  long total_shots_number = d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
-  d->ui->stopShooting->setVisible(total_shots_number!=1);
-  d->imagingManager->start(total_shots_number, QTime{0,0,0}.secsTo(d->ui->shoot_interval->time()) * 1000);
+  // TODO
+//   long total_shots_number = d->ui->shoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
+//   d->ui->stopShooting->setVisible(total_shots_number!=1);
+  d->imagingManager->start();
   return; 
 }
 
@@ -422,6 +330,7 @@ void DSLR_Shooter_Window::camera_disconnected()
 {
   d->ui->shoot->setDisabled(true);
   disconnect(d->ui->imageContainer, SLOT(setImage(const QImage &)));
+  d->cameraSetup->setCamera({});
 }
 
 void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)

@@ -19,20 +19,21 @@
 
 #include "imagingmanager.h"
 #include <QtConcurrent/QtConcurrent>
+#include "commons/shootersettings.h"
+
 using namespace std;
 
 class ImagingManager::Private {
 public:
-  Private(ImagingManager *q) : q{q} {}
+  Private(ShooterSettings &shooterSettings, ImagingManager *q) : shooterSettings{shooterSettings}, q{q} {}
+  ShooterSettings &shooterSettings;
   ImagerPtr imager;
   bool remove_on_camera;
-  bool save_enabled;
-  QString outputDirectory;
   shared_ptr<bool> abort;
   
   struct SequenceRun {
     int remaining_shots;
-    double delay_milliseconds;
+    int delay_milliseconds;
     ImagerPtr imager;
     ImagingManager *q;
     shared_ptr<bool> abort;
@@ -43,7 +44,7 @@ private:
 };
 
 
-ImagingManager::ImagingManager(QObject* parent) : QObject(parent), dptr(this)
+ImagingManager::ImagingManager(ShooterSettings &shooterSettings, QObject* parent) : QObject(parent), dptr(shooterSettings, this)
 {
 }
 
@@ -56,12 +57,18 @@ void ImagingManager::setImager(const ImagerPtr& imager)
   d->imager = imager;
 }
 
-void ImagingManager::start(int numberOfShots, double millisecondsDelayBetweenShots)
+void ImagingManager::start()
 {
+  int sequenceLength = 1;
+  if(d->shooterSettings.shootMode() == ShooterSettings::Repeat) {
+    sequenceLength = d->shooterSettings.sequenceLength() == 0 ? std::numeric_limits<int>().max() : d->shooterSettings.sequenceLength();
+  }
+  auto millisecondsDelayBetweenShots = QTime{0,0,0}.secsTo(d->shooterSettings.delayBetweenShots()) * 1000;
+  
   d->abort = make_shared<bool>(false);
   emit started();
   QtConcurrent::run([=]{
-    Private::SequenceRun sequence{numberOfShots, millisecondsDelayBetweenShots, d->imager, this, d->abort};
+    Private::SequenceRun sequence{sequenceLength, millisecondsDelayBetweenShots, d->imager, this, d->abort};
     sequence.start();
   });
 }
@@ -89,21 +96,12 @@ void ImagingManager::setExposure(double milliseconds)
 }
 
 
-
-void ImagingManager::setOutputDirectory(const QString& directory)
-{
-  d->outputDirectory = directory;
-}
-
 void ImagingManager::setRemoveOnCameraEnabled(bool enabled)
 {
   d->remove_on_camera = enabled;
 }
 
-void ImagingManager::setSaveEnabled(bool enabled)
-{
-  d->save_enabled = enabled;
-}
+
 
 
 #include "imagingmanager.moc"

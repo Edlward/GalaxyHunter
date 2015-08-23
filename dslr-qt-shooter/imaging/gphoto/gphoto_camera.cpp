@@ -4,11 +4,11 @@
 #include <iostream>
 #include <QTimer>
 #include <QDir>
+#include "commons/shootersettings.h"
 
 #include "utils/qt.h"
 #include <utils/qlambdathread.h>
 #include <sstream>
-
 
 QString gphoto_error(int errorCode)
 {
@@ -29,14 +29,14 @@ qulonglong GPhotoCamera::Settings::manualExposure() const
 }
 
 
-string GPhotoCamera::Settings::serialShootPort() const
+QString GPhotoCamera::Settings::serialShootPort() const
 {
-  return q->d->serialShootPort;
+  return QString::fromStdString(q->d->serialShootPort);
 }
 
-void GPhotoCamera::Settings::setSerialShootPort(const string serialShootPort)
+void GPhotoCamera::Settings::setSerialShootPort(const QString serialShootPort)
 {
-  q->d->serialShootPort = serialShootPort;
+  q->d->serialShootPort = serialShootPort.toStdString();
 }
 
 
@@ -103,8 +103,8 @@ GPhotoCamera::Settings::~Settings()
 }
 
 
-GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation)
-  : d(new Private{gphotoCameraInformation, this})
+GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation, ShooterSettings &shooterSettings)
+  : dptr(gphotoCameraInformation, shooterSettings, this)
 {
   gp_api{{
     { [=] { return gp_camera_new(&d->camera); } },
@@ -195,7 +195,7 @@ QImage GPhotoCamera::Private::shootPreset()
     sequence_run( [&]{ return camera_file.save();} ),
   }, make_shared<QMutexLocker>(&mutex)}.run_last([&]{
     camera_file.originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
-    deletePicturesOnCamera(camera_remote_file);
+//     deletePicturesOnCamera(camera_remote_file); TODO: add again?
     image = fileToImage(camera_file);
   }).on_error([=](int errorCode, const std::string &label) {
     qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
@@ -208,9 +208,9 @@ QImage GPhotoCamera::Private::shootPreset()
 QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
 {
   try {
-    if(!q->_outputDirectory.isEmpty()) {
+    if(shooterSettings.saveImage()) {
       QFile file(cameraTempFile.path());
-      auto destination = q->_outputDirectory + QDir::separator() + cameraTempFile.originalName;
+      auto destination = shooterSettings.saveImageDirectory() + QDir::separator() + cameraTempFile.originalName;
       if(file.copy(destination))
 	q->message(q, QString("Saved image to %1").arg(destination));
       else
@@ -281,12 +281,13 @@ QImage GPhotoCamera::Private::shootTethered()
     }
 
     camera_file.originalName = QString::fromStdString(filename);
-    qDebug() << "Output directory: " << q->_outputDirectory;
-    deletePicturesOnCamera(*newfile);
+    qDebug() << "Output directory: " << shooterSettings.saveImageDirectory();
+//     deletePicturesOnCamera(*newfile);TODO: add again?
     image = fileToImage(camera_file);
     return image;
 }
 
+/*TODO: add again?
 void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
 {
   if(q->deletePicturesOnCamera) {
@@ -305,7 +306,7 @@ void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_
   }
 }
 
-
+*/
 
 QString GPhotoCamera::about() const
 {

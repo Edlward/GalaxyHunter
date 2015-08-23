@@ -10,19 +10,13 @@
 #endif
 
 #include <commons/logmessage.h>
+#include "commons/shootersettings.h"
+
 using namespace std;
 
 ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {
 }
 
-ImagingDriver *ImagingDriver::imagingDriver(QObject *parent) {
-#ifdef IMAGING_gphoto2
-    return new GPhoto(parent);
-#endif
-#ifdef IMAGING_testing
-    return new TestingImagerDriver(parent);
-#endif
-}
 
 void ImagingDriver::camera_error(Imager* camera, const QString& message)
 {
@@ -45,7 +39,7 @@ void ImagingDriver::scan()
   emit scan_finished();
 }
 
-ImagingDrivers::ImagingDrivers(QObject* parent): ImagingDriver(parent), imagingDrivers(allDrivers())
+ImagingDrivers::ImagingDrivers(ShooterSettings &shooterSettings, QObject* parent): ImagingDriver(parent), imagingDrivers(allDrivers(shooterSettings))
 {
   for(auto driver: imagingDrivers) {
     qDebug() << "driver: " << typeid(*driver).name();
@@ -54,14 +48,14 @@ ImagingDrivers::ImagingDrivers(QObject* parent): ImagingDriver(parent), imagingD
   }
 }
 
-QList< ImagingDriverPtr > ImagingDrivers::allDrivers()
+QList< ImagingDriverPtr > ImagingDrivers::allDrivers(ShooterSettings &shooterSettings)
 {
   return {
     #ifdef IMAGING_gphoto2
-    make_shared<GPhoto>(),
+    make_shared<GPhoto>(shooterSettings),
 #endif
 #ifdef IMAGING_testing
-    make_shared<TestingImagerDriver>(),
+    make_shared<TestingImagerDriver>(shooterSettings),
 #endif
   };
 }

@@ -25,20 +25,19 @@
 #include "utils/dptr.h"
 #include "imaging_driver.h"
 
+class ShooterSettings;
 class ImagingManager : public QObject
 {
     Q_OBJECT
 
 public:
-    ImagingManager(QObject *parent = 0);
+    ImagingManager(ShooterSettings &shooterSettings, QObject *parent = 0);
     ~ImagingManager();
     void setImager(const ImagerPtr &imager);
 public slots:
-  void start(int numberOfShots, double millisecondsDelayBetweenShots = 0);
+  void start();
   void abort();
   void setExposure(double milliseconds);
-  void setOutputDirectory(const QString &directory);
-  void setSaveEnabled(bool enabled);
   void setRemoveOnCameraEnabled(bool enabled);
 signals:
   void started();

@@ -143,7 +143,7 @@
    <item row="6" column="0" colspan="2">
     <widget class="QPushButton" name="imageSettings">
      <property name="text">
-      <string>Image Settings...</string>
+      <string>Camera Settings...</string>
      </property>
     </widget>
    </item>
@@ -190,7 +190,7 @@
       <item row="1" column="1">
        <widget class="QTimeEdit" name="shoot_interval">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="currentSection">
          <enum>QDateTimeEdit::HourSection</enum>
@@ -227,7 +227,6 @@
   <zorder>label_10</zorder>
   <zorder>shoot_mode</zorder>
   <zorder>groupBox</zorder>
-  <zorder></zorder>
   <zorder>repeated_shots_settings</zorder>
  </widget>
  <resources/>

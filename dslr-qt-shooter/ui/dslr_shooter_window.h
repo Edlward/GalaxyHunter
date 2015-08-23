@@ -33,7 +33,6 @@ private slots:
   void camera_disconnected();
   void start_shooting();
 private slots:
-  void shootModeChanged(int index);
   void focus_received(double value);
   void shoot_received(const QImage& image, int remaining);
 private:

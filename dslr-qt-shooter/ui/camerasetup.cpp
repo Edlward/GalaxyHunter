@@ -18,9 +18,12 @@
  */
 
 #include "camerasetup.h"
+#include "imagesettingsdialog.h"
 #include "commons/shootersettings.h"
 #include "ui_camera_setup.h"
 #include <QFileDialog>
+#include "utils/qt.h"
+#include <functional>
 
 using namespace std;
 
@@ -30,13 +33,29 @@ public:
   ShooterSettings &shooterSettings;
   unique_ptr<Ui::CameraSetup> ui;
   QButtonGroup *fileOutput;
+    ImagerPtr imager;
   void load();
+  void camera_settings(function<void(Imager::Settings::ptr)> callback);
 private:
   CameraSetup *q;
 };
 
 CameraSetup::Private::Private(ShooterSettings& shooterSettings, CameraSetup* q) : shooterSettings{shooterSettings}, ui{new Ui::CameraSetup()}, q{q}
 {
+}
+
+
+void CameraSetup::Private::camera_settings(function<void(Imager::Settings::ptr)> callback)
+{
+  if(!imager)
+    return;
+//   ui->shoot->setDisabled(true); TODO
+  ui->imageSettings->setDisabled(true);
+  qt_async<Imager::Settings::ptr>([=]{ return imager->settings(); }, [=](const Imager::Settings::ptr &settings) {
+    callback(settings);
+//     ui->shoot->setEnabled(true); TODO
+    ui->imageSettings->setEnabled(true);
+  });
 }
 
 void CameraSetup::Private::load()
@@ -52,6 +71,7 @@ void CameraSetup::Private::load()
   ui->groupBox->setVisible(saveImages ? ui->outputSave : ui->outputSave);
   ui->outputDir->setVisible(saveImages);
   ui->outputDir->setText(shooterSettings.saveImageDirectory());
+  ui->imageSettings->setEnabled(imager.operator bool());
 }
 
 
@@ -78,7 +98,78 @@ CameraSetup::CameraSetup(ShooterSettings& shooterSettings, QWidget* parent) : QW
     d->shooterSettings.saveImage(save);
     d->load();
   });
+  connect(d->ui->shoot_mode, F_PTR(QComboBox, currentIndexChanged, int), [=](int index){
+    d->shooterSettings.shootMode( index == 0 ? ShooterSettings::Single : ShooterSettings::Repeat);
+    d->load();
+  });
+  connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool checked){
+    d->shooterSettings.ditherAfterEachShot(checked);
+    d->load();
+  });
+  connect(d->ui->images_count, F_PTR(QSpinBox, valueChanged, int), [=](int v){
+    d->shooterSettings.sequenceLength(v);
+    d->load();
+  });
+  
+  connect(d->ui->shoot_interval, &QTimeEdit::timeChanged, [=](QTime t) {
+    d->shooterSettings.delayBetweenShots(t);
+    d->load();
+  });
   d->load();
 }
+
+
+void CameraSetup::shooting(bool isShooting)
+{
+  d->ui->shoot_mode->setEnabled(!isShooting);
+  d->ui->shoot_interval->setEnabled(!isShooting);
+  d->ui->images_count->setEnabled(!isShooting);
+  d->ui->imageSettings->setEnabled(!isShooting);
+}
+
+void CameraSetup::setCamera(const ImagerPtr& imager)
+{
+  d->ui->imageSettings->disconnect();
+  d->imager = imager;
+  if(imager) {
+    d->camera_settings([=](const Imager::Settings::ptr &settings) {
+    auto camera_settings = d->shooterSettings.camera(imager, settings);
+    settings->setSerialShootPort(camera_settings->serialPort());
+    settings->setImageFormat(camera_settings->imageFormat());
+    settings->setISO(camera_settings->iso());
+    settings->setShutterSpeed(camera_settings->shutterSpeed());
+    settings->setManualExposure(camera_settings->manualExposure());
+  });
+  
+    
+    auto reloadSettings = [=] {
+    d->camera_settings([=](const Imager::Settings::ptr &settings){
+      d->ui->isoLabel->setText(settings->iso().current);
+      d->ui->imageFormatLabel->setText(settings->imageFormat().current);
+      d->ui->shutterSpeedLabel->setText(settings->shutterSpeed().current);
+      d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(settings->manualExposure()).toString());
+      
+      auto camera_settings = d->shooterSettings.camera(imager, settings);
+      camera_settings->imageFormat(settings->imageFormat().current);
+      camera_settings->serialPort(settings->serialShootPort());
+      camera_settings->iso(settings->iso().current);
+      camera_settings->shutterSpeed(settings->shutterSpeed().current);
+      camera_settings->manualExposure(settings->manualExposure());
+    });
+  };
+
+  timedLambda(500, reloadSettings, this);
+  
+  connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
+    d->camera_settings([=](const Imager::Settings::ptr &settings){
+      auto dialog = new ImageSettingsDialog{ settings , this};
+      connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); timedLambda(500, reloadSettings, this);});
+      dialog->show();
+    });
+  });
+  }
+  d->load();
+}
+
 
 #include "camerasetup.moc"

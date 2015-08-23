@@ -20,15 +20,13 @@
 #include "shootersettings.h"
 #include <QSettings>
 #include <QStandardPaths>
-
-Q_DECLARE_METATYPE(ShooterSettings::ShootMode)
+#include "utils/qt.h"
+using namespace std;
 
 class ShooterSettings::Private {
 public:
   Private(QSettings &settings, ShooterSettings *q);
   QSettings &settings;
-  template<typename T> T get(const QString &key, const T &defaultValue = {}) const;
-  template<typename T> void set(const QString &key, const T &value);
 private:
   ShooterSettings *q;
 };
@@ -38,15 +36,38 @@ ShooterSettings::Private::Private(QSettings& settings, ShooterSettings* q) : set
 }
 
 template<typename T>
-void ShooterSettings::Private::set(const QString& key, const T& value)
+void ShooterSettings_set(QSettings &settings, const QString& key, const T& value)
 {
   settings.setValue(key, value);
 }
 
 template<typename T>
-T ShooterSettings::Private::get(const QString& key, const T& defaultValue) const
+T ShooterSettings_get(QSettings &settings, const QString& key, const T& defaultValue = {})
 {
   return qvariant_cast<T>(settings.value(key, defaultValue));
+}
+
+class ShooterSettings::Camera::Private {
+public:
+  Private(QSettings &settings, const Imager::Settings::ptr &imagerSettings, ShooterSettings::Camera *q);
+  QSettings &settings;
+  Imager::Settings::ptr imagerSettings;
+private:
+  ShooterSettings::Camera *q;
+};
+
+ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings::ptr& imagerSettings, ShooterSettings::Camera* q) : settings{settings}, imagerSettings{imagerSettings}, q{q}
+{
+}
+
+ShooterSettings::Camera::Camera(const QString name, QSettings& settings, const Imager::Settings::ptr &imagerSettings) : dptr(settings, imagerSettings, this)
+{
+  settings.beginGroup("camera_%1"_q % name);
+}
+
+ShooterSettings::Camera::~Camera()
+{
+  d->settings.endGroup();
 }
 
 
@@ -59,21 +80,41 @@ ShooterSettings::~ShooterSettings()
 {
 }
 
-#define setting(Name, Type, Default) \
-Type ShooterSettings:: Name () const { return d->get<Type>(#Name, Default); } \
-void ShooterSettings:: Name (Type value) { d->set<Type>(#Name, value); }
+#define setting(Name, Type, Default, ...) \
+Type ShooterSettings:: __VA_ARGS__ Name () const { return ShooterSettings_get<Type>(d->settings, #Name, Default); } \
+void ShooterSettings:: __VA_ARGS__ Name (Type value) { ShooterSettings_set<Type>(d->settings, #Name, value); }
 
-#define setting_obj(Name, Type, Default) \
-Type ShooterSettings:: Name () const { return d->get<Type>(#Name, Default); } \
-void ShooterSettings:: Name (const Type &value) { d->set<Type>(#Name, value); }
+#define setting_obj(Name, Type, Default, ...) \
+Type ShooterSettings:: __VA_ARGS__ Name () const { return ShooterSettings_get<Type>(d->settings, #Name, Default); } \
+void ShooterSettings:: __VA_ARGS__ Name (const Type &value) { ShooterSettings_set<Type>(d->settings, #Name, value); }
+
+void ShooterSettings::shootMode(ShooterSettings::ShootMode mode)
+{
+  ShooterSettings_set<int>(d->settings, "shootMode", mode);
+}
+
+ShooterSettings::ShootMode ShooterSettings::shootMode() const
+{
+  return static_cast<ShootMode>(ShooterSettings_get<int>(d->settings, "shootMode", ShootMode::Single));
+}
+
+shared_ptr<ShooterSettings::Camera> ShooterSettings::camera(const ImagerPtr& imager, const Imager::Settings::ptr &settings)
+{
+  return CameraPtr{new Camera(imager->model(), d->settings, settings)};
+}
 
 
-setting(shootMode, ShooterSettings::ShootMode, ShooterSettings::Single)
 setting_obj(delayBetweenShots, QTime, QTime(0,0,0))
 setting(ditherAfterEachShot, bool, false)
 setting(saveImage, bool, false)
 setting(sequenceLength, int, 0)
 setting_obj(saveImageDirectory, QString, QStandardPaths::writableLocation(QStandardPaths::PicturesLocation))
+
+setting_obj(serialPort, QString, d->imagerSettings->serialShootPort(), Camera::)
+setting_obj(iso, QString, d->imagerSettings->iso().current, Camera::)
+setting_obj(imageFormat, QString, d->imagerSettings->imageFormat().current, Camera::)
+setting_obj(shutterSpeed, QString, d->imagerSettings->shutterSpeed().current, Camera::)
+setting(manualExposure, qlonglong, d->imagerSettings->manualExposure(), Camera::)
 
 
 

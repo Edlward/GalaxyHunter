@@ -2,13 +2,14 @@
 #define GULINUX_GPHOTO_CAMERA_H
 
 #include "imaging/imaging_driver.h"
-#include <memory>
+#include "utils/dptr.h"
 
+class ShooterSettings;
 class GPhotoCameraInformation;
 class GPhotoCamera : public Imager {
   Q_OBJECT
 public:
-  GPhotoCamera(const std::shared_ptr<GPhotoCameraInformation> &gphotoCameraInformation);
+  GPhotoCamera(const std::shared_ptr<GPhotoCameraInformation> &gphotoCameraInformation, ShooterSettings &shooterSettings);
   ~GPhotoCamera();
   virtual QString summary() const;
   virtual QString model() const;
@@ -22,9 +23,7 @@ public slots:
   virtual void disconnect();
   virtual QImage shoot() const;
 private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> const d;
+  D_PTR
 };
 
 #endif

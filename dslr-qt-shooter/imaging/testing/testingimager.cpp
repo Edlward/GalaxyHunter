@@ -19,25 +19,23 @@ public:
   virtual void setISO(const QString &s) { _iso.current = s; }
   virtual void setManualExposure(qulonglong seconds) { _manualExposure = seconds; }
   virtual qulonglong manualExposure() const { return _manualExposure; }
-  virtual void setSerialShootPort(const string serialShootPort) { _serialPort = serialShootPort; }
-  virtual string serialShootPort() const { return _serialPort; }
+  virtual void setSerialShootPort(const QString serialShootPort) { _serialPort = serialShootPort; }
+  virtual QString serialShootPort() const { return _serialPort; }
 private:
-  ComboSetting _shutterSpeed;
-  ComboSetting _imageFormat;
-  ComboSetting _iso;
-  qulonglong _manualExposure;
-  string _serialPort;
+  ComboSetting _shutterSpeed{"1", {"1", "2", "5"}};
+  ComboSetting _imageFormat{"PNG", {"PNG"}};
+  ComboSetting _iso{"100", {"100", "200"}};
+  qulonglong _manualExposure = 0;
+  QString _serialPort = "/dev/ttyUSB0";
 };
 
 
-TestingImagerDriver::TestingImagerDriver(QObject *parent) :
-    ImagingDriver(parent)
+TestingImagerDriver::TestingImagerDriver(ShooterSettings &shooterSettings, QObject *parent): ImagingDriver(parent), shooterSettings{shooterSettings}
 {
 }
 
-TestingImager::TestingImager() : Imager(), _settings(make_shared<TestingImager::Settings>())
+TestingImager::TestingImager(ShooterSettings &shooterSettings) : Imager(), _settings{make_shared<TestingImager::Settings>()}, shooterSettings{shooterSettings}
 {
-
 }
 
 
@@ -53,7 +51,7 @@ void TestingImager::disconnect()
 
 void TestingImagerDriver::scan_imagers()
 {
-  _imagers = {make_shared<TestingImager>()};
+  _imagers = {make_shared<TestingImager>(shooterSettings)};
 }
 
 
@@ -61,9 +59,12 @@ QImage TestingImager::shoot() const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 12) + 1);
   qDebug() << "loading image: " << imageFile;
-  for(int i=0; i<_settings->manualExposure(); i++) {
-    emit exposure_remaining(_settings->manualExposure()-i);
-    thread()->msleep(1000);
+  
+  int exposure = _settings->manualExposure() == 0 ? _settings->shutterSpeed().current.toInt() : _settings->manualExposure();
+  
+  for(int i=0; i<exposure; i++) {
+    emit exposure_remaining(exposure-i);
+    QThread::currentThread()->msleep(1000);
   }
   QImage image(imageFile);
   return image;

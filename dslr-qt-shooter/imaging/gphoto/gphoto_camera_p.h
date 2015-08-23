@@ -13,7 +13,7 @@
 #include <Magick++.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/path.hpp>
-
+#include "commons/shootersettings.h"
 
 using namespace std;
 
@@ -36,8 +36,8 @@ public:
     virtual void setISO(const QString &v) { _iso.change(v); }
     virtual void setManualExposure(qulonglong seconds);
     virtual void setShutterSpeed(const QString &v) { _shutterSpeed.change(v); }
-    virtual std::string serialShootPort() const;
-    virtual void setSerialShootPort(const string serialShootPort);
+    virtual QString serialShootPort() const;
+    virtual void setSerialShootPort(const QString serialShootPort);
     virtual ~Settings();
 private:
   GPContext *context;
@@ -67,8 +67,8 @@ struct CameraTempFile {
 
 class GPhotoCamera::Private {
 public:
-  Private(const shared_ptr<GPhotoCameraInformation> &info, GPhotoCamera *q)
-    : model(QString::fromStdString(info->name)), port(info->port), context(info->context), mutex(info->mutex), q(q) {}
+  Private(const shared_ptr<GPhotoCameraInformation> &info, ShooterSettings &shooterSettings, GPhotoCamera *q)
+    : model(QString::fromStdString(info->name)), port(info->port), context(info->context), mutex(info->mutex), shooterSettings{shooterSettings}, q(q) {}
   string port;
   QString model;
   QString about;
@@ -80,10 +80,10 @@ public:
   QImage shootTethered();
   QImage shootPreset();
   QImage fileToImage(CameraTempFile &cameraTempFile) const;
-  void deletePicturesOnCamera(const CameraFilePath &camera_remote_file);
   std::string fixedFilename(const std::string &fileName) const;
   QMutex &mutex;
   std::string serialShootPort;
+  ShooterSettings &shooterSettings;
 private:
   GPhotoCamera *q;
 };

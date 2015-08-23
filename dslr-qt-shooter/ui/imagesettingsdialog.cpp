@@ -81,7 +81,7 @@ ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &ima
     d->ui->pickSerialShootPort->setEnabled(checked);
     d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings->manualExposure()));
   };
-  d->ui->serialShootPort->setText(QString::fromStdString(d->imagerSettings->serialShootPort()));
+  d->ui->serialShootPort->setText(d->imagerSettings->serialShootPort());
   
   connect(d->ui->presetExposure, &QRadioButton::toggled, presetExposure);
   connect(d->ui->manualExposure, &QRadioButton::toggled, manualExposure);
@@ -101,7 +101,7 @@ void ImageSettingsDialog::accept()
     d->imagerSettings->setImageFormat(d->imageFormat);
     d->imagerSettings->setISO(d->iso);
     d->imagerSettings->setManualExposure(manualExposure);
-    d->imagerSettings->setSerialShootPort(d->ui->serialShootPort->text().toStdString() );
+    d->imagerSettings->setSerialShootPort(d->ui->serialShootPort->text() );
   QDialog::accept();
   deleteLater();
 }

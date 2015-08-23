@@ -20,7 +20,7 @@
 #ifndef GULINUX_GPHOTO_H
 #define GULINUX_GPHOTO_H
 
-#include <memory>
+#include "utils/dptr.h"
 #include <QObject>
 #include "imaging_driver.h"
 
@@ -32,16 +32,14 @@ class GPhoto : public ImagingDriver
 {
   Q_OBJECT
 public:
-    GPhoto(QObject *parent = 0);
+    GPhoto(ShooterSettings &shooterSettings, QObject *parent = 0);
     ~GPhoto();
 public slots:
 protected:
   virtual void scan_imagers();
 
 private:
-  class Private;
-  friend class Private;
-  std::unique_ptr<Private> const d;
+  D_PTR
 };
 
 #endif // GULINUX_GPHOTO_H
