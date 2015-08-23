@@ -14,6 +14,17 @@ class QImage;
 class ImagingDriver;
 typedef std::shared_ptr<ImagingDriver> ImagingDriverPtr;
 
+class Image {
+public:
+  typedef std::shared_ptr<Image> ptr;
+  virtual operator QImage() const = 0;
+  void save(const QString &directory, const QString &filename = {});
+protected:
+  virtual void save_to(const QString& path) = 0;
+  virtual QString originalFileName() = 0;
+};
+Q_DECLARE_METATYPE(Image::ptr)
+
 class Imager : public QObject {
   Q_OBJECT
 public:
@@ -46,7 +57,7 @@ public:
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
-  virtual QImage shoot() const = 0;
+  virtual Image::ptr shoot() const = 0;
   
 signals:
   void connected();

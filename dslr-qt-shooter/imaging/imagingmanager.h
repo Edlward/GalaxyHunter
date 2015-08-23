@@ -43,7 +43,7 @@ signals:
   void started();
   void finished();
   void saved(const QString &file);
-  void image(const QImage &image, int remaining);
+  void image(const Image::ptr &image, int remaining);
 private:
   D_PTR
 };

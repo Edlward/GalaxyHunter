@@ -11,6 +11,8 @@
 
 #include <commons/logmessage.h>
 #include "commons/shootersettings.h"
+#include "utils/qt.h"
+#include <QDir>
 
 using namespace std;
 
@@ -71,5 +73,18 @@ void ImagingDrivers::scan_imagers()
     auto imagers = driver->imagers();
     copy(begin(imagers), end(imagers), back_inserter(_imagers));
   }
+}
+
+class RegisterImagePtrMetaType {
+public:
+  RegisterImagePtrMetaType() { qRegisterMetaType<Image::ptr>(); }
+};
+
+RegisterImagePtrMetaType __registerImagePtrMetaType;
+
+void Image::save(const QString& directory, const QString& filename)
+{
+  auto path = "%1%2%3"_q % directory % QDir::separator() % (filename.isEmpty() ? originalFileName() : filename);
+  save_to(path);
 }
 

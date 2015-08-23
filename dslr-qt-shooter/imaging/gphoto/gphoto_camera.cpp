@@ -169,7 +169,7 @@ void GPhotoCamera::disconnect()
   gp_camera_exit(d->camera, d->context);
 }
 
-QImage GPhotoCamera::shoot() const
+Image::ptr GPhotoCamera::shoot() const
 {
   if(d->manualExposure > 0) {
     return d->shootTethered();
@@ -184,51 +184,28 @@ string GPhotoCamera::Private::fixedFilename(const string& fileName) const
 }
 
 
-QImage GPhotoCamera::Private::shootPreset()
+Image::ptr GPhotoCamera::Private::shootPreset()
 {
-  CameraTempFile camera_file;
+  auto camera_file = make_shared<CameraTempFile>(q);
   CameraFilePath camera_remote_file;
   QImage image;
   gp_api{{
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
-    sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, camera_file, context); } ),
-    sequence_run( [&]{ return camera_file.save();} ),
+    sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, *camera_file, context); } ),
+    sequence_run( [&]{ return camera_file->save();} ),
   }, make_shared<QMutexLocker>(&mutex)}.run_last([&]{
-    camera_file.originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
+    camera_file->originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
 //     deletePicturesOnCamera(camera_remote_file); TODO: add again?
-    image = fileToImage(camera_file);
   }).on_error([=](int errorCode, const std::string &label) {
     qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
     q->error(q, gphoto_error(errorCode));
   });
-  return image;
+  return camera_file;
 }
 
 
-QImage GPhotoCamera::Private::fileToImage(CameraTempFile& cameraTempFile) const
-{
-  try {
-    if(shooterSettings.saveImage()) {
-      QFile file(cameraTempFile.path());
-      auto destination = shooterSettings.saveImageDirectory() + QDir::separator() + cameraTempFile.originalName;
-      if(file.copy(destination))
-	q->message(q, QString("Saved image to %1").arg(destination));
-      else
-	q->error(q, QString("Error saving image to %1").arg(destination));
-    }
-    qDebug() << "shoot completed: camera file " << cameraTempFile.path();
-    QImage image;
-    QFileInfo fileInfo(cameraTempFile.originalName);
-    File2Image file2image(image);
-    file2image.load(cameraTempFile, fileInfo.suffix().toLower());
-    return image;
-  } catch(std::exception &e) {
-      q->error(q, QString("Error converting image: %1").arg(e.what()));
-      return QImage();
-  }
-}
 
-QImage GPhotoCamera::Private::shootTethered()
+Image::ptr GPhotoCamera::Private::shootTethered()
 {
   boost::thread t([=]{
     auto shoot = make_shared<SerialShoot>(serialShootPort);
@@ -247,7 +224,7 @@ QImage GPhotoCamera::Private::shootTethered()
 
     CameraEventType event;
     void *data;
-    CameraTempFile camera_file;
+    auto camera_file = make_shared<CameraTempFile>(q);
     QImage image;
     
     QMap<CameraEventType, QString> eventTypes {
@@ -272,21 +249,48 @@ QImage GPhotoCamera::Private::shootTethered()
     }
     CameraFilePath *newfile  = reinterpret_cast<CameraFilePath*>(data);
     string filename = fixedFilename(newfile->name);
-    if( result = gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, camera_file, context) != GP_OK) {
+    if( result = gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, *camera_file, context) != GP_OK) {
       q->error(q, gphoto_error(result));
       return {};
     }
-    if( result = camera_file.save() != GP_OK) {
+    if( result = camera_file->save() != GP_OK) {
       q->error(q, gphoto_error(result));
       return {};
     }
 
-    camera_file.originalName = QString::fromStdString(filename);
+    camera_file->originalName = QString::fromStdString(filename);
     qDebug() << "Output directory: " << shooterSettings.saveImageDirectory();
 //     deletePicturesOnCamera(*newfile);TODO: add again?
-    image = fileToImage(camera_file);
-    return image;
+    return camera_file;
 }
+
+
+CameraTempFile::operator QImage() const {
+  try {
+    QImage image;
+    QFileInfo fileInfo(originalName);
+    File2Image file2image(image);
+    file2image.load(*this, fileInfo.suffix().toLower());
+    return image;
+  } catch(std::exception &e) {
+      imager->error(imager, QString("Error converting image: %1").arg(e.what()));
+      return QImage();
+  }
+}
+
+void CameraTempFile::save_to(const QString& path){
+  QFile file( temp_file.fileName() );
+  if(file.copy(path))
+    imager->message(imager, "Saved image to %1"_q % path);
+  else
+    imager->error(imager, "Error saving temporary image %1 to %2"_q % temp_file.fileName() % path);
+}
+
+QString CameraTempFile::originalFileName()
+{
+  return QFileInfo(originalName).fileName();
+}
+
 
 /*TODO: add again?
 void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
@@ -334,7 +338,7 @@ GPhotoCamera::~GPhotoCamera()
 
 
 
-CameraTempFile::CameraTempFile()
+CameraTempFile::CameraTempFile(GPhotoCamera *imager) : imager{imager}
 {
   int r = gp_file_new(&camera_file);
   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_new=" << r;

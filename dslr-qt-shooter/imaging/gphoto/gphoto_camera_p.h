@@ -51,8 +51,9 @@ private:
 };
 
 
-struct CameraTempFile {
-  CameraTempFile();
+class CameraTempFile : public Image {
+public:
+  CameraTempFile(GPhotoCamera *imager);
   ~CameraTempFile();
   int save();
   CameraFile *camera_file;
@@ -62,7 +63,16 @@ struct CameraTempFile {
   operator QString() const { return path(); }
   QString mimeType() const;
   QString path() const { return temp_file.fileName(); }
+  
+  virtual operator QImage() const;
+protected:
+  virtual QString originalFileName();
+  virtual void save_to(const QString &path);
+private:
+  GPhotoCamera *imager;
 };
+
+
 
 
 class GPhotoCamera::Private {
@@ -77,9 +87,8 @@ public:
   Camera *camera = nullptr;
   qulonglong manualExposure = 0l;
   QString outputDirectory;
-  QImage shootTethered();
-  QImage shootPreset();
-  QImage fileToImage(CameraTempFile &cameraTempFile) const;
+  Image::ptr shootTethered();
+  Image::ptr shootPreset();
   std::string fixedFilename(const std::string &fileName) const;
   QMutex &mutex;
   std::string serialShootPort;

@@ -225,7 +225,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   autoScan->start(1000);
   
   // Imaging Manager
-  connect(d->imagingManager.get(), SIGNAL(image(QImage,int)), this, SLOT(shoot_received(QImage,int)));
+  connect(d->imagingManager.get(), &ImagingManager::image, this, &DSLR_Shooter_Window::shoot_received);
   auto setWidgetsEnabled = [=](bool enable) {
     d->cameraSetup->shooting(!enable); // TODO add some kind of "busy" signal?
     d->ui->shoot->setEnabled(enable);
@@ -299,10 +299,17 @@ void DSLR_Shooter_Window::camera_connected()
   d->cameraSetup->setCamera(d->imager);
 }
 
-void DSLR_Shooter_Window::shoot_received(const QImage& image, int remaining)
+void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
 {
-  d->ui->imageContainer->setImage(image);
-  d->ui->imageContainer->update();
+  if(!image)
+    return;
+  
+  if(d->shooterSettings.saveImage()) {
+    image->save(d->shooterSettings.saveImageDirectory());
+  }
+  
+  QImage img = *image;
+  d->ui->imageContainer->setImage(img);
   
   // d->ui->images_count->setValue(remaining); TODO readd a counter
   qDebug() << "Checking for dithering...";
@@ -314,13 +321,13 @@ void DSLR_Shooter_Window::shoot_received(const QImage& image, int remaining)
   }
   if(d->ui->enable_focus_analysis->isChecked()) {
     QMetaObject::invokeMethod(d->focus, "analyze", Qt::QueuedConnection,
-                              Q_ARG(QImage, d->ui->imageContainer->roi().isNull() ? image : image.copy(d->ui->imageContainer->roi())));
+                              Q_ARG(QImage, d->ui->imageContainer->roi().isNull() ? img : img.copy(d->ui->imageContainer->roi())));
   } else {
     d->ui->focus_analysis_history->clear();
     d->ui->focus_analysis_value->display(0);
   }
   for(auto widget: vector<QAbstractButton*>{d->ui->zoomActualSize, d->ui->zoomFit, d->ui->zoomIn, d->ui->zoomOut})
-    widget->setEnabled(!image.isNull());
+    widget->setEnabled(!img.isNull());
 }
 
 

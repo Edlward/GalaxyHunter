@@ -5,7 +5,9 @@
 #include <QImage>
 #include <QDebug>
 #include <QThread>
+#include <QDir>
 #include <QPixmap>
+#include "utils/qt.h"
 
 using namespace std;
 
@@ -54,8 +56,31 @@ void TestingImagerDriver::scan_imagers()
   _imagers = {make_shared<TestingImager>(shooterSettings)};
 }
 
+class TestingImage : public Image {
+public:
+  TestingImage(const QImage &image) : image(image) {}
+  virtual operator QImage() const { return image; }
+protected:
+  virtual void save_to(const QString &path);
+  virtual QString originalFileName();
+private:
+  QImage image;
+};
 
-QImage TestingImager::shoot() const
+QString TestingImage::originalFileName()
+{
+  return "%1.png"_q % QDateTime::currentDateTime().toString(Qt::ISODate);
+}
+
+
+void TestingImage::save_to(const QString& path)
+{
+  image.save(path);
+}
+
+
+
+Image::ptr TestingImager::shoot() const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 12) + 1);
   qDebug() << "loading image: " << imageFile;
@@ -67,6 +92,6 @@ QImage TestingImager::shoot() const
     QThread::currentThread()->msleep(1000);
   }
   QImage image(imageFile);
-  return image;
+  return make_shared<TestingImage>(image);
 }
 

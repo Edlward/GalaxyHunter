@@ -34,7 +34,7 @@ private slots:
   void start_shooting();
 private slots:
   void focus_received(double value);
-  void shoot_received(const QImage& image, int remaining);
+  void shoot_received(const Image::ptr& image, int remaining);
 private:
   D_PTR
 };

@@ -21,7 +21,7 @@ public:
 public slots:
   virtual void connect();
   virtual void disconnect();
-  virtual QImage shoot() const;
+  virtual Image::ptr shoot() const;
 private:
   D_PTR
 };
