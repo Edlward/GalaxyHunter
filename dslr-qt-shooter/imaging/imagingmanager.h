@@ -22,7 +22,7 @@
 
 #include <QObject>
 
-#include "utils/dptr.h"
+#include "dptr.h"
 #include "imaging_driver.h"
 
 class ShooterSettings;

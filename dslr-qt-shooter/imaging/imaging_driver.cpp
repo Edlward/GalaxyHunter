@@ -13,6 +13,7 @@
 #include "commons/shootersettings.h"
 #include "utils/qt.h"
 #include <QDir>
+#include "Qt/strings.h"
 
 using namespace std;
 

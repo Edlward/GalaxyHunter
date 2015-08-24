@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QDateTime>
 #include <imaging/imaging_driver.h>
-#include "utils/dptr.h"
+#include "dptr.h"
 
 class LogMessage;
 class LinGuider;

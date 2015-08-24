@@ -20,7 +20,7 @@
 #ifndef GULINUX_GPHOTO_H
 #define GULINUX_GPHOTO_H
 
-#include "utils/dptr.h"
+#include "dptr.h"
 #include <QObject>
 #include "imaging_driver.h"
 

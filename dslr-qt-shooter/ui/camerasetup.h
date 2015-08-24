@@ -21,7 +21,7 @@
 #define CAMERASETUP_H
 
 #include <QWidget>
-#include "utils/dptr.h"
+#include "dptr.h"
 #include <imaging/imaging_driver.h>
 
 class ShooterSettings;

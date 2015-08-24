@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QPixmap>
 #include "utils/qt.h"
+#include "Qt/strings.h"
 
 using namespace std;
 

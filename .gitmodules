@@ -1,0 +1,3 @@
+[submodule "dslr-qt-shooter/GuLinux-Commons"]
+	path = dslr-qt-shooter/GuLinux-Commons
+	url = https://github.com/GuLinux/GuLinux-Commons.git

@@ -19,7 +19,7 @@
 
 #ifndef SHOOTERSETTINGS_H
 #define SHOOTERSETTINGS_H
-#include "utils/dptr.h"
+#include "dptr.h"
 #include <imaging/imaging_driver.h>
 #include <QString>
 #include <QDateTime>

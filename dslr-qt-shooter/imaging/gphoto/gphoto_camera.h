@@ -2,7 +2,7 @@
 #define GULINUX_GPHOTO_CAMERA_H
 
 #include "imaging/imaging_driver.h"
-#include "utils/dptr.h"
+#include "dptr.h"
 
 class ShooterSettings;
 class GPhotoCameraInformation;

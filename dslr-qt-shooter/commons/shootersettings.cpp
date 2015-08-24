@@ -21,6 +21,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include "utils/qt.h"
+
+#include "Qt/strings.h"
 using namespace std;
 
 class ShooterSettings::Private {

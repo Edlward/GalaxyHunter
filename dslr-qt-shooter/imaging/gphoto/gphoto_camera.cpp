@@ -9,6 +9,7 @@
 #include "utils/qt.h"
 #include <utils/qlambdathread.h>
 #include <sstream>
+#include "Qt/strings.h"
 
 QString gphoto_error(int errorCode)
 {

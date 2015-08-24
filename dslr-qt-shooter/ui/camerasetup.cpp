@@ -24,6 +24,7 @@
 #include <QFileDialog>
 #include "utils/qt.h"
 #include <functional>
+#include "Qt/functional.h"
 
 using namespace std;
 
