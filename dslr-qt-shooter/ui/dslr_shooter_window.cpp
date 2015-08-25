@@ -31,7 +31,7 @@
 #include <qwt-src/qwt_plot_histogram.h>
 #include <qwt-src/qwt_symbol.h>
 #include "telescope/telescopecontrol.h"
-#include "zoomableimage.h"
+#include "GuLinux-Commons/Qt/zoomableimage.h"
 
 using namespace std;
 using namespace std::placeholders;

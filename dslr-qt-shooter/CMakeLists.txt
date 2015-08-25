@@ -33,9 +33,10 @@ add_subdirectory(imaging)
 add_subdirectory(telescope)
 add_subdirectory(files)
 add_subdirectory(commons)
+add_subdirectory(GuLinux-Commons/Qt)
 
 ADD_EXECUTABLE(dslr-qt-shooter main.cpp resources.qrc )
-TARGET_LINK_LIBRARIES(dslr-qt-shooter  ${dslr_static_LIBS} dsl_shooter_commons Qt5::Widgets Qt5::Network Qt5::Concurrent Qt5::Sql ${MAGICK_LDFLAGS} 
+TARGET_LINK_LIBRARIES(dslr-qt-shooter  ${dslr_static_LIBS} GuLinux_Qt_Commons dsl_shooter_commons Qt5::Widgets Qt5::Network Qt5::Concurrent Qt5::Sql ${MAGICK_LDFLAGS} 
   ${dslr_dependencies} ${CFITSIO_LDFLAGS} ${Boost_LIBRARIES}  )
 install(TARGETS dslr-qt-shooter RUNTIME DESTINATION bin)
 add_subdirectory(tests)

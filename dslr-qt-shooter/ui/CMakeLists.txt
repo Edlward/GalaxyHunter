@@ -1,7 +1,6 @@
 set(dslr_ui_SOURCES
   dslr_shooter_window.cpp
   imagesettingsdialog.cpp
-  zoomableimage.cpp
   messageswindow.cpp
   ${CMAKE_SOURCE_DIR}/dslr-qt-shooter/utils/qlambdathread.cpp
   dslr_shooter_window.ui
