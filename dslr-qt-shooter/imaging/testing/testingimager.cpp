@@ -54,6 +54,7 @@ void TestingImager::disconnect()
 
 void TestingImagerDriver::scan_imagers()
 {
+  qDebug() << __PRETTY_FUNCTION__;
   _imagers = {make_shared<TestingImager>(shooterSettings)};
 }
 

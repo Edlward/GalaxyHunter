@@ -37,6 +37,8 @@ public:
     ImagerPtr imager;
     ImagingManager *q;
     shared_ptr<bool> abort;
+    bool save;
+    const QString saveDirectory;
     void start();
   };
 private:
@@ -68,7 +70,7 @@ void ImagingManager::start()
   d->abort = make_shared<bool>(false);
   emit started();
   QtConcurrent::run([=]{
-    Private::SequenceRun sequence{sequenceLength, millisecondsDelayBetweenShots, d->imager, this, d->abort};
+    Private::SequenceRun sequence{sequenceLength, millisecondsDelayBetweenShots, d->imager, this, d->abort, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
     sequence.start();
   });
 }
@@ -77,6 +79,8 @@ void ImagingManager::Private::SequenceRun::start()
 {
   while(remaining_shots > 0 && ! *abort) {
     auto image = imager->shoot();
+    if(save)
+      image->save(saveDirectory);
     emit q->image(image, --remaining_shots);
     if(remaining_shots>0)
       QThread::msleep(delay_milliseconds);

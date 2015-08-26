@@ -16,6 +16,7 @@
 #include "Qt/strings.h"
 
 using namespace std;
+using namespace std::placeholders;
 
 ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {
 }
@@ -36,8 +37,8 @@ void ImagingDriver::scan()
   this->_imagers.clear();
   scan_imagers();
   for(auto imager: _imagers) {
-    connect(imager.get(), SIGNAL(message(Imager*, QString)), this, SLOT(camera_message(Imager*,QString)));
-    connect(imager.get(), SIGNAL(error(Imager*, QString)), this, SLOT(camera_error(Imager*,QString)));
+    connect(imager.get(), &Imager::message, bind(&ImagingDriver::camera_message, this, _1, _2));
+    connect(imager.get(), &Imager::error, bind(&ImagingDriver::camera_error, this, _1, _2));
   }
   emit scan_finished();
 }
@@ -59,8 +60,8 @@ ImagingDrivers::ImagingDrivers(ShooterSettings &shooterSettings, QObject* parent
 {
   for(auto driver: imagingDrivers) {
     qDebug() << "driver: " << typeid(*driver).name();
-    connect(driver.get(), SIGNAL(camera_connected()), this, SIGNAL(camera_connected()));
-    connect(driver.get(), SIGNAL(imager_message(LogMessage)), this, SIGNAL(imager_message(LogMessage)));
+    connect(driver.get(), &ImagingDriver::camera_connected, this, &ImagingDriver::camera_connected);
+    connect(driver.get(), &ImagingDriver::imager_message, bind(&ImagingDriver::imager_message, this, _1));
   }
 }
 

@@ -31,7 +31,6 @@ private slots:
   void got_message(const LogMessage &logMessage);
   void camera_connected();
   void camera_disconnected();
-  void start_shooting();
 private slots:
   void focus_received(double value);
   void shoot_received(const Image::ptr& image, int remaining);

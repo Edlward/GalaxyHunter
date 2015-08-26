@@ -60,10 +60,11 @@ public:
     TelescopeControl *telescopeControl;
     QStandardItemModel logs;
     QSystemTrayIcon trayIcon;
-    QThread* focusThread;
+    QThread focusThread;
     CameraSetup* cameraSetup;
     void saveState();
     ZoomableImage *imageView;
+    QThread imagingManagerThread;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -76,9 +77,9 @@ DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_W
 
 void DSLR_Shooter_Window::closeEvent(QCloseEvent* e)
 {
-    QWidget::closeEvent(e);
-    e->accept();
-    qApp->quit();
+  qApp->quit();
+  qDebug() << "window closed";
+  QWidget::closeEvent(e);
 }
 
 void DSLR_Shooter_Window::Private::saveState()
@@ -90,6 +91,8 @@ void DSLR_Shooter_Window::Private::saveState()
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent), dptr(this, new Ui::DSLR_Shooter_Window)
 {
+  d->imagingManager->moveToThread(&d->imagingManagerThread);
+  d->imagingManagerThread.start();
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
   d->ui->setupUi(this);
@@ -98,6 +101,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->imageContainer->layout()->setMargin(0);
   d->ui->imageContainer->layout()->addWidget(d->imageView = new ZoomableImage{false, d->ui->imageContainer});
   addToolBar(d->imageView->toolbar());
+  connect(qApp, &QApplication::aboutToQuit, d->imagingManager.get(), bind(&ImagingManager::abort, d->imagingManager), Qt::QueuedConnection);
+  connect(qApp, &QApplication::aboutToQuit, bind(&QThread::quit, &d->focusThread));
+  connect(qApp, &QApplication::aboutToQuit, bind(&QThread::quit, &d->imagingManagerThread));
   
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->camera_setup_dock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
@@ -144,12 +150,13 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->telescopeControl = new TelescopeControl(this);
   QMenu *setCamera = new QMenu("Available Cameras", this);
   d->ui->actionSet_Camera->setMenu(setCamera);
-  connect(d->telescopeControl, SIGNAL(message(LogMessage)), this, SLOT(got_message(LogMessage)));
-  connect(d->ui->actionStop_Shooting, &QAction::triggered, [=]{ d->ui->actionStop_Shooting->setDisabled(true); d->imagingManager->abort(); });
-  connect(d->ui->action_Quit, SIGNAL(triggered(bool)), qApp, SLOT(quit()));
+  connect(d->telescopeControl, &TelescopeControl::message, bind(&DSLR_Shooter_Window::got_message, this, _1));
+  connect(d->ui->actionStop_Shooting, &QAction::triggered, bind(&QAction::setDisabled, d->ui->actionStop_Shooting, true));
+  connect(d->ui->actionStop_Shooting, &QAction::triggered, d->imagingManager.get(), bind(&ImagingManager::abort, d->imagingManager));
+  connect(d->ui->action_Quit, &QAction::triggered, qApp, &QApplication::quit);
   d->guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
-  connect(updateTimer, SIGNAL(timeout()), this, SLOT(update_infos()));
+  connect(updateTimer, &QTimer::timeout, this, &DSLR_Shooter_Window::update_infos);
   updateTimer->start(2000);
   
   resize(QGuiApplication::primaryScreen()->availableSize() * 4 / 5);
@@ -158,8 +165,8 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   auto set_imager = [=](const ImagerPtr &imager) {
     d->imager = imager;
     d->imagingManager->setImager(imager);
-    connect(d->imager.get(), SIGNAL(connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
-    connect(d->imager.get(), SIGNAL(disconnected()), this, SLOT(camera_disconnected()), Qt::QueuedConnection);
+    connect(d->imager.get(), &Imager::connected, this, &DSLR_Shooter_Window::camera_connected, Qt::QueuedConnection);
+    connect(d->imager.get(), &Imager::disconnected, this, &DSLR_Shooter_Window::camera_disconnected, Qt::QueuedConnection);
     // TODO: restore
 //     connect(d->imager.get(), &Imager::exposure_remaining, this, [=](int seconds){
 //       statusBar()->showMessage(tr("Exposure remaining: %1").arg(QTime(0,0,0).addSecs(seconds).toString()));
@@ -167,11 +174,11 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     d->imager->connect();
   };
 
-  connect(d->imagingDriver.get(), SIGNAL(imager_message(LogMessage)), this, SLOT(got_message(LogMessage)), Qt::QueuedConnection);
-  connect(d->imagingDriver.get(), SIGNAL(camera_connected()), this, SLOT(camera_connected()), Qt::QueuedConnection);
+  connect(d->imagingDriver.get(), &ImagingDriver::imager_message, this, bind(&DSLR_Shooter_Window::got_message, this, _1), Qt::QueuedConnection);
+  connect(d->imagingDriver.get(), &ImagingDriver::camera_connected, this, &DSLR_Shooter_Window::camera_connected, Qt::QueuedConnection);
   
-  connect(d->ui->actionShoot, SIGNAL(triggered()), this, SLOT(start_shooting()));
-  connect(d->ui->actionScan, SIGNAL(triggered(bool)), d->imagingDriver.get(), SLOT(scan()), Qt::QueuedConnection);
+  connect(d->ui->actionShoot, &QAction::triggered, d->imagingManager.get(), bind(&ImagingManager::start, d->imagingManager));
+  connect(d->ui->actionScan, &QAction::triggered, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{
     setCamera->clear();
     for(auto camera: d->imagingDriver->imagers()) {
@@ -198,16 +205,15 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
       d->telescopeControl->open(address, port);
     }
   });
-  connect(d->ui->action_Devices_Control_Panel, SIGNAL(triggered(bool)), d->telescopeControl, SLOT(showControlPanel()));
-  connect(d->ui->actionRemote_Control, SIGNAL(triggered(bool)), d->telescopeControl, SLOT(showTelescopeRemoteControl()));
+  connect(d->ui->action_Devices_Control_Panel, &QAction::triggered, bind(&TelescopeControl::showControlPanel, d->telescopeControl));
+  connect(d->ui->actionRemote_Control, &QAction::triggered, bind(&TelescopeControl::showTelescopeRemoteControl, d->telescopeControl));
   QTimer *autoScan = new QTimer(this);
   autoScan->setSingleShot(true);
-  connect(autoScan, SIGNAL(timeout()), d->imagingDriver.get(), SLOT(scan()), Qt::QueuedConnection);
+  connect(autoScan, &QTimer::timeout, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
   
   d->focus = new Focus;
-  d->focusThread = new QThread;
-  d->focus->moveToThread(d->focusThread);
-  d->focusThread->start();
+  d->focus->moveToThread(&d->focusThread);
+  d->focusThread.start();
   d->focus_curve= new QwtPlotCurve;
   d->focus_curve->attach(d->ui->focusing_graph);
   d->focus_curve->setStyle(QwtPlotCurve::Lines);
@@ -219,7 +225,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->focus_curve->setBrush(QBrush{Qt::blue});
   d->ui->focusing_graph->setAutoReplot(true);
   d->ui->focusing_graph->setAxisAutoScale(true);
-  connect(d->focus, SIGNAL(focus_rate(double)), this, SLOT(focus_received(double)), Qt::QueuedConnection);
+  connect(d->focus, &Focus::focus_rate, this, bind(&DSLR_Shooter_Window::focus_received, this, _1), Qt::QueuedConnection);
   connect(d->ui->enable_focus_analysis, &QCheckBox::toggled, [=](bool checked) {
     d->ui->focusing_select_roi->setEnabled(checked);
     if(!checked)
@@ -237,7 +243,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(&QAction::setEnabled, d->ui->actionStop_Shooting, false));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
-  connect(d->imagingManager.get(), SIGNAL(finished()), d->ui->statusbar, SLOT(clearMessage()));
+  connect(d->imagingManager.get(), &ImagingManager::finished, this, bind(&QStatusBar::clearMessage, d->ui->statusbar));
 }
 
 void DSLR_Shooter_Window::focus_received(double value)
@@ -265,8 +271,10 @@ void DSLR_Shooter_Window::focus_received(double value)
 
 DSLR_Shooter_Window::~DSLR_Shooter_Window()
 {
+  qDebug() << "closing...";
   d->saveState();
-  d->focusThread->quit();
+  d->imagingManagerThread.quit();
+  d->focusThread.quit();
 }
 
 void DSLR_Shooter_Window::update_infos()
@@ -308,10 +316,6 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
   if(!image)
     return;
   
-  if(d->shooterSettings.saveImage()) {
-    image->save(d->shooterSettings.saveImageDirectory());
-  }
-  
   QImage img = *image;
   d->imageView->setImage(img);
   
@@ -332,15 +336,6 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
   }
 }
 
-
-void DSLR_Shooter_Window::start_shooting()
-{
-  // TODO
-//   long total_shots_number = d->ui->actionShoot_mode->currentIndex() == 0 ? 1 : d->ui->images_count->value();
-//   d->ui->actionStop_Shooting->setVisible(total_shots_number!=1);
-  d->imagingManager->start();
-  return; 
-}
 
 void DSLR_Shooter_Window::camera_disconnected()
 {
