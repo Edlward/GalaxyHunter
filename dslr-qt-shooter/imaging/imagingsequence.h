@@ -34,7 +34,7 @@ public:
     bool saveToDisk;
     QString saveDirectory;
   };
-  ImagingSequence(const ImagerPtr &imager, const Imager::Settings::ptr &ettings, const SequenceSettings &sequenceSettings, QObject* parent = 0);
+  ImagingSequence(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent);
 public slots:
   void start();
   void abort();

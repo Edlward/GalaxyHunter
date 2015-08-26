@@ -18,22 +18,50 @@
  */
 
 #include "imagingsequence.h"
+#include <QThread>
 
 class ImagingSequence::Private {
 public:
-    Private(ImagingSequence *q);
-
+  Private(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q);
+  ImagerPtr imager;
+  Imager::Settings::ptr imagerSettings;
+  SequenceSettings sequenceSettings;
+  bool aborted = false;
 private:
     ImagingSequence *q;
 };
 
-ImagingSequence::Private::Private(ImagingSequence* q) : q(q)
+ImagingSequence::Private::Private(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q)
+  : imager{imager}, imagerSettings{imagerSettings}, sequenceSettings{sequenceSettings}, q{q}
 {
 }
 
 
 
-ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings::ptr &ettings, const SequenceSettings &sequenceSettings, QObject* parent)
-    : dptr(this)
+ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings::ptr &imagerSettings, const SequenceSettings &sequenceSettings, QObject* parent)
+    : dptr(imager, imagerSettings, sequenceSettings, this)
 {
 }
+
+void ImagingSequence::start()
+{
+  while(d->sequenceSettings.shots > 0 && ! d->aborted) {
+    auto image = d->imager->shoot(d->imagerSettings);
+    if(d->sequenceSettings.saveToDisk)
+      image->save(d->sequenceSettings.saveDirectory);
+    emit this->image(image, --d->sequenceSettings.shots);
+    if(d->sequenceSettings.shots>0)
+      QThread::msleep(d->sequenceSettings.delayBetweenShotsMilliseconds);
+  }
+  if(d->aborted)
+    emit aborted();
+  else
+    emit finished();
+}
+
+void ImagingSequence::abort()
+{
+  d->aborted = true;
+}
+
+
