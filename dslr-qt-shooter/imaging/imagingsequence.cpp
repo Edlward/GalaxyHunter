@@ -45,6 +45,7 @@ ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings
 
 void ImagingSequence::start()
 {
+  emit started();
   while(d->sequenceSettings.shots > 0 && ! d->aborted) {
     auto image = d->imager->shoot(d->imagerSettings);
     if(d->sequenceSettings.saveToDisk)
@@ -64,4 +65,9 @@ void ImagingSequence::abort()
   d->aborted = true;
 }
 
+ImagingSequence::~ImagingSequence()
+{
+}
+
+#include "imagingsequence.moc"
 

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef IMAGINGSEQUENCE_H
-#define IMAGINGSEQUENCE_H
+#ifndef IMAGING_SEQUENCE_H
+#define IMAGING_SEQUENCE_H
 
 #include <QObject>
 #include "dptr.h"
@@ -26,6 +26,7 @@
 
 class ImagingSequence : public QObject
 {
+  Q_OBJECT
 public:
   struct SequenceSettings {
     std::size_t shots;
@@ -34,17 +35,19 @@ public:
     bool saveToDisk;
     QString saveDirectory;
   };
-  ImagingSequence(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent);
+  ImagingSequence(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent = 0);
+  virtual ~ImagingSequence();
 public slots:
   void start();
   void abort();
+private:
+    D_PTR
+  
 signals:
+  void started();
   void finished();
   void aborted();
   void image(const Image::ptr &image, int remaining);
-  
-private:
-    D_PTR
 };
 
 #endif // IMAGINGSEQUENCE_H

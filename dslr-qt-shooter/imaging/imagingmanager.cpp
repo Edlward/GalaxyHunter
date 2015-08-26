@@ -18,10 +18,12 @@
  */
 
 #include "imagingmanager.h"
+#include "imagingsequence.h"
 #include <QtConcurrent/QtConcurrent>
 #include "commons/shootersettings.h"
 
 using namespace std;
+using namespace std::placeholders;
 
 class ImagingManager::Private {
 public:
@@ -29,19 +31,7 @@ public:
   ShooterSettings &shooterSettings;
   ImagerPtr imager;
   bool remove_on_camera;
-  shared_ptr<bool> abort;
-  
-  struct SequenceRun {
-    int remaining_shots;
-    int delay_milliseconds;
-    ImagerPtr imager;
-    ImagingManager *q;
-    shared_ptr<bool> abort;
-    bool save;
-    const QString saveDirectory;
-    Imager::Settings::ptr imagerSettings;
-    void start();
-  };
+  shared_ptr<ImagingSequence> sequence;
 private:
   ImagingManager *q;
 };
@@ -68,35 +58,23 @@ void ImagingManager::start(const Imager::Settings::ptr &imagerSettings)
   }
   auto millisecondsDelayBetweenShots = QTime{0,0,0}.secsTo(d->shooterSettings.delayBetweenShots()) * 1000;
   
-  d->abort = make_shared<bool>(false);
-  emit started();
-  QtConcurrent::run([=]{
-    Private::SequenceRun sequence{
-      sequenceLength, millisecondsDelayBetweenShots, d->imager, this, d->abort, d->shooterSettings.saveImage(),
-      d->shooterSettings.saveImageDirectory(), imagerSettings};
-    sequence.start();
-  });
-}
-
-void ImagingManager::Private::SequenceRun::start()
-{
-  while(remaining_shots > 0 && ! *abort) {
-    auto image = imager->shoot(imagerSettings);
-    if(save)
-      image->save(saveDirectory);
-    emit q->image(image, --remaining_shots);
-    if(remaining_shots>0)
-      QThread::msleep(delay_milliseconds);
-  }
-  emit q->finished();
+  ImagingSequence::SequenceSettings sequenceSettings{sequenceLength, millisecondsDelayBetweenShots, d->remove_on_camera, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
+  
+  d->sequence = make_shared<ImagingSequence>(d->imager, imagerSettings, sequenceSettings);
+  connect(d->sequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
+  connect(d->sequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
+  connect(d->sequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
+  connect(d->sequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
+  d->sequence->start();
+  d->sequence.reset();
 }
 
 
 void ImagingManager::abort()
 {
   // TODO: extract sequence as a class
-  if(d->abort)
-    *d->abort = true;
+  if(d->sequence)
+    d->sequence->abort();
 }
 
 
