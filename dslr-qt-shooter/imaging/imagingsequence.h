@@ -1,6 +1,6 @@
 /*
  * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2015  <copyright holder> <email>
+ * Copyright (C) 2015  Marco Gulino <marco.gulino@bhuman.it>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,38 +17,34 @@
  *
  */
 
-#ifndef IMAGINGMANAGER_H
-#define IMAGINGMANAGER_H
+#ifndef IMAGINGSEQUENCE_H
+#define IMAGINGSEQUENCE_H
 
 #include <QObject>
-
 #include "dptr.h"
 #include "imaging_driver.h"
 
-class ShooterSettings;
-
-class ImagingManager : public QObject
+class ImagingSequence : public QObject
 {
-    Q_OBJECT
-
 public:
-    ImagingManager(ShooterSettings &shooterSettings, QObject *parent = 0);
-    ~ImagingManager();
-    void setImager(const ImagerPtr &imager);
+  struct SequenceSettings {
+    std::size_t shots;
+    long long delayBetweenShotsMilliseconds;
+    bool clearPicturesFromCamera;
+    bool saveToDisk;
+    QString saveDirectory;
+  };
+  ImagingSequence(const ImagerPtr &imager, const Imager::Settings::ptr &ettings, const SequenceSettings &sequenceSettings, QObject* parent = 0);
 public slots:
-  void start(const Imager::Settings::ptr &imagerSettings);
+  void start();
   void abort();
-  void setExposure(double milliseconds);
-  void setRemoveOnCameraEnabled(bool enabled);
 signals:
-  void started();
   void finished();
-  void saved(const QString &file);
+  void aborted();
   void image(const Image::ptr &image, int remaining);
+  
 private:
-  D_PTR
+    D_PTR
 };
 
-typedef std::shared_ptr<ImagingManager> ImagingManagerPtr;
-
-#endif // IMAGINGMANAGER_H
+#endif // IMAGINGSEQUENCE_H

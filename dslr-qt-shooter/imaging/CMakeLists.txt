@@ -6,7 +6,8 @@ set(dslr_imaging_SOURCES
   focus/fitshistogram.cpp
   focus/fitsimage.cpp
   imagingmanager.cpp
-  )
+  imagingsequence.cpp
+)
 
 option(testing_imager_enabled "Enable testing imager backend" OFF)
 if(testing_imager_enabled)
