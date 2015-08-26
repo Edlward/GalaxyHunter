@@ -94,7 +94,9 @@ void ImagingManager::Private::SequenceRun::start()
 
 void ImagingManager::abort()
 {
-  *d->abort = true;
+  // TODO: extract sequence as a class
+  if(d->abort)
+    *d->abort = true;
 }
 
 
