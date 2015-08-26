@@ -1,6 +1,7 @@
 #ifndef IMAGER_DRIVER_H
 #define IMAGER_DRIVER_H
 
+#include <QDebug>
 #include <QObject>
 #include <QImage>
 #include <QStringList>
@@ -97,4 +98,7 @@ protected:
 private:
   QList<ImagingDriverPtr> imagingDrivers;
 };
+
+QDebug operator<<(QDebug dbg, const Imager::Settings &settings);
+inline QDebug operator<<(QDebug dbg, const Imager::Settings::ptr &settings) { return dbg << *settings; }
 #endif // IMAGER_DRIVER_H

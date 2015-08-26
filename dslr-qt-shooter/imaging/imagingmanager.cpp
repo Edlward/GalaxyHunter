@@ -60,7 +60,7 @@ void ImagingManager::setImager(const ImagerPtr& imager)
   d->imager = imager;
 }
 
-void ImagingManager::start()
+void ImagingManager::start(const Imager::Settings::ptr &imagerSettings)
 {
   int sequenceLength = 1;
   if(d->shooterSettings.shootMode() == ShooterSettings::Repeat) {
@@ -71,7 +71,9 @@ void ImagingManager::start()
   d->abort = make_shared<bool>(false);
   emit started();
   QtConcurrent::run([=]{
-    Private::SequenceRun sequence{sequenceLength, millisecondsDelayBetweenShots, d->imager, this, d->abort, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
+    Private::SequenceRun sequence{
+      sequenceLength, millisecondsDelayBetweenShots, d->imager, this, d->abort, d->shooterSettings.saveImage(),
+      d->shooterSettings.saveImageDirectory(), imagerSettings};
     sequence.start();
   });
 }

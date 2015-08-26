@@ -37,6 +37,8 @@ public:
     ImagerPtr imager;
   void load();
   void camera_settings(function<void(Imager::Settings::ptr)> callback);
+  Imager::Settings::ptr imagerSettings;
+  void show_settings();
 private:
   CameraSetup *q;
 };
@@ -56,8 +58,15 @@ void CameraSetup::Private::camera_settings(function<void(Imager::Settings::ptr)>
     callback(settings);
 //     ui->shoot->setEnabled(true); TODO
     ui->imageSettings->setEnabled(true);
+   imagerSettings = settings;
   });
 }
+
+Imager::Settings::ptr CameraSetup::imagerSettings() const
+{
+  return d->imagerSettings;
+}
+
 
 void CameraSetup::Private::load()
 {
@@ -128,45 +137,39 @@ void CameraSetup::shooting(bool isShooting)
   d->ui->imageSettings->setEnabled(!isShooting);
 }
 
-void CameraSetup::setCamera(const ImagerPtr& imager)
+
+void CameraSetup::Private::show_settings()
 {
+  ui->isoLabel->setText(imagerSettings->iso().current);
+  ui->imageFormatLabel->setText(imagerSettings->imageFormat().current);
+  ui->shutterSpeedLabel->setText(imagerSettings->shutterSpeed().current);
+  ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(imagerSettings->manualExposure()).toString());
+  
+  auto camera_settings = shooterSettings.camera(imager, imagerSettings);
+  camera_settings->imageFormat(imagerSettings->imageFormat().current);
+  camera_settings->serialPort(imagerSettings->serialShootPort());
+  camera_settings->iso(imagerSettings->iso().current);
+  camera_settings->shutterSpeed(imagerSettings->shutterSpeed().current);
+  camera_settings->manualExposure(imagerSettings->manualExposure());
+}
+
+
+void CameraSetup::setCamera(const ImagerPtr& imager)
+{    
   d->ui->imageSettings->disconnect();
+  d->ui->imageSettings->setDisabled(true);
   d->imager = imager;
   if(imager) {
     d->camera_settings([=](const Imager::Settings::ptr &settings) {
-    auto camera_settings = d->shooterSettings.camera(imager, settings);
-    settings->setSerialShootPort(camera_settings->serialPort());
-    settings->setImageFormat(camera_settings->imageFormat());
-    settings->setISO(camera_settings->iso());
-    settings->setShutterSpeed(camera_settings->shutterSpeed());
-    settings->setManualExposure(camera_settings->manualExposure());
+    d->imagerSettings = settings;
+    d->show_settings();
+    d->ui->imageSettings->setEnabled(true);
   });
   
-    
-    auto reloadSettings = [=] {
-    d->camera_settings([=](const Imager::Settings::ptr &settings){
-      d->ui->isoLabel->setText(settings->iso().current);
-      d->ui->imageFormatLabel->setText(settings->imageFormat().current);
-      d->ui->shutterSpeedLabel->setText(settings->shutterSpeed().current);
-      d->ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(settings->manualExposure()).toString());
-      
-      auto camera_settings = d->shooterSettings.camera(imager, settings);
-      camera_settings->imageFormat(settings->imageFormat().current);
-      camera_settings->serialPort(settings->serialShootPort());
-      camera_settings->iso(settings->iso().current);
-      camera_settings->shutterSpeed(settings->shutterSpeed().current);
-      camera_settings->manualExposure(settings->manualExposure());
-    });
-  };
-
-  timedLambda(500, reloadSettings, this);
-  
   connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
-    d->camera_settings([=](const Imager::Settings::ptr &settings){
-      auto dialog = new ImageSettingsDialog{ settings , this};
-      connect(dialog, &QDialog::accepted, [=]{ d->ui->imageSettings->setEnabled(true); timedLambda(500, reloadSettings, this);});
-      dialog->show();
-    });
+    auto dialog = new ImageSettingsDialog{ d->imagerSettings, this};
+    connect(dialog, &QDialog::accepted, bind(&Private::show_settings, d.get()));
+    dialog->show();
   });
   }
   d->load();

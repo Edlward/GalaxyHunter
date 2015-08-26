@@ -177,7 +177,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->imagingDriver.get(), &ImagingDriver::imager_message, this, bind(&DSLR_Shooter_Window::got_message, this, _1), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::camera_connected, this, &DSLR_Shooter_Window::camera_connected, Qt::QueuedConnection);
   
-  connect(d->ui->actionShoot, &QAction::triggered, d->imagingManager.get(), bind(&ImagingManager::start, d->imagingManager));
+  connect(d->ui->actionShoot, &QAction::triggered, d->imagingManager.get(), [=]{
+    d->imagingManager->start(d->cameraSetup->imagerSettings());
+  });
   connect(d->ui->actionScan, &QAction::triggered, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{
     setCamera->clear();

@@ -90,3 +90,20 @@ void Image::save(const QString& directory, const QString& filename)
   save_to(path);
 }
 
+QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting combo) {
+  QStringList avail;
+  transform(begin(combo.available), end(combo.available), back_inserter(avail), [=](const QString &s) { return s==combo.current ? "*%1"_q % s : s; });
+  auto debug = dbg.noquote().nospace() << "{ " << avail.join(", ") << " }";
+  return debug.space().quote();
+}
+
+QDebug operator<<(QDebug dbg, const Imager::Settings &settings) {
+  dbg.nospace().noquote() << "Imager Settings: { "
+    << "imageFormat=" << settings.imageFormat() << ", "
+    << "iso=" << settings.iso() << ", "
+    << "shutterSpeed=" << settings.shutterSpeed() << ", "
+    << "manualExposure=" << settings.manualExposure() << ", "
+    << "serialPort=" << settings.serialShootPort() << " }"
+  ;
+  return dbg.space().quote();
+}

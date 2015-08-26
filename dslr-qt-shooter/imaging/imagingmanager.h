@@ -35,7 +35,7 @@ public:
     ~ImagingManager();
     void setImager(const ImagerPtr &imager);
 public slots:
-  void start();
+  void start(const Imager::Settings::ptr &imagerSettings);
   void abort();
   void setExposure(double milliseconds);
   void setRemoveOnCameraEnabled(bool enabled);

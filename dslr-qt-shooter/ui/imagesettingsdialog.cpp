@@ -52,7 +52,7 @@ ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSett
   : QDialog(parent), dptr(this, new Ui::ImageSettingsDialog, imagerSettings)
 {
     d->ui->setupUi(this);
-    
+  qDebug() << __PRETTY_FUNCTION__ << imagerSettings;
   auto populateCombo = [=] (QComboBox *combo, const Imager::Settings::ComboSetting &setting) {
     combo->setEnabled(setting);
     for(auto value: setting.available) {
@@ -95,11 +95,12 @@ ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSett
 void ImageSettingsDialog::accept()
 {
   uint64_t manualExposure = d->ui->manualExposure->isChecked() ? QTime{0,0,0}.secsTo(d->ui->shutterSpeedManual->time()) : 0;
-    d->imagerSettings->setShutterSpeed(d->shutterSpeed);
-    d->imagerSettings->setImageFormat(d->imageFormat);
-    d->imagerSettings->setISO(d->iso);
-    d->imagerSettings->setManualExposure(manualExposure);
-    d->imagerSettings->setSerialShootPort(d->ui->serialShootPort->text() );
+  d->imagerSettings->setShutterSpeed(d->shutterSpeed);
+  d->imagerSettings->setImageFormat(d->imageFormat);
+  d->imagerSettings->setISO(d->iso);
+  d->imagerSettings->setManualExposure(manualExposure);
+  d->imagerSettings->setSerialShootPort(d->ui->serialShootPort->text() );
+  qDebug() << __PRETTY_FUNCTION__ << d->imagerSettings;
   QDialog::accept();
   deleteLater();
 }
