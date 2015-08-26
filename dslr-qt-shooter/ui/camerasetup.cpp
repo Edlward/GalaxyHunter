@@ -25,6 +25,7 @@
 #include "utils/qt.h"
 #include <functional>
 #include "Qt/functional.h"
+#include "imaging/imagingsequence.h"
 
 using namespace std;
 
@@ -43,7 +44,9 @@ private:
   CameraSetup *q;
 };
 
-CameraSetup::Private::Private(ShooterSettings& shooterSettings, CameraSetup* q) : shooterSettings{shooterSettings}, ui{new Ui::CameraSetup()}, q{q}
+CameraSetup::Private::Private(ShooterSettings& shooterSettings, CameraSetup* q)
+  : shooterSettings{shooterSettings},
+  ui{new Ui::CameraSetup()}, q{q}
 {
 }
 
@@ -173,6 +176,12 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
   });
   }
   d->load();
+}
+
+shared_ptr< ImagingSequence > CameraSetup::imagingSequence() const
+{
+  ImagingSequence::SequenceSettings sequenceSettings{d->shooterSettings.sequenceLength(), d->shooterSettings.delayBetweenShots(), false, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
+  return make_shared<ImagingSequence>(d->imager, d->imagerSettings, sequenceSettings);
 }
 
 

@@ -58,7 +58,7 @@ void ImagingManager::start(const Imager::Settings::ptr &imagerSettings)
   }
   auto millisecondsDelayBetweenShots = QTime{0,0,0}.secsTo(d->shooterSettings.delayBetweenShots()) * 1000;
   
-  ImagingSequence::SequenceSettings sequenceSettings{sequenceLength, millisecondsDelayBetweenShots, d->remove_on_camera, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
+  ImagingSequence::SequenceSettings sequenceSettings{sequenceLength, d->shooterSettings.delayBetweenShots(), d->remove_on_camera, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
   
   d->sequence = make_shared<ImagingSequence>(d->imager, imagerSettings, sequenceSettings);
   connect(d->sequence.get(), &ImagingSequence::started, this, &ImagingManager::started);

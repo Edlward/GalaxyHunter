@@ -21,6 +21,7 @@
 #define IMAGING_SEQUENCE_H
 
 #include <QObject>
+#include <QDateTime>
 #include "dptr.h"
 #include "imaging_driver.h"
 
@@ -30,10 +31,11 @@ class ImagingSequence : public QObject
 public:
   struct SequenceSettings {
     std::size_t shots;
-    long long delayBetweenShotsMilliseconds;
+    QTime delayBetweenShots;
     bool clearPicturesFromCamera;
     bool saveToDisk;
     QString saveDirectory;
+    long long delayInMilliseconds() const;
   };
   ImagingSequence(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent = 0);
   virtual ~ImagingSequence();

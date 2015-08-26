@@ -36,6 +36,12 @@ ImagingSequence::Private::Private(const ImagerPtr& imager, const Imager::Setting
 {
 }
 
+long long int ImagingSequence::SequenceSettings::delayInMilliseconds() const
+{
+  return QTime{0,0,0}.secsTo(delayBetweenShots) * 1000;
+}
+
+
 
 
 ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings::ptr &imagerSettings, const SequenceSettings &sequenceSettings, QObject* parent)
@@ -52,7 +58,7 @@ void ImagingSequence::start()
       image->save(d->sequenceSettings.saveDirectory);
     emit this->image(image, --d->sequenceSettings.shots);
     if(d->sequenceSettings.shots>0)
-      QThread::msleep(d->sequenceSettings.delayBetweenShotsMilliseconds);
+      QThread::msleep(d->sequenceSettings.delayInMilliseconds());
   }
   if(d->aborted)
     emit aborted();
