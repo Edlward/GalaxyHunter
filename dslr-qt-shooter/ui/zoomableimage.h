@@ -27,12 +27,13 @@
 class QLabel;
 class QImage;
 class QRubberBand;
+class QToolBar;
 class ZoomableImage : public QWidget
 {
 Q_OBJECT
 public:
     ~ZoomableImage();
-    ZoomableImage(QWidget* parent);
+    ZoomableImage(bool embed_toolbar = true, QWidget* parent = 0);
     QRect roi() const;
 public slots:
   void setImage(const QImage &image);
@@ -41,6 +42,7 @@ public slots:
   void normalSize();
   void startSelectionMode();
   void clearROI();
+  QToolBar *toolbar() const;
 protected:
     virtual void resizeEvent(QResizeEvent * e);
 private:

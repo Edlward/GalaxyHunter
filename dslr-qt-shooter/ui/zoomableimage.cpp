@@ -31,7 +31,11 @@
 #include <QGraphicsRectItem>
 #include <QGridLayout>
 #include <QGraphicsView>
+#include <QToolBar>
+#include <QIcon>
+#include <QAction>
 
+using namespace std;
 
 class ZoomableImage::Private {
 public:
@@ -50,6 +54,7 @@ public:
   ZoomableImage *q;
   QGraphicsScene scene;
   QRect imageSize;
+    QToolBar* toolbar;
   
 };
 
@@ -63,10 +68,19 @@ ZoomableImage::~ZoomableImage()
 
 }
 
-ZoomableImage::ZoomableImage(QWidget* parent) : QWidget(parent), d(new Private{this})
+ZoomableImage::ZoomableImage(bool embed_toolbar, QWidget* parent) : QWidget(parent), d(new Private{this})
 {
   setLayout(new QGridLayout(this));
   layout()->setSpacing(0);
+  d->toolbar = new QToolBar(tr("Image Controls"));
+  if(embed_toolbar)
+    layout()->addWidget(d->toolbar);
+  connect(d->toolbar->addAction(QIcon::fromTheme("zoom-in"), tr("Zoom In")), &QAction::triggered, bind(&ZoomableImage::scale, this, 1.2));
+  connect(d->toolbar->addAction(QIcon::fromTheme("zoom-out"), tr("Zoom Out")), &QAction::triggered, bind(&ZoomableImage::scale, this, 0.8));
+  d->toolbar->addSeparator();
+  connect(d->toolbar->addAction(QIcon::fromTheme("zoom-fit-best"), tr("Fit Window")), &QAction::triggered, bind(&ZoomableImage::fitToWindow, this));
+  connect(d->toolbar->addAction(QIcon::fromTheme("zoom-original"), tr("Original Size")), &QAction::triggered, bind(&ZoomableImage::normalSize, this));
+  d->toolbar->setEnabled(false);
   layout()->addWidget(d->view = new Private::GraphicsView(this));
   d->view->setScene(&d->scene);
   d->view->setDragMode(QGraphicsView::ScrollHandDrag);
@@ -100,6 +114,12 @@ void ZoomableImage::scale(double factor)
   d->view->scale(factor, factor);
 }
 
+QToolBar* ZoomableImage::toolbar() const
+{
+  return d->toolbar;
+}
+
+
 
 
 
@@ -125,9 +145,12 @@ void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
 
 void ZoomableImage::setImage(const QImage& image)
 {
+  d->toolbar->setEnabled(!image.isNull());
   if(d->view->selection)
     d->scene.removeItem(d->view->selection);
   d->scene.clear();
+  if(image.isNull())
+    return;
   d->imageSize = image.rect();
   d->scene.addPixmap(QPixmap::fromImage(image));
   if(d->view->selection)
