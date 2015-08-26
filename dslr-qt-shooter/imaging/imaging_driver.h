@@ -57,7 +57,7 @@ public:
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
-  virtual Image::ptr shoot() const = 0;
+  virtual Image::ptr shoot(const Imager::Settings::ptr &settings) const = 0;
   
 signals:
   void connected();

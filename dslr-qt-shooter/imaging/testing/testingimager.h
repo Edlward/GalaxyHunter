@@ -19,15 +19,12 @@ public:
     }
     class Settings;
     friend class Settings;
-    virtual std::shared_ptr<Imager::Settings> settings() {
-        return _settings;
-    }
+    virtual std::shared_ptr<Imager::Settings> settings();
 public slots:
     virtual void connect();
     virtual void disconnect();
-    virtual Image::ptr shoot() const;
+    virtual Image::ptr shoot(const Imager::Settings::ptr &settings) const;
 private:
-    std::shared_ptr<Imager::Settings> _settings;
     ShooterSettings &shooterSettings;
 };
 class TestingImagerDriver : public ImagingDriver

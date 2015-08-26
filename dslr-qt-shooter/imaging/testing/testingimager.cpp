@@ -37,7 +37,7 @@ TestingImagerDriver::TestingImagerDriver(ShooterSettings &shooterSettings, QObje
 {
 }
 
-TestingImager::TestingImager(ShooterSettings &shooterSettings) : Imager(), _settings{make_shared<TestingImager::Settings>()}, shooterSettings{shooterSettings}
+TestingImager::TestingImager(ShooterSettings &shooterSettings) : Imager(), shooterSettings{shooterSettings}
 {
 }
 
@@ -81,13 +81,19 @@ void TestingImage::save_to(const QString& path)
 }
 
 
+Imager::Settings::ptr TestingImager::settings()
+{
+  return make_shared<TestingImager::Settings>();
+}
 
-Image::ptr TestingImager::shoot() const
+
+
+Image::ptr TestingImager::shoot(const Settings::ptr& settings) const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 12) + 1);
   qDebug() << "loading image: " << imageFile;
   
-  int exposure = _settings->manualExposure() == 0 ? _settings->shutterSpeed().current.toInt() : _settings->manualExposure();
+  int exposure = settings->manualExposure() == 0 ? settings->shutterSpeed().current.toInt() : settings->manualExposure();
   
   for(int i=0; i<exposure; i++) {
     emit exposure_remaining(exposure-i);

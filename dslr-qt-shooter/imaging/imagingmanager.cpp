@@ -39,6 +39,7 @@ public:
     shared_ptr<bool> abort;
     bool save;
     const QString saveDirectory;
+    Imager::Settings::ptr imagerSettings;
     void start();
   };
 private:
@@ -78,7 +79,7 @@ void ImagingManager::start()
 void ImagingManager::Private::SequenceRun::start()
 {
   while(remaining_shots > 0 && ! *abort) {
-    auto image = imager->shoot();
+    auto image = imager->shoot(imagerSettings);
     if(save)
       image->save(saveDirectory);
     emit q->image(image, --remaining_shots);

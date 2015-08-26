@@ -36,7 +36,7 @@ public:
     }
     ImageSettingsDialog *q;
     unique_ptr<Ui::ImageSettingsDialog> ui;
-    shared_ptr<Imager::Settings> imagerSettings;
+    Imager::Settings::ptr imagerSettings;
     
     // Settings
     QString shutterSpeed;
@@ -48,8 +48,8 @@ ImageSettingsDialog::~ImageSettingsDialog()
 {
 }
 
-ImageSettingsDialog::ImageSettingsDialog(const shared_ptr<Imager::Settings> &imagerSettings, QWidget* parent)
-  : QDialog(parent), d(new Private{this, new Ui::ImageSettingsDialog, imagerSettings})
+ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSettings, QWidget* parent)
+  : QDialog(parent), dptr(this, new Ui::ImageSettingsDialog, imagerSettings)
 {
     d->ui->setupUi(this);
     

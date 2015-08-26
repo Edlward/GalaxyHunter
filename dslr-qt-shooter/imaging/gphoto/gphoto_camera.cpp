@@ -169,8 +169,9 @@ void GPhotoCamera::disconnect()
   gp_camera_exit(d->camera, d->context);
 }
 
-Image::ptr GPhotoCamera::shoot() const
+Image::ptr GPhotoCamera::shoot(const Imager::Settings::ptr &settings) const
 {
+  // TODO: new settings interface
   if(d->manualExposure > 0) {
     return d->shootTethered();
   }
