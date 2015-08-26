@@ -39,6 +39,7 @@ public:
   };
   ImagingSequence(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent = 0);
   virtual ~ImagingSequence();
+  typedef std::shared_ptr<ImagingSequence> ptr;
 public slots:
   void start();
   void abort();
@@ -51,5 +52,4 @@ signals:
   void aborted();
   void image(const Image::ptr &image, int remaining);
 };
-
 #endif // IMAGINGSEQUENCE_H

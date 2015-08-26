@@ -50,23 +50,17 @@ void ImagingManager::setImager(const ImagerPtr& imager)
   d->imager = imager;
 }
 
-void ImagingManager::start(const Imager::Settings::ptr &imagerSettings)
+void ImagingManager::start(QQueue<std::shared_ptr<ImagingSequence>> sequence)
 {
-  int sequenceLength = 1;
-  if(d->shooterSettings.shootMode() == ShooterSettings::Repeat) {
-    sequenceLength = d->shooterSettings.sequenceLength() == 0 ? std::numeric_limits<int>().max() : d->shooterSettings.sequenceLength();
+  while(!sequence.isEmpty()) {
+    d->sequence = sequence.dequeue();
+    connect(d->sequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
+    connect(d->sequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
+    connect(d->sequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
+    connect(d->sequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
+    d->sequence->start();
+    d->sequence.reset();
   }
-  auto millisecondsDelayBetweenShots = QTime{0,0,0}.secsTo(d->shooterSettings.delayBetweenShots()) * 1000;
-  
-  ImagingSequence::SequenceSettings sequenceSettings{sequenceLength, d->shooterSettings.delayBetweenShots(), d->remove_on_camera, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
-  
-  d->sequence = make_shared<ImagingSequence>(d->imager, imagerSettings, sequenceSettings);
-  connect(d->sequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
-  connect(d->sequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
-  connect(d->sequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
-  connect(d->sequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
-  d->sequence->start();
-  d->sequence.reset();
 }
 
 

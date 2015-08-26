@@ -27,6 +27,7 @@
 #include <QInputDialog>
 #include "imaging/focus.h"
 #include <imaging/imagingmanager.h>
+#include <imaging/imagingsequence.h>
 #include "qwt-src/qwt_plot_curve.h"
 #include <qwt-src/qwt_plot_histogram.h>
 #include <qwt-src/qwt_symbol.h>
@@ -178,7 +179,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->imagingDriver.get(), &ImagingDriver::camera_connected, this, &DSLR_Shooter_Window::camera_connected, Qt::QueuedConnection);
   
   connect(d->ui->actionShoot, &QAction::triggered, d->imagingManager.get(), [=]{
-    d->imagingManager->start(d->cameraSetup->imagerSettings());
+    QQueue<ImagingSequence::ptr> sequence;
+    sequence.enqueue(d->cameraSetup->imagingSequence());
+    d->imagingManager->start(sequence);
   });
   connect(d->ui->actionScan, &QAction::triggered, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{

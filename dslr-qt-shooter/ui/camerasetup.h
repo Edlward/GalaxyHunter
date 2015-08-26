@@ -33,7 +33,6 @@ class CameraSetup : public QWidget
 public:
     ~CameraSetup();
     CameraSetup(ShooterSettings &shooterSettings, QWidget* parent = 0);
-    Imager::Settings::ptr imagerSettings() const;
     std::shared_ptr<ImagingSequence> imagingSequence() const;
 public slots:
   void shooting(bool isShooting);

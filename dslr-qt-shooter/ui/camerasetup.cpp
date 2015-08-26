@@ -65,12 +65,6 @@ void CameraSetup::Private::camera_settings(function<void(Imager::Settings::ptr)>
   });
 }
 
-Imager::Settings::ptr CameraSetup::imagerSettings() const
-{
-  return d->imagerSettings;
-}
-
-
 void CameraSetup::Private::load()
 {
   auto shootMode = shooterSettings.shootMode();
@@ -180,7 +174,11 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
 
 shared_ptr< ImagingSequence > CameraSetup::imagingSequence() const
 {
-  ImagingSequence::SequenceSettings sequenceSettings{d->shooterSettings.sequenceLength(), d->shooterSettings.delayBetweenShots(), false, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
+  int sequenceLength = 1;
+  if(d->shooterSettings.shootMode() == ShooterSettings::Repeat) {
+    sequenceLength = d->shooterSettings.sequenceLength() == 0 ? std::numeric_limits<int>().max() : d->shooterSettings.sequenceLength();
+  }
+  ImagingSequence::SequenceSettings sequenceSettings{sequenceLength, d->shooterSettings.delayBetweenShots(), false, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
   return make_shared<ImagingSequence>(d->imager, d->imagerSettings, sequenceSettings);
 }
 
