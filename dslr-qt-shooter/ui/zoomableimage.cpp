@@ -29,19 +29,33 @@
 #include <QMimeData>
 #include <QRubberBand>
 #include <QGraphicsRectItem>
+#include <QGridLayout>
+#include <QGraphicsView>
+
 
 class ZoomableImage::Private {
 public:
+  class GraphicsView : public QGraphicsView {
+  public:
+    GraphicsView(QWidget *parent = 0);
+    enum {FreeZoom, RealSize, FitToWindow} zoomMode = RealSize;
+    bool selectionMode = false;
+    QRectF selectionRect;
+    QGraphicsRectItem *selection = 0;
+  protected:
+    virtual void mouseReleaseEvent(QMouseEvent*e);
+  };
   Private(ZoomableImage *q) : q(q) {}
+  GraphicsView *view;
   ZoomableImage *q;
-  QPoint moveOriginPoint;
-  bool selectionMode = false;
-  QRectF selectionRect;
-  QGraphicsRectItem *selection = 0;
   QGraphicsScene scene;
   QRect imageSize;
+  
 };
 
+ZoomableImage::Private::GraphicsView::GraphicsView(QWidget* parent) : QGraphicsView(parent)
+{
+}
 
 
 ZoomableImage::~ZoomableImage()
@@ -49,20 +63,24 @@ ZoomableImage::~ZoomableImage()
 
 }
 
-ZoomableImage::ZoomableImage(QWidget* parent) : QGraphicsView(parent), d(new Private{this})
+ZoomableImage::ZoomableImage(QWidget* parent) : QWidget(parent), d(new Private{this})
 {
-  setScene(&d->scene);
-  setDragMode(QGraphicsView::ScrollHandDrag);
-  connect(this, &QGraphicsView::rubberBandChanged, [=](QRect a,const QPointF &sceneStart, const QPointF &sceneEnd){
-    if(!d->selectionMode || a.isEmpty())
+  setLayout(new QGridLayout(this));
+  layout()->setSpacing(0);
+  layout()->addWidget(d->view = new Private::GraphicsView(this));
+  d->view->setScene(&d->scene);
+  d->view->setDragMode(QGraphicsView::ScrollHandDrag);
+  connect(d->view, &QGraphicsView::rubberBandChanged, [=](QRect a,const QPointF &sceneStart, const QPointF &sceneEnd){
+    if(!d->view->selectionMode || a.isEmpty())
       return;
-    d->selectionRect = QRectF(sceneStart, sceneEnd);
+    d->view->selectionRect = QRectF(sceneStart, sceneEnd);
   });
 }
 
 void ZoomableImage::fitToWindow()
 {
-  fitInView(d->imageSize, Qt::KeepAspectRatio);
+  d->view->zoomMode = Private::GraphicsView::FitToWindow;
+  d->view->fitInView(d->imageSize, Qt::KeepAspectRatio);
 }
 
 
@@ -70,14 +88,16 @@ void ZoomableImage::fitToWindow()
 
 void ZoomableImage::normalSize()
 {
-  setTransform({});
+  d->view->zoomMode = Private::GraphicsView::RealSize;
+  d->view->setTransform({});
 }
 
 
 
 void ZoomableImage::scale(double factor)
 {
-  QGraphicsView::scale(factor, factor);
+  d->view->zoomMode = Private::Private::GraphicsView::FreeZoom;
+  d->view->scale(factor, factor);
 }
 
 
@@ -86,16 +106,16 @@ void ZoomableImage::scale(double factor)
 void ZoomableImage::startSelectionMode()
 {
   clearROI();
-  d->selectionMode = true;
-  setDragMode(QGraphicsView::RubberBandDrag);
+  d->view->selectionMode = true;
+  d->view->setDragMode(QGraphicsView::RubberBandDrag);
 }
 
-void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
+void ZoomableImage::Private::GraphicsView::mouseReleaseEvent(QMouseEvent* e)
 {
-  if(d->selectionMode) {
-    d->selectionMode = false;
-    d->selection = scene()->addRect(d->selectionRect, {Qt::green}, {QColor{0, 250, 250, 20}});
-    qDebug() << "rect: " << d->selectionRect << ", " << d->selection->rect();
+  if(selectionMode) {
+    selectionMode = false;
+    selection = scene()->addRect(selectionRect, {Qt::green}, {QColor{0, 250, 250, 20}});
+    qDebug() << "rect: " << selectionRect << ", " << selection->rect();
   }
   QGraphicsView::mouseReleaseEvent(e);
   setDragMode(QGraphicsView::ScrollHandDrag);
@@ -105,25 +125,31 @@ void ZoomableImage::mouseReleaseEvent(QMouseEvent* e)
 
 void ZoomableImage::setImage(const QImage& image)
 {
-  if(d->selection)
-    d->scene.removeItem(d->selection);
+  if(d->view->selection)
+    d->scene.removeItem(d->view->selection);
   d->scene.clear();
   d->imageSize = image.rect();
   d->scene.addPixmap(QPixmap::fromImage(image));
-  if(d->selection)
-    d->scene.addItem(d->selection);
+  if(d->view->selection)
+    d->scene.addItem(d->view->selection);
 }
 
 QRect ZoomableImage::roi() const
 {
-  return d->selectionRect.toRect();
+  return d->view->selectionRect.toRect();
 }
 
 void ZoomableImage::clearROI()
 {
-  scene()->removeItem(d->selection);
-  delete d->selection;
-  d->selection = 0;
-  d->selectionRect = {};
+  d->scene.removeItem(d->view->selection);
+  delete d->view->selection;
+  d->view->selection = 0;
+  d->view->selectionRect = {};
 }
 
+void ZoomableImage::resizeEvent(QResizeEvent* e)
+{
+  if(d->view->zoomMode == Private::GraphicsView::FitToWindow)
+    fitToWindow();
+  QWidget::resizeEvent(e);
+}

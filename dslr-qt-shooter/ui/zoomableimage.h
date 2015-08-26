@@ -20,14 +20,14 @@
 #ifndef ZOOMABLEIMAGE_H
 #define ZOOMABLEIMAGE_H
 
-#include <QScrollArea>
-#include <QGraphicsView>
+#include <QWidget>
 #include <QRect>
 #include <memory>
+#include "dptr.h"
 class QLabel;
 class QImage;
 class QRubberBand;
-class ZoomableImage : public QGraphicsView
+class ZoomableImage : public QWidget
 {
 Q_OBJECT
 public:
@@ -42,13 +42,9 @@ public slots:
   void startSelectionMode();
   void clearROI();
 protected:
-//     virtual void mousePressEvent(QMouseEvent*e);
-//     virtual void mouseMoveEvent(QMouseEvent* e);
-    virtual void mouseReleaseEvent(QMouseEvent*e);
+    virtual void resizeEvent(QResizeEvent * e);
 private:
-  class Private;
-  friend class Private;
-  const std::unique_ptr<Private> d;
+  D_PTR
 };
 
 #endif // ZOOMABLEIMAGE_H
