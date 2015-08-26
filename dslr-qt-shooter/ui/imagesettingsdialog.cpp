@@ -21,8 +21,6 @@
 #include "ui_imagesettingsdialog.h"
 #include "imaging/imaging_driver.h"
 #include <utils/qt.h>
-#include <utils/qlambdathread.h>
-#include <QThread>
 #include <QFileDialog>
 #include <QPushButton>
 

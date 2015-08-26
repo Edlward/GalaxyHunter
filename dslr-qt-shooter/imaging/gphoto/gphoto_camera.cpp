@@ -7,9 +7,9 @@
 #include "commons/shootersettings.h"
 
 #include "utils/qt.h"
-#include <utils/qlambdathread.h>
 #include <sstream>
 #include "Qt/strings.h"
+#include <QFuture>
 
 QString gphoto_error(int errorCode)
 {
@@ -120,7 +120,6 @@ GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCa
 #define ISO_SETTING "main/settings/iso"
 #define SHUTTER_SPEED_SETTING "main/settings/shutterspeed"
 
-#include <boost/thread.hpp>
 
 void GPhotoCamera::connect()
 {
@@ -208,7 +207,7 @@ Image::ptr GPhotoCamera::Private::shootPreset()
 
 Image::ptr GPhotoCamera::Private::shootTethered()
 {
-  boost::thread t([=]{
+  auto shoot_future = QtConcurrent::run([=]{
     auto shoot = make_shared<SerialShoot>(serialShootPort);
     QElapsedTimer elapsed;
     elapsed.start();
@@ -242,7 +241,7 @@ Image::ptr GPhotoCamera::Private::shootTethered()
       if(result == GP_OK && event == GP_EVENT_FILE_ADDED)
 	break;
     }
-    t.join();
+    shoot_future.waitForFinished();
     if(event != GP_EVENT_FILE_ADDED)
     {
       q->error(q, gphoto_error(result));
