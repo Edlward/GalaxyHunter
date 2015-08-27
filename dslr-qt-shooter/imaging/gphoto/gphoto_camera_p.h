@@ -17,39 +17,6 @@
 
 using namespace std;
 
-class GPhotoCamera::Settings : public Imager::Settings {
-public:
-  struct Set {
-    int load();
-    int save();
-    void change(const QString &value) { setting.current = value; }
-    ComboSetting setting;
-    CameraWidget *widget;
-    QString _original;
-  };
-    Settings(GPContext *context, Camera *camera, GPhotoCamera *q, QMutex &mutex);
-    virtual ComboSetting imageFormat() const { return _imageFormat.setting; }
-    virtual ComboSetting iso() const { return _iso.setting; }
-    virtual ComboSetting shutterSpeed() const { return _shutterSpeed.setting; }
-    virtual qulonglong manualExposure() const;
-    virtual void setImageFormat(const QString &v) { _imageFormat.change(v); }
-    virtual void setISO(const QString &v) { _iso.change(v); }
-    virtual void setManualExposure(qulonglong seconds);
-    virtual void setShutterSpeed(const QString &v) { _shutterSpeed.change(v); }
-    virtual QString serialShootPort() const;
-    virtual void setSerialShootPort(const QString serialShootPort);
-    virtual ~Settings();
-private:
-  GPContext *context;
-  Camera *camera;
-  QMutex &mutex;
-  CameraWidget *settings;
-  GPhotoCamera *q;
-  Set _imageFormat;
-  Set _iso;
-  Set _shutterSpeed;
-};
-
 
 class CameraTempFile : public Image {
 public:
@@ -73,8 +40,6 @@ private:
 };
 
 
-
-
 class GPhotoCamera::Private {
 public:
   Private(const shared_ptr<GPhotoCameraInformation> &info, ShooterSettings &shooterSettings, GPhotoCamera *q)
@@ -85,14 +50,26 @@ public:
   QString summary;
   GPContext* context;
   Camera *camera = nullptr;
-  qulonglong manualExposure = 0l;
   QString outputDirectory;
-  Image::ptr shootTethered();
+  Image::ptr shootTethered(const Imager::Settings &settings);
   Image::ptr shootPreset();
   std::string fixedFilename(const std::string &fileName) const;
   QMutex &mutex;
-  std::string serialShootPort;
   ShooterSettings &shooterSettings;
+  Imager::Settings imagerSettings;
+  
+  class GPhotoComboSetting {
+  public:
+    GPhotoComboSetting(Private *d, const QString &settingName); // Loads value from camera
+    operator Imager::Settings::ComboSetting() const { return comboSetting; } // returns setting values
+    void save(const Imager::Settings::ComboSetting &settings); // Saves the value to camera, returns a gphoto error code?
+  private:
+    void load();
+    Private *d;
+    const QString settingName;
+    Imager::Settings::ComboSetting comboSetting;
+  };
+  
 private:
   GPhotoCamera *q;
 };

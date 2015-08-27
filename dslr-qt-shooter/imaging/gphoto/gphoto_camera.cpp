@@ -17,90 +17,53 @@ QString gphoto_error(int errorCode)
     return QString(errorMessage);
 }
 
-
-void GPhotoCamera::Settings::setManualExposure(qulonglong seconds)
+GPhotoCamera::Private::GPhotoComboSetting::GPhotoComboSetting ( GPhotoCamera::Private* d, const QString& settingName )
+  : d{d}, settingName{settingName}
 {
-  q->d->manualExposure = seconds;
+  load();
 }
 
 
-qulonglong GPhotoCamera::Settings::manualExposure() const
+void GPhotoCamera::Private::GPhotoComboSetting::load()
 {
-  return q->d->manualExposure;
-}
-
-
-QString GPhotoCamera::Settings::serialShootPort() const
-{
-  return QString::fromStdString(q->d->serialShootPort);
-}
-
-void GPhotoCamera::Settings::setSerialShootPort(const QString serialShootPort)
-{
-  q->d->serialShootPort = serialShootPort.toStdString();
-}
-
-
-GPhotoCamera::Settings::Settings(GPContext* context, Camera* camera, GPhotoCamera* q, QMutex &mutex)
-  : context(context), camera(camera), q(q), mutex(mutex)
-{
-  qDebug() << __PRETTY_FUNCTION__ << ": Loading settings";
-  gp_api{{
-    sequence_run([&] { return gp_camera_get_config(camera, &settings, context); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "imageformat", &_imageFormat.widget); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "iso", &_iso.widget); }),
-    sequence_run([&] { return gp_widget_get_child_by_name(settings, "shutterspeed", &_shutterSpeed.widget); }),
-  }, make_shared<QMutexLocker>(&mutex)}.run_last([=]{
-    _imageFormat.load();
-    _iso.load();
-    _shutterSpeed.load();
-  });
-}
-
-int GPhotoCamera::Settings::Set::save()
-{
-  qDebug() << "Saving setting: current=" << setting.current << ", previous: " << _original;
-  if(setting.current == _original)
-    return GP_OK;
-  return  gp_widget_set_value(widget, setting.current.toStdString().c_str());
-}
-
-int GPhotoCamera::Settings::Set::load()
-{
-  setting.available.clear();
+  CameraWidget *settings;
+  CameraWidget *widget;
   char *value;
-  int ret = gp_widget_get_value(widget, &value);
-  if(ret >= GP_OK) {
-    setting.current = QString(value);
-    _original = setting.current;
+  
+  qDebug() << __PRETTY_FUNCTION__ << ": Loading setting:" << settingName;
+  comboSetting.available.clear();
+  
+  // TODO: error checking
+  int result = gp_camera_get_config(d->camera, &settings, d->context);
+  result = gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget);
+  result = gp_widget_get_value(widget, &value);
+  if(result == GP_OK) {
+    comboSetting.current = QString(value);
     int choices = gp_widget_count_choices(widget);
     for(int i=0; i<choices; i++) {
       const char *choice;
       if(gp_widget_get_choice(widget, i, &choice) == GP_OK)
-	setting.available.push_back(QString(choice));
+        comboSetting.available.push_back(QString(choice));
     }
   }
-  return ret;
+  gp_widget_free(settings);
 }
 
 
-GPhotoCamera::Settings::~Settings()
+
+void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::ComboSetting& imagerSettings )
 {
-  qDebug() << __PRETTY_FUNCTION__;
-  vector<Set> sets{_imageFormat, _iso, _shutterSpeed};
-  if(any_of(begin(sets), end(sets), [](const Set &s){ return s._original != s.setting.current; })) {
-    gp_api {{
-      sequence_run([&]{ return _imageFormat.save(); }),
-      sequence_run([&]{ return _shutterSpeed.save(); }),
-      sequence_run([&]{ return _iso.save(); }),
-      sequence_run([&]{ return gp_camera_set_config(camera, settings, context); }),
-    }, make_shared<QMutexLocker>(&mutex)}.on_error([=](int errorCode, const std::string &label) {
-      qDebug() << gphoto_error(errorCode);
-      q->error(q, gphoto_error(errorCode));
-    });
-  }
+  if( imagerSettings == this->comboSetting)
+    return;
+  
+  CameraWidget *settings;
+  CameraWidget *widget;
+  char *value;
+  int result = gp_camera_get_config(d->camera, &settings, d->context);
+  result = gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget);
+  result = gp_widget_set_value(widget, imagerSettings.current.toStdString().c_str() );
   gp_widget_free(settings);
-  qDebug() << "done";
+  load();
 }
 
 
@@ -155,11 +118,14 @@ void GPhotoCamera::connect()
   // TODO d->reloadSettings();
   gp_port_info_list_free(portInfoList);
   gp_abilities_list_free(abilities_list);
+  d->imagerSettings.imageFormat = Private::GPhotoComboSetting(d.get(), "imageformat");
+  d->imagerSettings.iso = Private::GPhotoComboSetting(d.get(), "iso");
+  d->imagerSettings.shutterSpeed = Private::GPhotoComboSetting(d.get(), "shutterspeed");
 }
 
-shared_ptr< Imager::Settings > GPhotoCamera::settings()
+Imager::Settings GPhotoCamera::settings()
 {
-    return make_shared<Settings>(d->context, d->camera, this, d->mutex);
+    return d->imagerSettings;
 }
 
 
@@ -171,9 +137,11 @@ void GPhotoCamera::disconnect()
 
 Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 {
-  // TODO: new settings interface
-  if(d->manualExposure > 0) {
-    return d->shootTethered();
+  Private::GPhotoComboSetting(d.get(), "imageformat").save(settings.imageFormat);
+  Private::GPhotoComboSetting(d.get(), "iso").save(settings.shutterSpeed);
+  Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.iso);
+  if(settings.manualExposure ) {
+    return d->shootTethered(settings);
   }
   return d->shootPreset();
 }
@@ -185,7 +153,7 @@ string GPhotoCamera::Private::fixedFilename(const string& fileName) const
 }
 
 
-Image::ptr GPhotoCamera::Private::shootPreset()
+Image::ptr GPhotoCamera::Private::shootPreset(  )
 {
   auto camera_file = make_shared<CameraTempFile>(q);
   CameraFilePath camera_remote_file;
@@ -206,18 +174,18 @@ Image::ptr GPhotoCamera::Private::shootPreset()
 
 
 
-Image::ptr GPhotoCamera::Private::shootTethered()
+Image::ptr GPhotoCamera::Private::shootTethered( const Imager::Settings& settings )
 {
   auto shoot_future = QtConcurrent::run([=]{
-    auto shoot = make_shared<SerialShoot>(serialShootPort);
+    auto shoot = make_shared<SerialShoot>(settings.serialShootPort.toStdString());
     QElapsedTimer elapsed;
     elapsed.start();
     int elapsed_secs = 0;
-    while(elapsed.elapsed() < manualExposure * 1000) {
+    while(elapsed.elapsed() < settings.manualExposureSeconds * 1000) {
       if(elapsed.elapsed()/1000 > elapsed_secs) {
 	elapsed_secs = elapsed.elapsed()/1000;
 	qDebug() << "elapsed=" << elapsed_secs;
-	q->exposure_remaining(manualExposure-elapsed_secs);
+	q->exposure_remaining(settings.manualExposureSeconds-elapsed_secs);
       }
       q->exposure_remaining(0);
     }
@@ -237,7 +205,7 @@ Image::ptr GPhotoCamera::Private::shootTethered()
     };
     int result;
     for(int i=0; i<3; i++) {
-      result = gp_camera_wait_for_event(camera, (manualExposure*2 + 20)*1000, &event, &data, context);
+      result = gp_camera_wait_for_event(camera, (settings.manualExposureSeconds*2 + 20)*1000, &event, &data, context);
       qDebug() << "result=" << result << ", event=" << eventTypes[event];
       if(result == GP_OK && event == GP_EVENT_FILE_ADDED)
 	break;

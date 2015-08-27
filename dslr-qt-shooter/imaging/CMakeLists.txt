@@ -16,11 +16,11 @@ if(testing_imager_enabled)
 endif(testing_imager_enabled)
 
 find_package(PkgConfig REQUIRED)
-# pkg_check_modules(GPHOTO2 libgphoto2)
-# if(GPHOTO2_FOUND)
-#   add_subdirectory(gphoto)
-#   add_definitions(-DIMAGING_gphoto2)
-# endif(GPHOTO2_FOUND)
+pkg_check_modules(GPHOTO2 libgphoto2)
+if(GPHOTO2_FOUND)
+  add_subdirectory(gphoto)
+  add_definitions(-DIMAGING_gphoto2)
+endif(GPHOTO2_FOUND)
 
 
 add_library(dslr_imaging STATIC ${dslr_imaging_SOURCES} ${dslr_imaging_HEADERS_MOC})

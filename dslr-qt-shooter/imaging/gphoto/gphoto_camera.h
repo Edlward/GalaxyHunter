@@ -15,9 +15,7 @@ public:
   virtual QString model() const;
   virtual QString about() const;
   
-  class Settings;
-  friend class Settings;
-  virtual std::shared_ptr< Imager::Settings > settings();
+  virtual Settings settings();
 public slots:
   virtual void connect();
   virtual void disconnect();
