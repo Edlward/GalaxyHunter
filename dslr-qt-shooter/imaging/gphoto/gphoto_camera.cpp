@@ -69,12 +69,10 @@ void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::C
   CameraWidget *settings;
   CameraWidget *widget;
   char *value;
-  int result = gp_camera_get_config(d->camera, &settings, d->context);
-  GPHOTO_CHECK_ERROR(result, d)
-  result = gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget);
-  GPHOTO_CHECK_ERROR(result, d)
-  result = gp_widget_set_value(widget, imagerSettings.current.toStdString().c_str() );
-  GPHOTO_CHECK_ERROR(result, d)
+  int error_code;
+  GPHOTO_RUN( gp_camera_get_config(d->camera, &settings, d->context), d);
+  GPHOTO_RUN(gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget), d)
+  GPHOTO_RUN(gp_widget_set_value(widget, imagerSettings.current.toStdString().c_str() ), d)
   gp_widget_free(settings);
   load();
 }
@@ -83,9 +81,8 @@ void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::C
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation, ShooterSettings &shooterSettings)
   : dptr(gphotoCameraInformation, shooterSettings, this)
 {
-  int result =  gp_camera_new(&d->camera);
-  if(result != GP_OK)
-    d->GPHOTO_RETURN_ERROR(result);
+  int error_code;
+  GPHOTO_RUN(gp_camera_new(&d->camera), d)
 }
 
 
