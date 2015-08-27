@@ -179,9 +179,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->imagingDriver.get(), &ImagingDriver::camera_connected, this, &DSLR_Shooter_Window::camera_connected, Qt::QueuedConnection);
   
   connect(d->ui->actionShoot, &QAction::triggered, d->imagingManager.get(), [=]{
-    QQueue<ImagingSequence::ptr> sequence;
-    sequence.enqueue(d->cameraSetup->imagingSequence());
-    d->imagingManager->start(sequence);
+    d->imagingManager->start({{d->cameraSetup->imagingSequence()}});
   });
   connect(d->ui->actionScan, &QAction::triggered, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{

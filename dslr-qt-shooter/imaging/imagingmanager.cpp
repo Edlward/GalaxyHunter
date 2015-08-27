@@ -31,7 +31,7 @@ public:
   ShooterSettings &shooterSettings;
   ImagerPtr imager;
   bool remove_on_camera;
-  shared_ptr<ImagingSequence> sequence;
+  SequenceElement sequence;
 private:
   ImagingManager *q;
 };
@@ -50,26 +50,28 @@ void ImagingManager::setImager(const ImagerPtr& imager)
   d->imager = imager;
 }
 
-void ImagingManager::start(QQueue<std::shared_ptr<ImagingSequence>> sequence)
+void ImagingManager::start(Sequence sequence)
 {
   while(!sequence.isEmpty()) {
     d->sequence = sequence.dequeue();
-    d->sequence->moveToThread(QThread::currentThread());
-    connect(d->sequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
-    connect(d->sequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
-    connect(d->sequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
-    connect(d->sequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
-    d->sequence->start();
-    d->sequence.reset();
+    auto imagingSequence = d->sequence.imagingSequence;
+    if(imagingSequence) {
+      imagingSequence->moveToThread(QThread::currentThread());
+      connect(imagingSequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
+      connect(imagingSequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
+      connect(imagingSequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
+      connect(imagingSequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
+      imagingSequence->start();
+    }
+    d->sequence = {};
   }
 }
 
 
 void ImagingManager::abort()
 {
-  // TODO: extract sequence as a class
-  if(d->sequence)
-    d->sequence->abort();
+  if(d->sequence.imagingSequence)
+    d->sequence.imagingSequence->abort();
 }
 
 

@@ -24,6 +24,7 @@
 
 #include "dptr.h"
 #include "imaging_driver.h"
+#include "sequence_element.h"
 #include <QQueue>
 class ImagingSequence;
 class ShooterSettings;
@@ -37,7 +38,7 @@ public:
     ~ImagingManager();
     void setImager(const ImagerPtr &imager);
 public slots:
-  void start(QQueue<std::shared_ptr<ImagingSequence>> sequence);
+  void start(Sequence sequence);
   void abort();
   void setExposure(double milliseconds);
   void setRemoveOnCameraEnabled(bool enabled);
