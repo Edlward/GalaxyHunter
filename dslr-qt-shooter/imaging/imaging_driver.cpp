@@ -18,6 +18,28 @@
 using namespace std;
 using namespace std::placeholders;
 
+bool Imager::Settings::ComboSetting::operator== ( const Imager::Settings::ComboSetting& other ) const
+{
+  return other.available == available && other.current == current;
+}
+
+Imager::Settings::ComboSetting::operator bool() const
+{
+  return !available.empty();
+}
+
+bool Imager::Settings::operator== ( const Imager::Settings& other ) const
+{
+  return
+    shutterSpeed == other.shutterSpeed &&
+    serialShootPort == other.serialShootPort && 
+    iso == other.iso && 
+    manualExposure == other.manualExposure &&
+    imageFormat == other.imageFormat;
+  ;
+}
+
+
 ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {
 }
 
@@ -99,11 +121,11 @@ QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting combo) {
 
 QDebug operator<<(QDebug dbg, const Imager::Settings &settings) {
   dbg.nospace().noquote() << "Imager Settings: { "
-    << "imageFormat=" << settings.imageFormat() << ", "
-    << "iso=" << settings.iso() << ", "
-    << "shutterSpeed=" << settings.shutterSpeed() << ", "
-    << "manualExposure=" << settings.manualExposure() << ", "
-    << "serialPort=" << settings.serialShootPort() << " }"
+    << "imageFormat=" << settings.imageFormat << ", "
+    << "iso=" << settings.iso << ", "
+    << "shutterSpeed=" << settings.shutterSpeed << ", "
+    << "manualExposure=" << settings.manualExposure << ", "
+    << "serialPort=" << settings.serialShootPort << " }"
   ;
   return dbg.space().quote();
 }

@@ -12,25 +12,6 @@
 
 using namespace std;
 
-class TestingImager::Settings : public Imager::Settings {
-public:
-  virtual ComboSetting shutterSpeed() const { return _shutterSpeed; }
-  virtual ComboSetting imageFormat() const { return _imageFormat; }
-  virtual ComboSetting iso() const { return _iso; }
-  virtual void setShutterSpeed(const QString &s) { _shutterSpeed.current = s; }
-  virtual void setImageFormat(const QString &s) { _imageFormat.current = s; }
-  virtual void setISO(const QString &s) { _iso.current = s; }
-  virtual void setManualExposure(qulonglong seconds) { _manualExposure = seconds; }
-  virtual qulonglong manualExposure() const { return _manualExposure; }
-  virtual void setSerialShootPort(const QString serialShootPort) { _serialPort = serialShootPort; }
-  virtual QString serialShootPort() const { return _serialPort; }
-private:
-  ComboSetting _shutterSpeed{"1", {"1", "2", "5"}};
-  ComboSetting _imageFormat{"PNG", {"PNG"}};
-  ComboSetting _iso{"100", {"100", "200"}};
-  qulonglong _manualExposure = 0;
-  QString _serialPort = "/dev/ttyUSB0";
-};
 
 
 TestingImagerDriver::TestingImagerDriver(ShooterSettings &shooterSettings, QObject *parent): ImagingDriver(parent), shooterSettings{shooterSettings}
@@ -80,20 +61,35 @@ void TestingImage::save_to(const QString& path)
   image.save(path);
 }
 
+/*
+ *   ComboSetting _shutterSpeed{"1", {"1", "2", "5"}};
+  ComboSetting _imageFormat{"PNG", {"PNG"}};
+  ComboSetting _iso{"100", {"100", "200"}};
+  qulonglong _manualExposure = 0;
+  QString _serialPort = "/dev/ttyUSB0";
+  */
 
-Imager::Settings::ptr TestingImager::settings()
+
+Imager::Settings TestingImager::settings()
 {
-  return make_shared<TestingImager::Settings>();
+  return {
+    {"1", {"1", "1", "2", "5"}},
+    {"PNG", {"PNG"}},
+    {"100", {"100", "200", "500"}},
+    false,
+    1,
+    "/dev/ttyUSB0",
+  };
 }
 
 
 
-Image::ptr TestingImager::shoot(const Settings::ptr& settings) const
+Image::ptr TestingImager::shoot(const Settings &settings) const
 {
   QString imageFile= QString(":imager/testing/%1.jpg").arg( (qrand() % 12) + 1);
   qDebug() << "loading image: " << imageFile;
   
-  int exposure = settings->manualExposure() == 0 ? settings->shutterSpeed().current.toInt() : settings->manualExposure();
+  int exposure = settings.manualExposure == 0 ? settings.shutterSpeed.current.toInt() : settings.manualExposureSeconds;
   
   for(int i=0; i<exposure; i++) {
     emit exposure_remaining(exposure-i);

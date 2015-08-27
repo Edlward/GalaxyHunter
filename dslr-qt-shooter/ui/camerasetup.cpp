@@ -37,8 +37,8 @@ public:
   QButtonGroup *fileOutput;
     ImagerPtr imager;
   void load();
-  void camera_settings(function<void(Imager::Settings::ptr)> callback);
-  Imager::Settings::ptr imagerSettings;
+  void camera_settings(function<void(Imager::Settings)> callback);
+  Imager::Settings imagerSettings;
   ImagingSequence::SequenceSettings sequenceSettings;
   void show_settings();
 private:
@@ -52,13 +52,13 @@ CameraSetup::Private::Private(ShooterSettings& shooterSettings, CameraSetup* q)
 }
 
 
-void CameraSetup::Private::camera_settings(function<void(Imager::Settings::ptr)> callback)
+void CameraSetup::Private::camera_settings(function<void(Imager::Settings)> callback)
 {
   if(!imager)
     return;
 //   ui->shoot->setDisabled(true); TODO
   ui->imageSettings->setDisabled(true);
-  qt_async<Imager::Settings::ptr>([=]{ return imager->settings(); }, [=](const Imager::Settings::ptr &settings) {
+  qt_async<Imager::Settings>([=]{ return imager->settings(); }, [=](const Imager::Settings &settings) {
     callback(settings);
 //     ui->shoot->setEnabled(true); TODO
     ui->imageSettings->setEnabled(true);
@@ -146,17 +146,17 @@ void CameraSetup::shooting(bool isShooting)
 
 void CameraSetup::Private::show_settings()
 {
-  ui->isoLabel->setText(imagerSettings->iso().current);
-  ui->imageFormatLabel->setText(imagerSettings->imageFormat().current);
-  ui->shutterSpeedLabel->setText(imagerSettings->shutterSpeed().current);
-  ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(imagerSettings->manualExposure()).toString());
-  
+  ui->isoLabel->setText(imagerSettings.iso.current);
+  ui->imageFormatLabel->setText(imagerSettings.imageFormat.current);
+  ui->shutterSpeedLabel->setText(imagerSettings.shutterSpeed.current);
+  ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(imagerSettings.manualExposure).toString());
+  // TODO: what is this?
   auto camera_settings = shooterSettings.camera(imager, imagerSettings);
-  camera_settings->imageFormat(imagerSettings->imageFormat().current);
-  camera_settings->serialPort(imagerSettings->serialShootPort());
-  camera_settings->iso(imagerSettings->iso().current);
-  camera_settings->shutterSpeed(imagerSettings->shutterSpeed().current);
-  camera_settings->manualExposure(imagerSettings->manualExposure());
+  camera_settings->imageFormat(imagerSettings.imageFormat.current);
+  camera_settings->serialPort(imagerSettings.serialShootPort);
+  camera_settings->iso(imagerSettings.iso.current);
+  camera_settings->shutterSpeed(imagerSettings.shutterSpeed.current);
+  camera_settings->manualExposure(imagerSettings.manualExposure);
 }
 
 
@@ -166,7 +166,7 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
   d->ui->imageSettings->setDisabled(true);
   d->imager = imager;
   if(imager) {
-    d->camera_settings([=](const Imager::Settings::ptr &settings) {
+    d->camera_settings([=](const Imager::Settings &settings) {
     d->imagerSettings = settings;
     d->show_settings();
     d->ui->imageSettings->setEnabled(true);

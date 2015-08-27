@@ -51,18 +51,18 @@ T ShooterSettings_get(QSettings &settings, const QString& key, const T& defaultV
 
 class ShooterSettings::Camera::Private {
 public:
-  Private(QSettings &settings, const Imager::Settings::ptr &imagerSettings, ShooterSettings::Camera *q);
+  Private(QSettings &settings, const Imager::Settings &imagerSettings, ShooterSettings::Camera *q);
   QSettings &settings;
-  Imager::Settings::ptr imagerSettings;
+  Imager::Settings imagerSettings;
 private:
   ShooterSettings::Camera *q;
 };
 
-ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings::ptr& imagerSettings, ShooterSettings::Camera* q) : settings{settings}, imagerSettings{imagerSettings}, q{q}
+ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings& imagerSettings, ShooterSettings::Camera* q) : settings{settings}, imagerSettings{imagerSettings}, q{q}
 {
 }
 
-ShooterSettings::Camera::Camera(const QString name, QSettings& settings, const Imager::Settings::ptr &imagerSettings) : dptr(settings, imagerSettings, this)
+ShooterSettings::Camera::Camera(const QString name, QSettings& settings, const Imager::Settings &imagerSettings) : dptr(settings, imagerSettings, this)
 {
   settings.beginGroup("camera_%1"_q % name);
 }
@@ -100,7 +100,7 @@ ShooterSettings::ShootMode ShooterSettings::shootMode() const
   return static_cast<ShootMode>(ShooterSettings_get<int>(d->settings, "shootMode", ShootMode::Single));
 }
 
-shared_ptr<ShooterSettings::Camera> ShooterSettings::camera(const ImagerPtr& imager, const Imager::Settings::ptr &settings)
+shared_ptr<ShooterSettings::Camera> ShooterSettings::camera(const ImagerPtr& imager, const Imager::Settings &settings)
 {
   return CameraPtr{new Camera(imager->model(), d->settings, settings)};
 }
@@ -112,11 +112,11 @@ setting(saveImage, bool, false)
 setting(sequenceLength, int, 0)
 setting_obj(saveImageDirectory, QString, QStandardPaths::writableLocation(QStandardPaths::PicturesLocation))
 
-setting_obj(serialPort, QString, d->imagerSettings->serialShootPort().isEmpty() ? "/dev/ttyUSB0" : d->imagerSettings->serialShootPort(), Camera::)
-setting_obj(iso, QString, d->imagerSettings->iso().current, Camera::)
-setting_obj(imageFormat, QString, d->imagerSettings->imageFormat().current, Camera::)
-setting_obj(shutterSpeed, QString, d->imagerSettings->shutterSpeed().current, Camera::)
-setting(manualExposure, qlonglong, d->imagerSettings->manualExposure(), Camera::)
+setting_obj(serialPort, QString, d->imagerSettings.serialShootPort.isEmpty() ? "/dev/ttyUSB0" : d->imagerSettings.serialShootPort, Camera::)
+setting_obj(iso, QString, d->imagerSettings.iso.current, Camera::)
+setting_obj(imageFormat, QString, d->imagerSettings.imageFormat.current, Camera::)
+setting_obj(shutterSpeed, QString, d->imagerSettings.shutterSpeed.current, Camera::)
+setting(manualExposure, qlonglong, d->imagerSettings.manualExposure, Camera::)
 
 
 

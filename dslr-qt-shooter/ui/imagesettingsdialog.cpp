@@ -28,27 +28,19 @@ using namespace std;
 
 class ImageSettingsDialog::Private {
 public:
-  Private(ImageSettingsDialog *q, Ui::ImageSettingsDialog *ui, const shared_ptr<Imager::Settings> &imagerSettings)
+  Private(ImageSettingsDialog *q, Ui::ImageSettingsDialog *ui, Imager::Settings &imagerSettings)
     : q(q), ui(ui), imagerSettings(imagerSettings) {
-      this->imageFormat = imagerSettings->imageFormat().current;
-      this->shutterSpeed = imagerSettings->shutterSpeed().current;
-      this->iso = imagerSettings->iso().current;
     }
     ImageSettingsDialog *q;
     unique_ptr<Ui::ImageSettingsDialog> ui;
-    Imager::Settings::ptr imagerSettings;
-    
-    // Settings
-    QString shutterSpeed;
-    QString iso;
-    QString imageFormat;
+    Imager::Settings &imagerSettings;
 };
 
 ImageSettingsDialog::~ImageSettingsDialog()
 {
 }
 
-ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSettings, QWidget* parent)
+ImageSettingsDialog::ImageSettingsDialog( Imager::Settings& imagerSettings, QWidget* parent )
   : QDialog(parent), dptr(this, new Ui::ImageSettingsDialog, imagerSettings)
 {
     d->ui->setupUi(this);
@@ -61,12 +53,12 @@ ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSett
     combo->setCurrentText(setting.current);
   };
   
-  populateCombo(d->ui->imageFormat, d->imagerSettings->imageFormat());
-  populateCombo(d->ui->iso, d->imagerSettings->iso());
-  populateCombo(d->ui->shutterSpeedPresets, d->imagerSettings->shutterSpeed());
-  connect(d->ui->shutterSpeedPresets, &QComboBox::currentTextChanged, [=](const QString &t) { d->shutterSpeed = t; });
-  connect(d->ui->iso, &QComboBox::currentTextChanged, [=](const QString &t) { d->iso = t; });
-  connect(d->ui->imageFormat, &QComboBox::currentTextChanged, [=](const QString &t) { d->imageFormat = t; });
+  populateCombo(d->ui->imageFormat, d->imagerSettings.imageFormat);
+  populateCombo(d->ui->iso, d->imagerSettings.iso);
+  populateCombo(d->ui->shutterSpeedPresets, d->imagerSettings.shutterSpeed);
+  connect(d->ui->shutterSpeedPresets, &QComboBox::currentTextChanged, [=](const QString &t) { d->imagerSettings.shutterSpeed.current = t; });
+  connect(d->ui->iso, &QComboBox::currentTextChanged, [=](const QString &t) { d->imagerSettings.iso.current = t; });
+  connect(d->ui->imageFormat, &QComboBox::currentTextChanged, [=](const QString &t) { d->imagerSettings.imageFormat.current = t; });
   
   auto presetExposure = [=](bool checked) {
     d->ui->shutterSpeedPresets->setEnabled(checked);
@@ -77,12 +69,18 @@ ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSett
     d->ui->shutterSpeedManual->setEnabled(checked);
     d->ui->serialShootPort->setEnabled(checked);
     d->ui->pickSerialShootPort->setEnabled(checked);
-    d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings->manualExposure()));
+    d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings.manualExposure));
+    d->imagerSettings.manualExposure = checked;
   };
-  d->ui->serialShootPort->setText(d->imagerSettings->serialShootPort());
+  d->ui->serialShootPort->setText(d->imagerSettings.serialShootPort);
+  
+  connect(d->ui->shutterSpeedManual, &QTimeEdit::timeChanged, [=](const QTime &time) {
+    d->imagerSettings.manualExposureSeconds = QTime{0,0,0}.secsTo(d->ui->shutterSpeedManual->time());
+  });
   
   connect(d->ui->presetExposure, &QRadioButton::toggled, presetExposure);
   connect(d->ui->manualExposure, &QRadioButton::toggled, manualExposure);
+  connect(d->ui->serialShootPort, &QLineEdit::textChanged, [=](const QString &port) { d->imagerSettings.serialShootPort = port; });
   auto bulbMode = d->ui->shutterSpeedPresets->currentText() == "Bulb";
   d->ui->presetExposure->setChecked(!bulbMode); presetExposure(!bulbMode);
   d->ui->manualExposure->setChecked(bulbMode); manualExposure(bulbMode);
@@ -94,12 +92,6 @@ ImageSettingsDialog::ImageSettingsDialog(const Imager::Settings::ptr &imagerSett
 
 void ImageSettingsDialog::accept()
 {
-  uint64_t manualExposure = d->ui->manualExposure->isChecked() ? QTime{0,0,0}.secsTo(d->ui->shutterSpeedManual->time()) : 0;
-  d->imagerSettings->setShutterSpeed(d->shutterSpeed);
-  d->imagerSettings->setImageFormat(d->imageFormat);
-  d->imagerSettings->setISO(d->iso);
-  d->imagerSettings->setManualExposure(manualExposure);
-  d->imagerSettings->setSerialShootPort(d->ui->serialShootPort->text() );
   qDebug() << __PRETTY_FUNCTION__ << d->imagerSettings;
   QDialog::accept();
   deleteLater();

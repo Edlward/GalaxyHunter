@@ -46,7 +46,7 @@ public:
       void manualExposure(qlonglong manualExposure);
     private:
       friend class ShooterSettings;
-      Camera(const QString name, QSettings &settings, const Imager::Settings::ptr &imagerSettings);
+      Camera(const QString name, QSettings &settings, const Imager::Settings &imagerSettings);
       D_PTR
     };
     
@@ -72,7 +72,7 @@ public:
     QString saveImageDirectory() const;
     void saveImageDirectory(const QString &directory);
     
-    CameraPtr camera(const ImagerPtr& imager, const Imager::Settings::ptr &settings);
+    CameraPtr camera(const ImagerPtr& imager, const Imager::Settings &settings);
 private:
   D_PTR
   friend class Camera;

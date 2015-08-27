@@ -22,16 +22,16 @@
 
 class ImagingSequence::Private {
 public:
-  Private(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q);
+  Private(const ImagerPtr& imager, const Imager::Settings& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q);
   ImagerPtr imager;
-  Imager::Settings::ptr imagerSettings;
+  Imager::Settings imagerSettings;
   SequenceSettings sequenceSettings;
   bool aborted = false;
 private:
     ImagingSequence *q;
 };
 
-ImagingSequence::Private::Private(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q)
+ImagingSequence::Private::Private(const ImagerPtr& imager, const Imager::Settings& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q)
   : imager{imager}, imagerSettings{imagerSettings}, sequenceSettings{sequenceSettings}, q{q}
 {
 }
@@ -44,7 +44,7 @@ long long int ImagingSequence::SequenceSettings::delayInMilliseconds() const
 
 
 
-ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings::ptr &imagerSettings, const SequenceSettings &sequenceSettings, QObject* parent)
+ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings &imagerSettings, const SequenceSettings &sequenceSettings, QObject* parent)
     : dptr(imager, imagerSettings, sequenceSettings, this)
 {
 }

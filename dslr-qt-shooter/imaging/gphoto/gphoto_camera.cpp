@@ -169,7 +169,7 @@ void GPhotoCamera::disconnect()
   gp_camera_exit(d->camera, d->context);
 }
 
-Image::ptr GPhotoCamera::shoot(const Imager::Settings::ptr &settings) const
+Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 {
   // TODO: new settings interface
   if(d->manualExposure > 0) {

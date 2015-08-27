@@ -29,36 +29,32 @@ Q_DECLARE_METATYPE(Image::ptr)
 class Imager : public QObject {
   Q_OBJECT
 public:
-  class Settings {
+  struct Settings {
   public:
-    typedef std::shared_ptr<Settings> ptr;
     struct ComboSetting {
       QString current;
       QStringList available;
-      operator bool() const { return !available.empty(); }
+      operator bool() const;
+      bool operator==(const ComboSetting &other) const;
     };
-    virtual ~Settings() {};
-    virtual ComboSetting shutterSpeed() const = 0;
-    virtual ComboSetting imageFormat() const = 0;
-    virtual ComboSetting iso() const = 0;
-    virtual void setShutterSpeed(const QString &) = 0;
-    virtual void setImageFormat(const QString &) = 0;
-    virtual void setISO(const QString &) = 0;
-    virtual void setManualExposure(qulonglong seconds) = 0;
-    virtual qulonglong manualExposure() const = 0;
-    virtual void setSerialShootPort(const QString serialShootPort) = 0;
-    virtual QString serialShootPort() const = 0;
+    ComboSetting shutterSpeed;
+    ComboSetting imageFormat;
+    ComboSetting iso;
+    bool manualExposure;
+    qulonglong manualExposureSeconds;
+    QString serialShootPort;
+    bool operator==(const Settings &other) const;
   };
   
   virtual QString summary() const = 0; // TODO: documentation
   virtual QString model() const = 0;  // TODO: documentation
   virtual QString about() const = 0; // TODO: documentation
-  virtual std::shared_ptr<Settings> settings() = 0;
+  virtual Settings settings() = 0;
       
 public slots:
   virtual void connect() = 0;
   virtual void disconnect() = 0;
-  virtual Image::ptr shoot(const Imager::Settings::ptr &settings) const = 0;
+  virtual Image::ptr shoot(const Settings &settings) const = 0;
   
 signals:
   void connected();
@@ -100,5 +96,4 @@ private:
 };
 
 QDebug operator<<(QDebug dbg, const Imager::Settings &settings);
-inline QDebug operator<<(QDebug dbg, const Imager::Settings::ptr &settings) { return dbg << *settings; }
 #endif // IMAGER_DRIVER_H

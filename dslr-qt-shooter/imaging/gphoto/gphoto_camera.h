@@ -21,7 +21,7 @@ public:
 public slots:
   virtual void connect();
   virtual void disconnect();
-  virtual Image::ptr shoot(const Imager::Settings::ptr &settings) const;
+  virtual Image::ptr shoot(const Imager::Settings &settings) const;
 private:
   D_PTR
 };

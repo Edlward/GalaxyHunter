@@ -17,13 +17,11 @@ public:
     virtual QString about() const {
         return "";
     }
-    class Settings;
-    friend class Settings;
-    virtual std::shared_ptr<Imager::Settings> settings();
+    virtual Settings settings();
 public slots:
     virtual void connect();
     virtual void disconnect();
-    virtual Image::ptr shoot(const Imager::Settings::ptr &settings) const;
+    virtual Image::ptr shoot(const Settings &settings) const;
 private:
     ShooterSettings &shooterSettings;
 };

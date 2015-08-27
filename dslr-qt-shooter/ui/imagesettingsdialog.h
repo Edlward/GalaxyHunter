@@ -35,7 +35,7 @@ class ImageSettingsDialog : public QDialog
     Q_OBJECT
 public:
     ~ImageSettingsDialog();
-    ImageSettingsDialog(const Imager::Settings::ptr &imagerSettings, QWidget* parent);
+    ImageSettingsDialog(Imager::Settings &imagerSettings, QWidget* parent);
 public slots:
   void accept();
 private:
