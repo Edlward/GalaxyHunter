@@ -2,6 +2,7 @@
 #include "imagesettingsdialog.h"
 #include "messageswindow.h"
 #include "camerasetup.h"
+#include "sequenceswidget.h"
 #include "commons/logmessage.h"
 #include <commons/shootersettings.h>
 #include "ui_dslr_shooter_window.h"
@@ -66,6 +67,7 @@ public:
     void saveState();
     ZoomableImage *imageView;
     QThread imagingManagerThread;
+    SequencesWidget* sequencesEditor;
 private:
   DSLR_Shooter_Window *q;
 };
@@ -107,6 +109,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(qApp, &QApplication::aboutToQuit, bind(&QThread::quit, &d->imagingManagerThread));
   
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->camera_setup_dock);
+  tabifyDockWidget(d->ui->camera_information_dock, d->ui->sequencesDock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->focus_dock);
   d->ui->camera_information_dock->raise();
@@ -123,6 +126,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMap<QDockWidget*, QAction*> dockWidgetsActions {
     {d->ui->camera_information_dock, d->ui->actionCamera_Information},
     {d->ui->camera_setup_dock, d->ui->actionCamera_Setup},
+    {d->ui->sequencesDock, d->ui->actionSequences_Editor},
     {d->ui->guider_dock, d->ui->actionGuider},
     {d->ui->focus_dock, d->ui->actionFocusing},
     {logsDockWidget, d->ui->actionLogs_Messages},
@@ -130,6 +134,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   
   
   d->ui->camera_setup_dock->setWidget(d->cameraSetup = new CameraSetup{d->shooterSettings});
+  d->ui->sequencesDock->setWidget(d->sequencesEditor = new SequencesWidget{d->shooterSettings});
 
   for(auto dockwidget : dockWidgetsActions.keys()) {
     connect(dockwidget, &QDockWidget::dockLocationChanged, [=]{ d->saveState(); });
@@ -312,6 +317,7 @@ void DSLR_Shooter_Window::camera_connected()
   d->ui->camera_infos->setText(camera_infos);
   d->ui->actionShoot->setEnabled(true);
   d->cameraSetup->setCamera(d->imager);
+  d->sequencesEditor->setImager(d->imager);
 }
 
 void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
@@ -345,6 +351,7 @@ void DSLR_Shooter_Window::camera_disconnected()
   d->ui->actionShoot->setDisabled(true);
   disconnect(d->imageView, SLOT(setImage(const QImage &)));
   d->cameraSetup->setCamera({});
+  d->sequencesEditor->setImager({});
 }
 
 void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)

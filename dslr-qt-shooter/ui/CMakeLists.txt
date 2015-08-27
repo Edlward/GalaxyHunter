@@ -7,6 +7,7 @@ set(dslr_ui_SOURCES
   messageswindow.ui
   camera_setup.ui
   camerasetup.cpp
+  sequenceswidget.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})

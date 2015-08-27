@@ -33,7 +33,7 @@
      <x>0</x>
      <y>0</y>
      <width>772</width>
-     <height>27</height>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
@@ -63,6 +63,7 @@
     </property>
     <addaction name="actionCamera_Information"/>
     <addaction name="actionCamera_Setup"/>
+    <addaction name="actionSequences_Editor"/>
     <addaction name="actionGuider"/>
     <addaction name="actionFocusing"/>
     <addaction name="actionLogs_Messages"/>
@@ -116,6 +117,15 @@
    <widget class="QWidget" name="dockWidgetContents_2">
     <layout class="QGridLayout" name="gridLayout_8"/>
    </widget>
+  </widget>
+  <widget class="QDockWidget" name="sequencesDock">
+   <property name="windowTitle">
+    <string>Se&amp;quences Editor</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_5"/>
   </widget>
   <widget class="QDockWidget" name="guider_dock">
    <property name="windowTitle">
@@ -433,6 +443,14 @@
    </property>
    <property name="text">
     <string>Stop Shooting</string>
+   </property>
+  </action>
+  <action name="actionSequences_Editor">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Sequences Editor</string>
    </property>
   </action>
  </widget>
