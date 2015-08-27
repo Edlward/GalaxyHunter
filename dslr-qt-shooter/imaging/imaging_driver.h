@@ -45,11 +45,14 @@ public:
     QString serialShootPort;
     bool operator==(const Settings &other) const;
   };
+  struct Info {
+    QString summary;
+    QString model;
+    QString about;
+  };
   
-  virtual QString summary() const = 0; // TODO: documentation
-  virtual QString model() const = 0;  // TODO: documentation
-  virtual QString about() const = 0; // TODO: documentation
-  virtual Settings settings() = 0;
+  virtual Info info() const = 0;
+  virtual Settings settings() const = 0;
       
 public slots:
   virtual void connect() = 0;

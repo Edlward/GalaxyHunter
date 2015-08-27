@@ -42,12 +42,9 @@ private:
 
 class GPhotoCamera::Private {
 public:
-  Private(const shared_ptr<GPhotoCameraInformation> &info, ShooterSettings &shooterSettings, GPhotoCamera *q)
-    : model(QString::fromStdString(info->name)), port(info->port), context(info->context), mutex(info->mutex), shooterSettings{shooterSettings}, q(q) {}
+  Private(const shared_ptr<GPhotoCameraInformation> &info, ShooterSettings &shooterSettings, GPhotoCamera *q);
   string port;
-  QString model;
-  QString about;
-  QString summary;
+  Info info;
   GPContext* context;
   Camera *camera = nullptr;
   QString outputDirectory;
@@ -73,7 +70,6 @@ public:
 private:
   GPhotoCamera *q;
 };
-
 
 
 #endif

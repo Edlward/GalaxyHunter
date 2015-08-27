@@ -46,12 +46,12 @@ ImagingDriver::ImagingDriver(QObject *parent) : QObject(parent) {
 
 void ImagingDriver::camera_error(Imager* camera, const QString& message)
 {
-  emit imager_message(LogMessage::error(camera->model(), message) );
+  emit imager_message(LogMessage::error(camera->info().model, message) );
 }
 
 void ImagingDriver::camera_message(Imager* camera, const QString& message)
 {
-  emit imager_message(LogMessage::info(camera->model(), message) );
+  emit imager_message(LogMessage::info(camera->info().model, message) );
 }
 
 void ImagingDriver::scan()

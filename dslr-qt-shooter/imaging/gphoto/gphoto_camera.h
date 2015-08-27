@@ -11,11 +11,8 @@ class GPhotoCamera : public Imager {
 public:
   GPhotoCamera(const std::shared_ptr<GPhotoCameraInformation> &gphotoCameraInformation, ShooterSettings &shooterSettings);
   ~GPhotoCamera();
-  virtual QString summary() const;
-  virtual QString model() const;
-  virtual QString about() const;
-  
-  virtual Settings settings();
+  virtual Info info() const;
+  virtual Settings settings() const;
 public slots:
   virtual void connect();
   virtual void disconnect();

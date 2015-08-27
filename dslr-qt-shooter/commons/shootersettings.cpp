@@ -102,7 +102,7 @@ ShooterSettings::ShootMode ShooterSettings::shootMode() const
 
 shared_ptr<ShooterSettings::Camera> ShooterSettings::camera(const ImagerPtr& imager, const Imager::Settings &settings)
 {
-  return CameraPtr{new Camera(imager->model(), d->settings, settings)};
+  return CameraPtr{new Camera(imager->info().model, d->settings, settings)};
 }
 
 

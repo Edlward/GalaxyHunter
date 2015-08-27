@@ -185,7 +185,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{
     setCamera->clear();
     for(auto camera: d->imagingDriver->imagers()) {
-      connect(setCamera->addAction(camera->model()), &QAction::triggered, [=] {
+      connect(setCamera->addAction(camera->info().model), &QAction::triggered, [=] {
         set_imager(camera);
       });
     }
@@ -306,9 +306,9 @@ void DSLR_Shooter_Window::camera_connected()
 {
   d->ui->camera_infos->clear();
   QString camera_infos = QString("Model: %1\nSummary: %2")
-    .arg(d->imager->model())
-    .arg(d->imager->summary());
-  got_message(LogMessage::info("General", QString("Camera connected: %1").arg(d->imager->model())));
+    .arg(d->imager->info().model)
+    .arg(d->imager->info().summary);
+  got_message(LogMessage::info("General", QString("Camera connected: %1").arg(d->imager->info().model)));
   d->ui->camera_infos->setText(camera_infos);
   d->ui->actionShoot->setEnabled(true);
   d->cameraSetup->setCamera(d->imager);

@@ -8,16 +8,8 @@ class TestingImager : public Imager {
     Q_OBJECT
 public:
     TestingImager(ShooterSettings &settings);
-    virtual QString summary() const {
-        return "---- Testing Imager ----";
-    }
-    virtual QString model() const {
-        return "Testing Imager v.0.0";
-    }
-    virtual QString about() const {
-        return "";
-    }
-    virtual Settings settings();
+    virtual Settings settings() const;
+    virtual Info info() const;
 public slots:
     virtual void connect();
     virtual void disconnect();

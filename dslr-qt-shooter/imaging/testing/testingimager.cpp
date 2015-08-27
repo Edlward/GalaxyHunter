@@ -61,16 +61,12 @@ void TestingImage::save_to(const QString& path)
   image.save(path);
 }
 
-/*
- *   ComboSetting _shutterSpeed{"1", {"1", "2", "5"}};
-  ComboSetting _imageFormat{"PNG", {"PNG"}};
-  ComboSetting _iso{"100", {"100", "200"}};
-  qulonglong _manualExposure = 0;
-  QString _serialPort = "/dev/ttyUSB0";
-  */
+Imager::Info TestingImager::info() const
+{
+  return { "Testing Imager", "testing imager model", "simulator" };
+}
 
-
-Imager::Settings TestingImager::settings()
+Imager::Settings TestingImager::settings() const
 {
   return {
     {"1", {"1", "1", "2", "5"}},

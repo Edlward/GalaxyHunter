@@ -17,6 +17,14 @@ QString gphoto_error(int errorCode)
     return QString(errorMessage);
 }
 
+
+GPhotoCamera::Private::Private ( const shared_ptr< GPhotoCameraInformation >& info, ShooterSettings& shooterSettings, GPhotoCamera* q )
+  : port(info->port), context(info->context), mutex(info->mutex), shooterSettings{shooterSettings}, q(q)
+{
+  this->info.model = QString::fromStdString(info->name);
+}
+
+
 GPhotoCamera::Private::GPhotoComboSetting::GPhotoComboSetting ( GPhotoCamera::Private* d, const QString& settingName )
   : d{d}, settingName{settingName}
 {
@@ -96,7 +104,7 @@ void GPhotoCamera::connect()
   gp_api{{
     sequence_run( [&]{ return gp_abilities_list_new (&abilities_list); } ),
     sequence_run( [&]{ return gp_abilities_list_load(abilities_list, d->context); } ),
-    sequence_run( [&]{ model = gp_abilities_list_lookup_model(abilities_list, d->model.toLocal8Bit()); return model; } ),
+    sequence_run( [&]{ model = gp_abilities_list_lookup_model(abilities_list, d->info.model.toLocal8Bit()); return model; } ),
     sequence_run( [&]{ return gp_abilities_list_get_abilities(abilities_list, model, &abilities); } ),
     sequence_run( [&]{ return gp_camera_set_abilities(d->camera, abilities); } ),
     sequence_run( [&]{ return gp_port_info_list_new(&portInfoList); } ),
@@ -111,8 +119,8 @@ void GPhotoCamera::connect()
     qDebug() << "on " << label << ": " << gphoto_error(errorCode);
     emit error(this, gphoto_error(errorCode));
   }).run_last([&]{
-    d->summary = QString(camera_summary.text);
-    d->about = QString(camera_about.text);
+    d->info.summary = QString(camera_summary.text);
+    d->info.about = QString(camera_about.text);
     emit connected();    
   });  
   // TODO d->reloadSettings();
@@ -123,7 +131,7 @@ void GPhotoCamera::connect()
   d->imagerSettings.shutterSpeed = Private::GPhotoComboSetting(d.get(), "shutterspeed");
 }
 
-Imager::Settings GPhotoCamera::settings()
+Imager::Settings GPhotoCamera::settings() const
 {
     return d->imagerSettings;
 }
@@ -282,20 +290,6 @@ void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_
 
 */
 
-QString GPhotoCamera::about() const
-{
-  return d->about;
-}
-
-QString GPhotoCamera::model() const
-{
-  return d->model;
-}
-
-QString GPhotoCamera::summary() const
-{
-  return d->summary;
-}
 
 
 GPhotoCamera::~GPhotoCamera()
@@ -337,16 +331,9 @@ QString CameraTempFile::mimeType() const
   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
   return QString(mime);
 }
-/*
-uint64_t GPhotoCamera::manualExposure() const
+
+Imager::Info GPhotoCamera::info() const
 {
-    return d->manualExposure;
+  return d->info;
 }
 
-void GPhotoCamera::setManualExposure(uint64_t seconds)
-{
-    d->manualExposure = seconds;
-    if(seconds > 0) {
-      setShutterSpeed("Bulb");
-    }
-}*/
