@@ -52,7 +52,7 @@ public:
     
     typedef std::shared_ptr<Camera> CameraPtr;
     
-    enum ShootMode { Single, Repeat };
+    enum ShootMode { Single, Continuous, Sequence };
     
     ShootMode shootMode() const;
     void shootMode(ShootMode mode);

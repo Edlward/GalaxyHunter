@@ -67,9 +67,8 @@ void CameraSetup::Private::camera_settings(function<void(Imager::Settings::ptr)>
 
 void CameraSetup::Private::load()
 {
-  auto shootMode = shooterSettings.shootMode();
-  ui->shoot_mode->setCurrentIndex(shootMode == ShooterSettings::Single ? 0 : 1);
-  ui->repeated_shots_settings->setVisible(shootMode == ShooterSettings::Repeat);
+  ui->shoot_mode->setCurrentIndex(static_cast<int>(shooterSettings.shootMode()));
+  ui->repeated_shots_settings->setVisible(shooterSettings.shootMode() == ShooterSettings::ShooterSettings::Sequence);
   ui->ditherAfterShot->setChecked(shooterSettings.ditherAfterEachShot());
   ui->images_count->setValue(shooterSettings.sequenceLength());
   ui->shoot_interval->setTime(shooterSettings.delayBetweenShots());
@@ -106,7 +105,7 @@ CameraSetup::CameraSetup(ShooterSettings& shooterSettings, QWidget* parent) : QW
     d->load();
   });
   connect(d->ui->shoot_mode, F_PTR(QComboBox, currentIndexChanged, int), [=](int index){
-    d->shooterSettings.shootMode( index == 0 ? ShooterSettings::Single : ShooterSettings::Repeat);
+    d->shooterSettings.shootMode( static_cast<ShooterSettings::ShootMode>(index));
     d->load();
   });
   connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool checked){
@@ -174,11 +173,7 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
 
 shared_ptr< ImagingSequence > CameraSetup::imagingSequence() const
 {
-  int sequenceLength = 1;
-  if(d->shooterSettings.shootMode() == ShooterSettings::Repeat) {
-    sequenceLength = d->shooterSettings.sequenceLength() == 0 ? std::numeric_limits<int>().max() : d->shooterSettings.sequenceLength();
-  }
-  ImagingSequence::SequenceSettings sequenceSettings{sequenceLength, d->shooterSettings.delayBetweenShots(), false, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
+  ImagingSequence::SequenceSettings sequenceSettings{d->shooterSettings.shootMode(), d->shooterSettings.sequenceLength(), d->shooterSettings.delayBetweenShots(), false, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
   return make_shared<ImagingSequence>(d->imager, d->imagerSettings, sequenceSettings);
 }
 

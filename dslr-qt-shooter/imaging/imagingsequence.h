@@ -24,17 +24,22 @@
 #include <QDateTime>
 #include "dptr.h"
 #include "imaging_driver.h"
+#include <commons/shootersettings.h>
 
 class ImagingSequence : public QObject
 {
   Q_OBJECT
 public:
   struct SequenceSettings {
+    ShooterSettings::ShootMode mode;
     std::size_t shots;
     QTime delayBetweenShots;
     bool clearPicturesFromCamera;
     bool saveToDisk;
     QString saveDirectory;
+    
+    operator bool() const;
+    std::size_t operator--();
     long long delayInMilliseconds() const;
   };
   ImagingSequence(const ImagerPtr& imager, const Imager::Settings::ptr& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent = 0);

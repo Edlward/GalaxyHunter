@@ -51,13 +51,15 @@ ImagingSequence::ImagingSequence(const ImagerPtr &imager, const Imager::Settings
 
 void ImagingSequence::start()
 {
+  if(d->sequenceSettings.mode == ShooterSettings::Single)
+    d->sequenceSettings.shots = 1;
   emit started();
-  while(d->sequenceSettings.shots > 0 && ! d->aborted) {
+  while(d->sequenceSettings && ! d->aborted) {
     auto image = d->imager->shoot(d->imagerSettings);
     if(d->sequenceSettings.saveToDisk)
       image->save(d->sequenceSettings.saveDirectory);
-    emit this->image(image, --d->sequenceSettings.shots);
-    if(d->sequenceSettings.shots>0)
+    emit this->image(image, --d->sequenceSettings);
+    if(d->sequenceSettings)
       QThread::msleep(d->sequenceSettings.delayInMilliseconds());
   }
   if(d->aborted)
@@ -74,6 +76,19 @@ void ImagingSequence::abort()
 ImagingSequence::~ImagingSequence()
 {
 }
+
+std::size_t ImagingSequence::SequenceSettings::operator--()
+{
+  if(mode == ShooterSettings::Sequence || mode == ShooterSettings::Single)
+    shots--;
+  return mode != ShooterSettings::Continuous ? shots : std::numeric_limits<size_t>().max();
+}
+
+ImagingSequence::SequenceSettings::operator bool() const
+{
+  return mode == ShooterSettings::Continuous || shots > 0;
+}
+
 
 #include "imagingsequence.moc"
 
