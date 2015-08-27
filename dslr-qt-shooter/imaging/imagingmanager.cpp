@@ -54,6 +54,7 @@ void ImagingManager::start(QQueue<std::shared_ptr<ImagingSequence>> sequence)
 {
   while(!sequence.isEmpty()) {
     d->sequence = sequence.dequeue();
+    d->sequence->moveToThread(QThread::currentThread());
     connect(d->sequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
     connect(d->sequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
     connect(d->sequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
