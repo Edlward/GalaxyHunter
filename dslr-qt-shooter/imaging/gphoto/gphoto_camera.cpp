@@ -11,18 +11,20 @@
 #include "Qt/strings.h"
 #include <QFuture>
 
-QString gphoto_error(int errorCode)
-{
-    const char *errorMessage = gp_result_as_string(errorCode);
-    return QString(errorMessage);
-}
-
-
 GPhotoCamera::Private::Private ( const shared_ptr< GPhotoCameraInformation >& info, ShooterSettings& shooterSettings, GPhotoCamera* q )
   : port(info->port), context(info->context), mutex(info->mutex), shooterSettings{shooterSettings}, q(q)
 {
   this->info.model = QString::fromStdString(info->name);
 }
+
+
+void GPhotoCamera::Private::gphoto_error ( int error_code, const QString& file, int line )
+{
+  const char *errorMessage = gp_result_as_string(error_code);
+  qDebug() << "gphoto error on " << file << ":" << line << ": " << errorMessage;
+  emit q->error(q, QString(errorMessage));
+}
+
 
 
 GPhotoCamera::Private::GPhotoComboSetting::GPhotoComboSetting ( GPhotoCamera::Private* d, const QString& settingName )
@@ -41,18 +43,18 @@ void GPhotoCamera::Private::GPhotoComboSetting::load()
   qDebug() << __PRETTY_FUNCTION__ << ": Loading setting:" << settingName;
   comboSetting.available.clear();
   
-  // TODO: error checking
   int result = gp_camera_get_config(d->camera, &settings, d->context);
+  GPHOTO_CHECK_ERROR(result, d)
   result = gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget);
+  GPHOTO_CHECK_ERROR(result, d)
   result = gp_widget_get_value(widget, &value);
-  if(result == GP_OK) {
-    comboSetting.current = QString(value);
-    int choices = gp_widget_count_choices(widget);
-    for(int i=0; i<choices; i++) {
-      const char *choice;
-      if(gp_widget_get_choice(widget, i, &choice) == GP_OK)
-        comboSetting.available.push_back(QString(choice));
-    }
+  GPHOTO_CHECK_ERROR(result, d)
+  comboSetting.current = QString(value);
+  int choices = gp_widget_count_choices(widget);
+  for(int i=0; i<choices; i++) {
+    const char *choice;
+    if(gp_widget_get_choice(widget, i, &choice) == GP_OK)
+      comboSetting.available.push_back(QString(choice));
   }
   gp_widget_free(settings);
 }
@@ -68,8 +70,11 @@ void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::C
   CameraWidget *widget;
   char *value;
   int result = gp_camera_get_config(d->camera, &settings, d->context);
+  GPHOTO_CHECK_ERROR(result, d)
   result = gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget);
+  GPHOTO_CHECK_ERROR(result, d)
   result = gp_widget_set_value(widget, imagerSettings.current.toStdString().c_str() );
+  GPHOTO_CHECK_ERROR(result, d)
   gp_widget_free(settings);
   load();
 }
@@ -78,12 +83,9 @@ void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::C
 GPhotoCamera::GPhotoCamera(const shared_ptr< GPhotoCameraInformation > &gphotoCameraInformation, ShooterSettings &shooterSettings)
   : dptr(gphotoCameraInformation, shooterSettings, this)
 {
-  gp_api{{
-    { [=] { return gp_camera_new(&d->camera); } },
-  }, make_shared<QMutexLocker>(&d->mutex)}.on_error([=](int errorCode, const std::string &label) {
-    qDebug() << gphoto_error(errorCode);
-    emit error(this, gphoto_error(errorCode));
-  });
+  int result =  gp_camera_new(&d->camera);
+  if(result != GP_OK)
+    d->GPHOTO_RETURN_ERROR(result);
 }
 
 
@@ -116,8 +118,7 @@ void GPhotoCamera::connect()
     sequence_run( [&]{ return gp_camera_get_summary(d->camera, &camera_summary, d->context); } ),
     sequence_run( [&]{ return gp_camera_get_about(d->camera, &camera_about, d->context); } ),
   }, make_shared<QMutexLocker>(&d->mutex)}.on_error([=](int errorCode, const std::string &label) {
-    qDebug() << "on " << label << ": " << gphoto_error(errorCode);
-    emit error(this, gphoto_error(errorCode));
+    d->GPHOTO_RETURN_ERROR(errorCode);
   }).run_last([&]{
     d->info.summary = QString(camera_summary.text);
     d->info.about = QString(camera_about.text);
@@ -174,8 +175,7 @@ Image::ptr GPhotoCamera::Private::shootPreset(  )
     camera_file->originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
 //     deletePicturesOnCamera(camera_remote_file); TODO: add again?
   }).on_error([=](int errorCode, const std::string &label) {
-    qDebug() << "on " << QString::fromStdString(label) << ": " << gphoto_error(errorCode) << "(" << errorCode << ")";
-    q->error(q, gphoto_error(errorCode));
+    GPHOTO_RETURN_ERROR(errorCode);
   });
   return camera_file;
 }
@@ -221,18 +221,15 @@ Image::ptr GPhotoCamera::Private::shootTethered( const Imager::Settings& setting
     shoot_future.waitForFinished();
     if(event != GP_EVENT_FILE_ADDED)
     {
-      q->error(q, gphoto_error(result));
-      return {};
+      GPHOTO_RETURN_ERROR(result, {})
     }
     CameraFilePath *newfile  = reinterpret_cast<CameraFilePath*>(data);
     string filename = fixedFilename(newfile->name);
     if( result = gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, *camera_file, context) != GP_OK) {
-      q->error(q, gphoto_error(result));
-      return {};
+      GPHOTO_RETURN_ERROR(result, {})
     }
     if( result = camera_file->save() != GP_OK) {
-      q->error(q, gphoto_error(result));
-      return {};
+      GPHOTO_RETURN_ERROR(result, {})
     }
 
     camera_file->originalName = QString::fromStdString(filename);

@@ -55,6 +55,10 @@ public:
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
   
+  void gphoto_error(int error_code, const QString &file, int line);
+#define GPHOTO_RETURN_ERROR(error_code, ...) gphoto_error(error_code, __FILE__, __LINE__); return __VA_ARGS__ ;
+#define GPHOTO_CHECK_ERROR(error_code, context, ...) if(error_code != GP_OK) { context->GPHOTO_RETURN_ERROR(error_code, __VA_ARGS__) }
+  
   class GPhotoComboSetting {
   public:
     GPhotoComboSetting(Private *d, const QString &settingName); // Loads value from camera
@@ -70,6 +74,5 @@ public:
 private:
   GPhotoCamera *q;
 };
-
 
 #endif
