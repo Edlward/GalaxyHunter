@@ -37,6 +37,7 @@ public:
     bool clearPicturesFromCamera;
     bool saveToDisk;
     QString saveDirectory;
+    bool ditherAfterShots;
     
     operator bool() const;
     std::size_t operator--();
@@ -56,5 +57,6 @@ signals:
   void finished();
   void aborted();
   void image(const Image::ptr &image, int remaining);
+  void dither();
 };
 #endif // IMAGINGSEQUENCE_H

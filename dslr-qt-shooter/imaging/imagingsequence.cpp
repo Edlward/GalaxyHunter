@@ -59,8 +59,11 @@ void ImagingSequence::start()
     if(d->sequenceSettings.saveToDisk)
       image->save(d->sequenceSettings.saveDirectory);
     emit this->image(image, --d->sequenceSettings);
-    if(d->sequenceSettings)
+    if(d->sequenceSettings) {
+      if(d->sequenceSettings.ditherAfterShots)
+        emit this->dither();
       QThread::msleep(d->sequenceSettings.delayInMilliseconds());
+    }
   }
   if(d->aborted)
     emit aborted();

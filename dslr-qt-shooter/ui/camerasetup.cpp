@@ -39,6 +39,7 @@ public:
   void load();
   void camera_settings(function<void(Imager::Settings::ptr)> callback);
   Imager::Settings::ptr imagerSettings;
+  ImagingSequence::SequenceSettings sequenceSettings;
   void show_settings();
 private:
   CameraSetup *q;
@@ -67,17 +68,24 @@ void CameraSetup::Private::camera_settings(function<void(Imager::Settings::ptr)>
 
 void CameraSetup::Private::load()
 {
-  ui->shoot_mode->setCurrentIndex(static_cast<int>(shooterSettings.shootMode()));
-  ui->repeated_shots_settings->setVisible(shooterSettings.shootMode() == ShooterSettings::ShooterSettings::Sequence);
-  ui->ditherAfterShot->setChecked(shooterSettings.ditherAfterEachShot());
-  ui->images_count->setValue(shooterSettings.sequenceLength());
-  ui->shoot_interval->setTime(shooterSettings.delayBetweenShots());
-  auto saveImages = shooterSettings.saveImage();
+  ui->shoot_mode->setCurrentIndex(static_cast<int>(sequenceSettings.mode));
+  ui->repeated_shots_settings->setVisible(sequenceSettings.mode == ShooterSettings::ShooterSettings::Sequence);
+  ui->ditherAfterShot->setChecked(sequenceSettings.ditherAfterShots);
+  ui->images_count->setValue(sequenceSettings.shots);
+  ui->shoot_interval->setTime(sequenceSettings.delayBetweenShots);
+  auto saveImages = sequenceSettings.saveToDisk;
   ui->outputSave->setChecked(saveImages);
   ui->groupBox->setVisible(saveImages ? ui->outputSave : ui->outputSave);
   ui->outputDir->setVisible(saveImages);
-  ui->outputDir->setText(shooterSettings.saveImageDirectory());
+  ui->outputDir->setText(sequenceSettings.saveDirectory);
   ui->imageSettings->setEnabled(imager.operator bool());
+  
+  shooterSettings.shootMode(sequenceSettings.mode);
+  shooterSettings.ditherAfterEachShot(sequenceSettings.ditherAfterShots);
+  shooterSettings.sequenceLength(sequenceSettings.shots);
+  shooterSettings.delayBetweenShots(sequenceSettings.delayBetweenShots);
+  shooterSettings.saveImage(sequenceSettings.saveToDisk);
+  shooterSettings.saveImageDirectory(sequenceSettings.saveDirectory);
 }
 
 
@@ -88,6 +96,8 @@ CameraSetup::~CameraSetup()
 CameraSetup::CameraSetup(ShooterSettings& shooterSettings, QWidget* parent) : QWidget(parent), dptr(shooterSettings, this)
 {
   d->ui->setupUi(this);
+  d->sequenceSettings = { shooterSettings.shootMode(), shooterSettings.sequenceLength(), shooterSettings.delayBetweenShots(), false, 
+    shooterSettings.saveImage(), shooterSettings.saveImageDirectory(), shooterSettings.ditherAfterEachShot() };
   d->fileOutput = new QButtonGroup(this);
   d->fileOutput->addButton(d->ui->outputDiscard);
   d->fileOutput->addButton(d->ui->outputSave);
@@ -97,28 +107,28 @@ CameraSetup::CameraSetup(ShooterSettings& shooterSettings, QWidget* parent) : QW
     auto dir = QFileDialog::getExistingDirectory(this, tr("Save Images Directory"), d->shooterSettings.saveImageDirectory());
     if(dir.isEmpty())
       return;
-    d->shooterSettings.saveImageDirectory(dir);
+    d->sequenceSettings.saveDirectory = dir;
     d->load();
   });
   connect(d->ui->outputSave, &QAbstractButton::toggled, [=](bool save) {
-    d->shooterSettings.saveImage(save);
+    d->sequenceSettings.saveToDisk = save;
     d->load();
   });
   connect(d->ui->shoot_mode, F_PTR(QComboBox, currentIndexChanged, int), [=](int index){
-    d->shooterSettings.shootMode( static_cast<ShooterSettings::ShootMode>(index));
+    d->sequenceSettings.mode = static_cast<ShooterSettings::ShootMode>(index);
     d->load();
   });
   connect(d->ui->ditherAfterShot, &QCheckBox::toggled, [=](bool checked){
-    d->shooterSettings.ditherAfterEachShot(checked);
+    d->sequenceSettings.ditherAfterShots = checked;
     d->load();
   });
   connect(d->ui->images_count, F_PTR(QSpinBox, valueChanged, int), [=](int v){
-    d->shooterSettings.sequenceLength(v);
+    d->sequenceSettings.shots = v;
     d->load();
   });
   
   connect(d->ui->shoot_interval, &QTimeEdit::timeChanged, [=](QTime t) {
-    d->shooterSettings.delayBetweenShots(t);
+    d->sequenceSettings.delayBetweenShots = t;
     d->load();
   });
   d->load();
@@ -173,8 +183,7 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
 
 shared_ptr< ImagingSequence > CameraSetup::imagingSequence() const
 {
-  ImagingSequence::SequenceSettings sequenceSettings{d->shooterSettings.shootMode(), d->shooterSettings.sequenceLength(), d->shooterSettings.delayBetweenShots(), false, d->shooterSettings.saveImage(), d->shooterSettings.saveImageDirectory()};
-  return make_shared<ImagingSequence>(d->imager, d->imagerSettings, sequenceSettings);
+  return make_shared<ImagingSequence>(d->imager, d->imagerSettings, d->sequenceSettings);
 }
 
 
