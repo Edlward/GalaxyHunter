@@ -41,6 +41,15 @@ long long int ImagingSequence::SequenceSettings::delayInMilliseconds() const
   return QTime{0,0,0}.secsTo(delayBetweenShots) * 1000;
 }
 
+ImagingSequence::SequenceSettings ImagingSequence::settings() const
+{
+  return d->sequenceSettings;
+}
+
+Imager::Settings ImagingSequence::imagerSettings() const
+{
+  return d->imagerSettings;
+}
 
 
 
