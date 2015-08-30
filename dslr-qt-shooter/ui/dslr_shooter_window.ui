@@ -33,7 +33,7 @@
      <x>0</x>
      <y>0</y>
      <width>772</width>
-     <height>28</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCamera">
@@ -282,7 +282,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="shoot_toolbar">
    <property name="windowTitle">
     <string>Shooting</string>
    </property>
@@ -450,7 +450,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Sequences Editor</string>
+    <string>Sequences &amp;Editor</string>
    </property>
   </action>
  </widget>

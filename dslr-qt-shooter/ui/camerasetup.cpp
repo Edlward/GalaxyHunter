@@ -40,7 +40,7 @@ public:
   void camera_settings(function<void(Imager::Settings)> callback);
   Imager::Settings imagerSettings;
   ImagingSequence::SequenceSettings sequenceSettings;
-  void show_settings();
+  void update_settings_ui();
 private:
   CameraSetup *q;
 };
@@ -62,7 +62,6 @@ void CameraSetup::Private::camera_settings(function<void(Imager::Settings)> call
     callback(settings);
 //     ui->shoot->setEnabled(true); TODO
     ui->imageSettings->setEnabled(true);
-   imagerSettings = settings;
   });
 }
 
@@ -144,19 +143,13 @@ void CameraSetup::shooting(bool isShooting)
 }
 
 
-void CameraSetup::Private::show_settings()
+void CameraSetup::Private::update_settings_ui()
 {
   ui->isoLabel->setText(imagerSettings.iso.current);
   ui->imageFormatLabel->setText(imagerSettings.imageFormat.current);
   ui->shutterSpeedLabel->setText(imagerSettings.shutterSpeed.current);
   ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(imagerSettings.manualExposureSeconds).toString());
-  // TODO: what is this?
-  auto camera_settings = shooterSettings.camera(imager, imagerSettings);
-  camera_settings->imageFormat(imagerSettings.imageFormat.current);
-  camera_settings->serialPort(imagerSettings.serialShootPort);
-  camera_settings->iso(imagerSettings.iso.current);
-  camera_settings->shutterSpeed(imagerSettings.shutterSpeed.current);
-  camera_settings->manualExposure(imagerSettings.manualExposureSeconds);
+  ui->manualExposureLabel->setVisible(imagerSettings.manualExposure);
 }
 
 
@@ -167,14 +160,17 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
   d->imager = imager;
   if(imager) {
     d->camera_settings([=](const Imager::Settings &settings) {
-    d->imagerSettings = settings;
-    d->show_settings();
-    d->ui->imageSettings->setEnabled(true);
+      d->imagerSettings = *d->shooterSettings.camera(imager, settings);
+      d->update_settings_ui();
+      d->ui->imageSettings->setEnabled(true);
   });
   
   connect(d->ui->imageSettings, &QPushButton::clicked, [=]{
     auto dialog = new ImageSettingsDialog{ d->imagerSettings, this};
-    connect(dialog, &QDialog::accepted, bind(&Private::show_settings, d.get()));
+    connect(dialog, &QDialog::accepted, [=]{
+      d->shooterSettings.camera(imager)->save(d->imagerSettings);
+      d->update_settings_ui();
+    });
     dialog->show();
   });
   }

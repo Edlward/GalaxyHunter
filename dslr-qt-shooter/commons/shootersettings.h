@@ -34,18 +34,12 @@ public:
     class Camera {
     public:
       ~Camera();
-      QString serialPort() const;
-      void serialPort(const QString &serialPort);
-      QString iso() const;
-      void iso(const QString &iso);
-      QString imageFormat() const;
-      void imageFormat(const QString &imageFormat);
-      QString shutterSpeed() const;
-      void shutterSpeed(const QString &shutterSpeed);
-      qlonglong manualExposure() const;
-      void manualExposure(qlonglong manualExposure);
+      operator Imager::Settings() const;
+      void save(const Imager::Settings &imagerSettings);
+      
     private:
       friend class ShooterSettings;
+      Camera(const QString name, QSettings &settings);
       Camera(const QString name, QSettings &settings, const Imager::Settings &imagerSettings);
       D_PTR
     };
@@ -73,6 +67,7 @@ public:
     void saveImageDirectory(const QString &directory);
     
     CameraPtr camera(const ImagerPtr& imager, const Imager::Settings &settings);
+    CameraPtr camera(const ImagerPtr& imager);
 private:
   D_PTR
   friend class Camera;

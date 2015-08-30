@@ -44,7 +44,6 @@ ImageSettingsDialog::ImageSettingsDialog( Imager::Settings& imagerSettings, QWid
   : QDialog(parent), dptr(this, new Ui::ImageSettingsDialog, imagerSettings)
 {
     d->ui->setupUi(this);
-  qDebug() << __PRETTY_FUNCTION__ << imagerSettings;
   auto populateCombo = [=] (QComboBox *combo, const Imager::Settings::ComboSetting &setting) {
     combo->setEnabled(setting);
     for(auto value: setting.available) {

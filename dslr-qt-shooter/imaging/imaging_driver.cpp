@@ -28,6 +28,16 @@ Imager::Settings::ComboSetting::operator bool() const
   return !available.empty();
 }
 
+Imager::Settings::operator bool() const
+{
+  if(iso.available.empty() && shutterSpeed.available.empty() && imageFormat.available.empty())
+    return false;
+  if(shutterSpeed.current.isEmpty() && manualExposureSeconds == 0)
+    return false;
+  return true;
+}
+
+
 bool Imager::Settings::operator== ( const Imager::Settings& other ) const
 {
   return

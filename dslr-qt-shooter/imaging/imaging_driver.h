@@ -44,6 +44,7 @@ public:
     qulonglong manualExposureSeconds;
     QString serialShootPort;
     bool operator==(const Settings &other) const;
+    operator bool() const;
   };
   struct Info {
     QString summary;

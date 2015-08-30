@@ -19,6 +19,7 @@
 
 #include "shootersettings.h"
 #include <QSettings>
+#include <QDebug>
 #include <QStandardPaths>
 #include "utils/qt.h"
 
@@ -48,30 +49,6 @@ T ShooterSettings_get(QSettings &settings, const QString& key, const T& defaultV
 {
   return qvariant_cast<T>(settings.value(key, defaultValue));
 }
-
-class ShooterSettings::Camera::Private {
-public:
-  Private(QSettings &settings, const Imager::Settings &imagerSettings, ShooterSettings::Camera *q);
-  QSettings &settings;
-  Imager::Settings imagerSettings;
-private:
-  ShooterSettings::Camera *q;
-};
-
-ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings& imagerSettings, ShooterSettings::Camera* q) : settings{settings}, imagerSettings{imagerSettings}, q{q}
-{
-}
-
-ShooterSettings::Camera::Camera(const QString name, QSettings& settings, const Imager::Settings &imagerSettings) : dptr(settings, imagerSettings, this)
-{
-  settings.beginGroup("camera_%1"_q % name);
-}
-
-ShooterSettings::Camera::~Camera()
-{
-  d->settings.endGroup();
-}
-
 
 
 ShooterSettings::ShooterSettings(QSettings& settings) : dptr(settings, this)
@@ -105,6 +82,13 @@ shared_ptr<ShooterSettings::Camera> ShooterSettings::camera(const ImagerPtr& ima
   return CameraPtr{new Camera(imager->info().model, d->settings, settings)};
 }
 
+ShooterSettings::CameraPtr ShooterSettings::camera(const ImagerPtr& imager)
+{
+  return CameraPtr{new Camera(imager->info().model, d->settings)};
+}
+
+
+
 
 setting_obj(delayBetweenShots, QTime, QTime(0,0,0))
 setting(ditherAfterEachShot, bool, false)
@@ -112,11 +96,61 @@ setting(saveImage, bool, false)
 setting(sequenceLength, int, 0)
 setting_obj(saveImageDirectory, QString, QStandardPaths::writableLocation(QStandardPaths::PicturesLocation))
 
-setting_obj(serialPort, QString, d->imagerSettings.serialShootPort.isEmpty() ? "/dev/ttyUSB0" : d->imagerSettings.serialShootPort, Camera::)
-setting_obj(iso, QString, d->imagerSettings.iso.current, Camera::)
-setting_obj(imageFormat, QString, d->imagerSettings.imageFormat.current, Camera::)
-setting_obj(shutterSpeed, QString, d->imagerSettings.shutterSpeed.current, Camera::)
-setting(manualExposure, qlonglong, d->imagerSettings.manualExposure, Camera::)
+
+
+class ShooterSettings::Camera::Private {
+public:
+  Private(QSettings &settings, const Imager::Settings &imagerSettings, ShooterSettings::Camera *q);
+  QSettings &settings;
+  Imager::Settings imagerSettings;
+private:
+  ShooterSettings::Camera *q;
+};
+
+ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings& imagerSettings, ShooterSettings::Camera* q) : settings{settings}, imagerSettings{imagerSettings}, q{q}
+{
+}
+
+ShooterSettings::Camera::Camera(const QString name, QSettings& settings) : dptr(settings, {}, this)
+{
+  settings.beginGroup("camera_%1"_q % name);
+}
+
+
+ShooterSettings::Camera::Camera(const QString name, QSettings& settings, const Imager::Settings &imagerSettings) : dptr(settings, imagerSettings, this)
+{
+  qDebug() << "loading settings from default: " << imagerSettings;
+  settings.beginGroup("camera_%1"_q % name);
+  d->imagerSettings.imageFormat.current = d->settings.value("image_format", imagerSettings.imageFormat.current).toString();
+  d->imagerSettings.iso.current = d->settings.value("iso", imagerSettings.iso.current).toString();
+  d->imagerSettings.shutterSpeed.current = d->settings.value("shutter_speed", imagerSettings.shutterSpeed.current).toString();
+  d->imagerSettings.manualExposure = d->settings.value("manual_exposure", imagerSettings.manualExposure).toBool();
+  d->imagerSettings.manualExposureSeconds = d->settings.value("manual_exposure_seconds", imagerSettings.manualExposureSeconds).toLongLong();
+  d->imagerSettings.serialShootPort = d->settings.value("serial_shoot_port", imagerSettings.serialShootPort).toString();
+  qDebug() << "settings loaded: " << d->imagerSettings;
+}
+
+void ShooterSettings::Camera::save(const Imager::Settings& imagerSettings)
+{
+  d->imagerSettings = imagerSettings;
+  d->settings.setValue("image_format", d->imagerSettings.imageFormat.current);
+  d->settings.setValue("iso", d->imagerSettings.iso.current);
+  d->settings.setValue("shutter_speed", d->imagerSettings.shutterSpeed.current);
+  d->settings.setValue("manual_exposure", d->imagerSettings.manualExposure);
+  d->settings.setValue("manual_exposure_seconds", d->imagerSettings.manualExposureSeconds);
+  d->settings.setValue("serial_shoot_port", d->imagerSettings.serialShootPort);
+  qDebug() << "saved: " << d->imagerSettings;
+}
+
+ShooterSettings::Camera::~Camera()
+{
+  d->settings.endGroup();
+}
+
+ShooterSettings::Camera::operator Imager::Settings() const
+{
+  return d->imagerSettings;
+}
 
 
 
