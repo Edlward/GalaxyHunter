@@ -95,11 +95,16 @@ void DSLR_Shooter_Window::Private::saveState()
 DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   QMainWindow(parent), dptr(this, new Ui::DSLR_Shooter_Window)
 {
+  d->ui->setupUi(this);
+  connect(d->ui->actionAbout, &QAction::triggered, bind(&QMessageBox::about, this, tr("About"),
+                                                          tr("%1 version %2.\nDSLR management application for Astronomy").arg(qApp->applicationDisplayName())
+                                                         .arg(qApp->applicationVersion())));
+  connect(d->ui->actionAbout_Qt, &QAction::triggered, &QApplication::aboutQt);
+  setWindowIcon(QIcon::fromTheme(PROJECT_NAME));
   d->imagingManager->moveToThread(&d->imagingManagerThread);
   d->imagingManagerThread.start();
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
-  d->ui->setupUi(this);
   setWindowTitle(PROJECT_NICE_NAME);
   d->ui->imageContainer->setLayout(new QBoxLayout(QBoxLayout::BottomToTop));
   d->ui->imageContainer->layout()->setSpacing(0);
