@@ -27,6 +27,7 @@
 #include <QStandardItemModel>
 #include <QDialogButtonBox>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QToolBar>
 using namespace std;
 
@@ -73,6 +74,11 @@ public:
   void clearSequence();
   QStandardItemModel model;
   QList<shared_ptr<SequenceItem>> sequences;
+    QAction* add_action;
+    QAction* remove_action;
+    QAction* move_up_action;
+    QAction* move_down_action;
+    QAction* clear_action;
 private:
   SequencesWidget *q;
 };
@@ -91,14 +97,16 @@ SequencesWidget::~SequencesWidget()
 SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* parent) : QWidget{parent}, dptr(shooterSettings, this)
 {
     d->ui->setupUi(this);
-    auto toolbar = new QToolBar("sequence toolbar", this);
-    toolbar->addAction(QIcon::fromTheme("list-add"), "New sequence");
-    toolbar->addAction(QIcon::fromTheme("list-remove"), "Remove sequence");
-    toolbar->addAction(QIcon::fromTheme("arrow-up"), "Move up");
-    toolbar->addAction(QIcon::fromTheme("arrow-down"), "Move down");
-    toolbar->addAction(QIcon::fromTheme("edit-clear-list"), "Clear all");
-    connect(d->ui->addSequenceItem, &QPushButton::clicked, bind(&Private::addSequenceItem, d.get()));
-    connect(d->ui->clearSequence, &QPushButton::clicked, bind(&Private::clearSequence, d.get()));
+    d->ui->toolbarContainer->setLayout(new QVBoxLayout);
+    auto toolbar = new QToolBar("sequence toolbar", d->ui->toolbarContainer);
+    d->ui->toolbarContainer->layout()->addWidget(toolbar);
+    d->add_action = toolbar->addAction(QIcon::fromTheme("list-add"), "New sequence");
+    d->remove_action = toolbar->addAction(QIcon::fromTheme("list-remove"), "Remove sequence");
+    d->move_up_action = toolbar->addAction(QIcon::fromTheme("arrow-up"), "Move up");
+    d->move_down_action = toolbar->addAction(QIcon::fromTheme("arrow-down"), "Move down");
+    d->clear_action = toolbar->addAction(QIcon::fromTheme("edit-clear-list"), "Clear all");
+    connect(d->add_action, &QAction::triggered, bind(&Private::addSequenceItem, d.get()));
+    connect(d->clear_action, &QAction::triggered, bind(&Private::clearSequence, d.get()));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
     d->model.setHorizontalHeaderLabels({tr("Name"), tr("Shots"), tr("Exposure")});
@@ -138,8 +146,11 @@ void SequencesWidget::setImager(const ImagerPtr& imager)
 {
   d->imager = imager;
   d->clearSequence();
-  d->ui->addSequenceItem->setEnabled(imager.operator bool());
-  d->ui->clearSequence->setEnabled(imager.operator bool());
+  d->add_action->setEnabled(imager.operator bool());
+  d->move_down_action->setDisabled(true);
+  d->move_up_action->setDisabled(true);
+  d->remove_action->setDisabled(true);
+  d->clear_action->setEnabled(imager.operator bool());
 }
 
 void SequencesWidget::Private::clearSequence()
