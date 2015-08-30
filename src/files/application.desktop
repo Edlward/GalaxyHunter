@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=DSLR-Qt-Shooter
+Name=${PROJECT_NAME}
 Comment=Astronomy DSLR Manager, with autoguider and telescope control
-Exec=dslr-qt-shooter
-Icon=dslr-qt-shooter
+Exec=${PROJECT_NAME}
+Icon=${PROJECT_NAME}
 Terminal=false
 Categories=Science;Graphics
