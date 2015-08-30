@@ -9,4 +9,10 @@ Requirements
 
 Qt >= 5.4
 GPhoto2
+cfitsio
+graphicsmagick/imagemagick
+boost
 
+Credits
+--------
+Application icon: [http://rocketdock.com/addon/icons/44869 - Dottom](http://rocketdock.com/addon/icons/44869)
