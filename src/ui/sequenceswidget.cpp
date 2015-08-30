@@ -26,25 +26,41 @@
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QDialogButtonBox>
+#include <QLineEdit>
 using namespace std;
 
-class SequenceItem : public QStandardItem {
+class SequenceItem {
 public:
-  SequenceItem(const ImagingSequence::ptr &sequence);
+  SequenceItem(const QString &name, const ImagingSequence::ptr &sequence);
+  operator QList<QStandardItem*>() const;
   ImagingSequence::ptr sequence;
+  QString name;
+  QList<shared_ptr<QStandardItem>> columns;
 };
 
-SequenceItem::SequenceItem(const ImagingSequence::ptr& sequence) : sequence{sequence}
+SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequence) : sequence{sequence}
 {
   QString shots = "1";
   if(sequence->settings().mode == ShooterSettings::Continuous)
-    shots = "infinite";
+    shots = qApp->tr("infinite");
   if(sequence->settings().mode == ShooterSettings::Sequence)
     shots = QString::number(sequence->settings().shots);
-  auto exposure = sequence->imagerSettings().manualExposure ? QTime{0,0,0}.addSecs(sequence->imagerSettings().manualExposureSeconds).toString() : sequence->imagerSettings().shutterSpeed.current;
+  auto exposure = sequence->imagerSettings().manualExposure ? 
+    QTime{0,0,0}.addSecs(sequence->imagerSettings().manualExposureSeconds).toString() :
+    sequence->imagerSettings().shutterSpeed.current + qApp->tr(" (preset)");
   qDebug() << "shots: " << shots << ", exposure: " << exposure;
-  setText("Images: %1, exposure: %2"_q % shots % exposure );
+  columns.push_back(make_shared<QStandardItem>(name));
+  columns.push_back(make_shared<QStandardItem>(shots));
+  columns.push_back(make_shared<QStandardItem>(exposure));
 }
+
+ SequenceItem::operator QList<QStandardItem*>() const
+{
+  QList<QStandardItem*> _columns;
+  transform(begin(columns), end(columns), back_inserter(_columns), [=](const shared_ptr<QStandardItem> &item) {return item.get(); });
+  return _columns;
+}
+
 
 class SequencesWidget::Private {
 public:
@@ -78,6 +94,7 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
     connect(d->ui->clearSequence, &QPushButton::clicked, bind(&Private::clearSequence, d.get()));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
+    d->model.setHorizontalHeaderLabels({tr("Name"), tr("Shots"), tr("Exposure")});
     d->ui->sequenceItems->setModel(&d->model);
 }
 
@@ -90,9 +107,12 @@ void SequencesWidget::Private::addSequenceItem()
   QDialog *dialog = new QDialog(q);
   dialog->resize(500, 450);
   dialog->setModal(true);
-  dialog->setLayout(new QGridLayout);
+  dialog->setLayout(new QVBoxLayout);
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager);
+  dialog->layout()->addWidget(new QLabel{tr("Sequence Name")});
+  auto lineedit = new QLineEdit;
+  dialog->layout()->addWidget(lineedit);
   dialog->layout()->addWidget(cameraSetup);
   auto buttonBox = new QDialogButtonBox;
   connect(buttonBox->addButton(QDialogButtonBox::Cancel), &QPushButton::clicked, dialog, &QDialog::reject);
@@ -100,10 +120,10 @@ void SequencesWidget::Private::addSequenceItem()
   dialog->layout()->addWidget(buttonBox);
   if(dialog->exec() != QDialog::Accepted)
     return;
-  qDebug() << "sequence with settings: " << cameraSetup->imagingSequence()->imagerSettings();
-  auto sequenceItem = make_shared<SequenceItem>(cameraSetup->imagingSequence());
+  qDebug() << "sequence with name: " << lineedit->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
+  auto sequenceItem = make_shared<SequenceItem>(lineedit->text(), cameraSetup->imagingSequence());
   sequences.push_back(sequenceItem);
-  model.appendRow(sequenceItem.get());
+  model.appendRow(*sequenceItem);
 }
 
 void SequencesWidget::setImager(const ImagerPtr& imager)

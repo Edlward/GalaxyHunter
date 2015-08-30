@@ -42,7 +42,6 @@ public:
     operator bool() const;
     std::size_t operator--();
     long long delayInMilliseconds() const;
-    QString name;
   };
   ImagingSequence(const ImagerPtr& imager, const Imager::Settings& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent = 0);
   SequenceSettings settings() const;
