@@ -27,6 +27,7 @@
 #include <QStandardItemModel>
 #include <QDialogButtonBox>
 #include <QLineEdit>
+#include <QToolBar>
 using namespace std;
 
 class SequenceItem {
@@ -90,12 +91,19 @@ SequencesWidget::~SequencesWidget()
 SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* parent) : QWidget{parent}, dptr(shooterSettings, this)
 {
     d->ui->setupUi(this);
+    auto toolbar = new QToolBar("sequence toolbar", this);
+    toolbar->addAction(QIcon::fromTheme("list-add"), "New sequence");
+    toolbar->addAction(QIcon::fromTheme("list-remove"), "Remove sequence");
+    toolbar->addAction(QIcon::fromTheme("arrow-up"), "Move up");
+    toolbar->addAction(QIcon::fromTheme("arrow-down"), "Move down");
+    toolbar->addAction(QIcon::fromTheme("edit-clear-list"), "Clear all");
     connect(d->ui->addSequenceItem, &QPushButton::clicked, bind(&Private::addSequenceItem, d.get()));
     connect(d->ui->clearSequence, &QPushButton::clicked, bind(&Private::clearSequence, d.get()));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
     d->model.setHorizontalHeaderLabels({tr("Name"), tr("Shots"), tr("Exposure")});
     d->ui->sequenceItems->setModel(&d->model);
+    
 }
 
 Sequence SequencesWidget::sequence() const
