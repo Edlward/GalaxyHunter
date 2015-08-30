@@ -32,7 +32,7 @@ private:
 };
 
 ImagingSequence::Private::Private(const ImagerPtr& imager, const Imager::Settings& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, ImagingSequence* q)
-  : imager{imager}, imagerSettings{imagerSettings}, sequenceSettings{sequenceSettings}, q{q}
+  : imager(imager), imagerSettings(imagerSettings), sequenceSettings(sequenceSettings), q(q)
 {
 }
 

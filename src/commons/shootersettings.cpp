@@ -107,7 +107,7 @@ private:
   ShooterSettings::Camera *q;
 };
 
-ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings& imagerSettings, ShooterSettings::Camera* q) : settings{settings}, imagerSettings{imagerSettings}, q{q}
+ShooterSettings::Camera::Private::Private(QSettings& settings, const Imager::Settings& imagerSettings, ShooterSettings::Camera* q) : settings(settings), imagerSettings(imagerSettings), q{q}
 {
 }
 
