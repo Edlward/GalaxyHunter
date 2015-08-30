@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Version=1.0
-Name=${PROJECT_NAME}
+Version=${VERSION_STRING}
+Name=${PROJECT_NICE_NAME}
 Comment=Astronomy DSLR Manager, with autoguider and telescope control
 Exec=${PROJECT_NAME}
 Icon=${PROJECT_NAME}

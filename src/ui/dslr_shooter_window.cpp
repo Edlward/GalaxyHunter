@@ -34,6 +34,7 @@
 #include <qwt-src/qwt_symbol.h>
 #include "telescope/telescopecontrol.h"
 #include "GuLinux-Commons/Qt/zoomableimage.h"
+#include "commons/version.h"
 
 using namespace std;
 using namespace std::placeholders;
@@ -99,6 +100,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->trayIcon.show();
   d->logs.setHorizontalHeaderLabels({tr("Time"), tr("Type"), tr("Source"), tr("Message")});
   d->ui->setupUi(this);
+  setWindowTitle(PROJECT_NICE_NAME);
   d->ui->imageContainer->setLayout(new QBoxLayout(QBoxLayout::BottomToTop));
   d->ui->imageContainer->layout()->setSpacing(0);
   d->ui->imageContainer->layout()->setMargin(0);
