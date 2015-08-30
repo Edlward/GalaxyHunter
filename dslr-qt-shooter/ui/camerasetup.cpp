@@ -149,14 +149,14 @@ void CameraSetup::Private::show_settings()
   ui->isoLabel->setText(imagerSettings.iso.current);
   ui->imageFormatLabel->setText(imagerSettings.imageFormat.current);
   ui->shutterSpeedLabel->setText(imagerSettings.shutterSpeed.current);
-  ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(imagerSettings.manualExposure).toString());
+  ui->manualExposureLabel->setText(QTime(0,0,0).addSecs(imagerSettings.manualExposureSeconds).toString());
   // TODO: what is this?
   auto camera_settings = shooterSettings.camera(imager, imagerSettings);
   camera_settings->imageFormat(imagerSettings.imageFormat.current);
   camera_settings->serialPort(imagerSettings.serialShootPort);
   camera_settings->iso(imagerSettings.iso.current);
   camera_settings->shutterSpeed(imagerSettings.shutterSpeed.current);
-  camera_settings->manualExposure(imagerSettings.manualExposure);
+  camera_settings->manualExposure(imagerSettings.manualExposureSeconds);
 }
 
 

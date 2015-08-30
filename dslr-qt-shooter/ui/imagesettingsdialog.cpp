@@ -69,7 +69,7 @@ ImageSettingsDialog::ImageSettingsDialog( Imager::Settings& imagerSettings, QWid
     d->ui->shutterSpeedManual->setEnabled(checked);
     d->ui->serialShootPort->setEnabled(checked);
     d->ui->pickSerialShootPort->setEnabled(checked);
-    d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings.manualExposure));
+    d->ui->shutterSpeedManual->setTime(QTime(0,0,0).addSecs(d->imagerSettings.manualExposureSeconds));
     d->imagerSettings.manualExposure = checked;
   };
   d->ui->serialShootPort->setText(d->imagerSettings.serialShootPort);
