@@ -23,19 +23,19 @@
 #include <QDialog>
 #include "Qt/strings.h"
 #include <QLabel>
-
+#include <QStandardItem>
+#include <QStandardItemModel>
+#include <QDialogButtonBox>
 using namespace std;
 
-class SequenceWidget : public QWidget {
-  Q_OBJECT
+class SequenceItem : public QStandardItem {
 public:
-  SequenceWidget(const ImagingSequence::ptr &sequence, QWidget *parent = 0);
+  SequenceItem(const ImagingSequence::ptr &sequence);
   ImagingSequence::ptr sequence;
 };
 
-SequenceWidget::SequenceWidget(const ImagingSequence::ptr& sequence, QWidget* parent) : QWidget{parent}, sequence{sequence}
+SequenceItem::SequenceItem(const ImagingSequence::ptr& sequence) : sequence{sequence}
 {
-  setLayout(new QHBoxLayout);
   QString shots = "1";
   if(sequence->settings().mode == ShooterSettings::Continuous)
     shots = "infinite";
@@ -43,7 +43,7 @@ SequenceWidget::SequenceWidget(const ImagingSequence::ptr& sequence, QWidget* pa
     shots = QString::number(sequence->settings().shots);
   auto exposure = sequence->imagerSettings().manualExposure ? QTime{0,0,0}.addSecs(sequence->imagerSettings().manualExposureSeconds).toString() : sequence->imagerSettings().shutterSpeed.current;
   qDebug() << "shots: " << shots << ", exposure: " << exposure;
-  layout()->addWidget(new QLabel{"Images: %1, exposure: %2"_q % shots % exposure });
+  setText("Images: %1, exposure: %2"_q % shots % exposure );
 }
 
 class SequencesWidget::Private {
@@ -54,7 +54,8 @@ public:
   shared_ptr<Ui::SequencesWidget> ui;
   void addSequenceItem();
   void clearSequence();
-  QList<shared_ptr<SequenceWidget>> sequences;
+  QStandardItemModel model;
+  QList<shared_ptr<SequenceItem>> sequences;
 private:
   SequencesWidget *q;
 };
@@ -77,6 +78,7 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
     connect(d->ui->clearSequence, &QPushButton::clicked, bind(&Private::clearSequence, d.get()));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
+    d->ui->sequenceItems->setModel(&d->model);
 }
 
 Sequence SequencesWidget::sequence() const
@@ -92,11 +94,16 @@ void SequencesWidget::Private::addSequenceItem()
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager);
   dialog->layout()->addWidget(cameraSetup);
-  dialog->exec();
+  auto buttonBox = new QDialogButtonBox;
+  connect(buttonBox->addButton(QDialogButtonBox::Cancel), &QPushButton::clicked, dialog, &QDialog::reject);
+  connect(buttonBox->addButton(QDialogButtonBox::Ok), &QPushButton::clicked, dialog, &QDialog::accept);
+  dialog->layout()->addWidget(buttonBox);
+  if(dialog->exec() != QDialog::Accepted)
+    return;
   qDebug() << "sequence with settings: " << cameraSetup->imagingSequence()->imagerSettings();
-  auto sequenceWidget = make_shared<SequenceWidget>(cameraSetup->imagingSequence());
-  sequences.push_back(sequenceWidget);
-  ui->sequenceItems->layout()->addWidget(sequenceWidget.get());
+  auto sequenceItem = make_shared<SequenceItem>(cameraSetup->imagingSequence());
+  sequences.push_back(sequenceItem);
+  model.appendRow(sequenceItem.get());
 }
 
 void SequencesWidget::setImager(const ImagerPtr& imager)
