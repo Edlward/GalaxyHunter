@@ -19,6 +19,7 @@
 
 #include "sequenceswidget.h"
 #include "ui_sequenceswidget.h"
+#include "ui_addsequenceitem.h"
 #include "camerasetup.h"
 #include <QDialog>
 #include "Qt/strings.h"
@@ -29,6 +30,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QToolBar>
+#include <QComboBox>
 using namespace std;
 
 class SequenceItem {
@@ -170,23 +172,21 @@ Sequence SequencesWidget::sequence() const
 void SequencesWidget::Private::addSequenceItem()
 {
   QDialog *dialog = new QDialog(q);
+  auto dialog_ui = new Ui::AddSequenceItemDialog;
+  dialog_ui->setupUi(dialog);
   dialog->resize(500, 450);
   dialog->setModal(true);
-  dialog->setLayout(new QVBoxLayout);
+  
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager);
-  dialog->layout()->addWidget(new QLabel{tr("Sequence Name")});
-  auto lineedit = new QLineEdit;
-  dialog->layout()->addWidget(lineedit);
-  dialog->layout()->addWidget(cameraSetup);
-  auto buttonBox = new QDialogButtonBox;
-  connect(buttonBox->addButton(QDialogButtonBox::Cancel), &QPushButton::clicked, dialog, &QDialog::reject);
-  connect(buttonBox->addButton(QDialogButtonBox::Ok), &QPushButton::clicked, dialog, &QDialog::accept);
-  dialog->layout()->addWidget(buttonBox);
+  dialog_ui->item_settings_stack->addWidget(cameraSetup);
   if(dialog->exec() != QDialog::Accepted)
     return;
-  qDebug() << "sequence with name: " << lineedit->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
-  auto sequenceItem = make_shared<SequenceItem>(lineedit->text(), cameraSetup->imagingSequence(), &model);
+  qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
+  auto sequenceItem = make_shared<SequenceItem>(dialog_ui->item_name->text(), cameraSetup->imagingSequence(), &model);
+  
+  delete dialog_ui;
+  delete dialog;
   sequences.push_back(sequenceItem);
   model.appendRow(*sequenceItem);
 }

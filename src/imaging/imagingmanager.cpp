@@ -66,6 +66,8 @@ void ImagingManager::start(Sequence sequence)
       connect(imagingSequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
       imagingSequence->start();
     }
+    if(d->sequence.run_after_sequence)
+      d->sequence.run_after_sequence();
     d->sequence = {};
   }
   emit finished();

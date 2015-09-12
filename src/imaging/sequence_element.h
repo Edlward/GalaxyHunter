@@ -7,6 +7,7 @@
 struct SequenceElement {
   ImagingSequence::ptr imagingSequence;
   QString displayName;
+  std::function<void()> run_after_sequence;
 };
 
 class Sequence : public QQueue<SequenceElement> {
