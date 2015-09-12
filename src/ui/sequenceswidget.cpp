@@ -207,6 +207,7 @@ void SequencesWidget::Private::addSequenceItem()
       waitDialog->setLayout(new QVBoxLayout);
       waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
       auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+      waitDialog->layout()->addWidget(buttonBox);
       connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
       connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
       waitDialog->exec();
