@@ -231,6 +231,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->focusThread.start();
   connect(d->focus, &Focus::focus_rate, this, bind(&DSLR_Shooter_Window::focus_received, this, _1), Qt::QueuedConnection);
   connect(d->ui->enable_focus_analysis, &QCheckBox::toggled, [=](bool checked) {
+    d->ui->focus_analysis_widgets->setVisible(checked);
     d->ui->focusing_select_roi->setEnabled(checked);
     if(!checked)
       d->imageView->clearROI();
@@ -253,8 +254,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
 void DSLR_Shooter_Window::focus_received(double value)
 {
     qDebug() << "got focus HFD: " << value;
-    d->ui->focus_analysis_value->display(value);
+    d->ui->focus_analysis_value->setText(QString::number(value, 'f', 5));
     auto history = d->focus->history();
+    d->ui->focus_analysis_best_hdf->setText(QString::number(*std::min_element(begin(history), end(history)), 'f', 5));
     
     QVector<double> x, y;
     int index=0;
@@ -334,7 +336,7 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
   } else {
     d->ui->focusing_graph->graph()->clearData();
     d->ui->focusing_graph->replot();
-    d->ui->focus_analysis_value->display(0);
+    d->ui->focus_analysis_value->clear();
   }
 }
 
