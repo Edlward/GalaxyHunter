@@ -30,6 +30,7 @@ public:
     ~Focus();
     Focus(QObject* parent = 0);
     QVector<double> history() const { return _history; }
+    void clear_history() { _history.clear(); }
 public slots:
   void analyze(const QImage &image);
 

@@ -68,7 +68,8 @@ void CameraSetup::Private::camera_settings(function<void(Imager::Settings)> call
 void CameraSetup::Private::load()
 {
   ui->shoot_mode->setCurrentIndex(static_cast<int>(sequenceSettings.mode));
-  ui->repeated_shots_settings->setVisible(sequenceSettings.mode == ShooterSettings::ShooterSettings::Sequence);
+  ui->repeated_shots_settings->setVisible(sequenceSettings.mode == ShooterSettings::ShooterSettings::Sequence || sequenceSettings.mode == ShooterSettings::ShooterSettings::Continuous );
+  ui->images_count->setEnabled(sequenceSettings.mode == ShooterSettings::ShooterSettings::Sequence);
   ui->ditherAfterShot->setChecked(sequenceSettings.ditherAfterShots);
   ui->images_count->setValue(sequenceSettings.shots);
   ui->shoot_interval->setTime(sequenceSettings.delayBetweenShots);
