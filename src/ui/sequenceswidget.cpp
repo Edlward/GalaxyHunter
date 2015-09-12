@@ -37,7 +37,7 @@ using namespace std;
 
 class SequenceItem {
 public:
-  SequenceItem(const QString &name, const ImagingSequence::ptr &sequence, QStandardItemModel *model);
+  SequenceItem(const SequenceElement& sequence, QStandardItemModel* model);
   ~SequenceItem();
   SequenceElement sequenceElement;
   QStandardItemModel *model;
@@ -45,18 +45,23 @@ public:
   QList<shared_ptr<QStandardItem>> columns;
 };
 
-SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequence, QStandardItemModel* model) : sequenceElement{sequence, name}, model{model}
+SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement{sequenceElement}, model{model}
 {
-  QString shots = "1";
-  if(sequence->settings().mode == ShooterSettings::Continuous)
-    shots = qApp->tr("infinite");
-  if(sequence->settings().mode == ShooterSettings::Sequence)
-    shots = QString::number(sequence->settings().shots);
-  auto exposure = sequence->imagerSettings().manualExposure ? 
-    QTime{0,0,0}.addSecs(sequence->imagerSettings().manualExposureSeconds).toString() :
-    sequence->imagerSettings().shutterSpeed.current + qApp->tr(" (preset)");
-  qDebug() << "shots: " << shots << ", exposure: " << exposure;
-  columns.push_back(make_shared<QStandardItem>(name));
+  QString shots = "";
+  QString exposure = "";
+  if(sequenceElement.imagingSequence) {
+    auto sequence = sequenceElement.imagingSequence;
+    shots = "1";
+    if(sequence->settings().mode == ShooterSettings::Continuous)
+      shots = qApp->tr("infinite");
+    if(sequence->settings().mode == ShooterSettings::Sequence)
+      shots = QString::number(sequence->settings().shots);
+    exposure = sequence->imagerSettings().manualExposure ? 
+      QTime{0,0,0}.addSecs(sequence->imagerSettings().manualExposureSeconds).toString() :
+      sequence->imagerSettings().shutterSpeed.current + qApp->tr(" (preset)");
+    qDebug() << "shots: " << shots << ", exposure: " << exposure;
+  }
+  columns.push_back(make_shared<QStandardItem>(sequenceElement.displayName));
   columns.push_back(make_shared<QStandardItem>(shots));
   columns.push_back(make_shared<QStandardItem>(exposure));
 }
@@ -187,8 +192,26 @@ void SequencesWidget::Private::addSequenceItem()
   if(dialog->exec() != QDialog::Accepted)
     return;
   qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
-  auto sequenceItem = make_shared<SequenceItem>(dialog_ui->item_name->text(), cameraSetup->imagingSequence(), &model);
-  
+  shared_ptr<SequenceItem> sequenceItem;
+  if(dialog_ui->item_type->currentIndex() == 0) {
+    sequenceItem = make_shared<SequenceItem>(SequenceElement{cameraSetup->imagingSequence(), dialog_ui->item_name->text()}, &model);
+  } else if(dialog_ui->item_type->currentIndex() == 1) {
+    auto timeout_enabled = dialog_ui->auto_accept->isChecked();
+    auto timeout_seconds = QTime{0,0,0}.secsTo(dialog_ui->auto_accept_timeout->time());
+    auto name = dialog_ui->item_name->text();
+    sequenceItem = make_shared<SequenceItem>(SequenceElement{{}, dialog_ui->item_name->text(), [=]{
+      QDialog *waitDialog = new QDialog;
+      if(timeout_enabled && timeout_seconds>0) {
+        QTimer::singleShot(timeout_seconds*1000, waitDialog, &QDialog::accept);
+      };
+      waitDialog->setLayout(new QVBoxLayout);
+      waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
+      auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+      connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
+      connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
+      waitDialog->exec();
+    }}, &model);
+  };
   delete dialog_ui;
   delete dialog;
   sequences.push_back(sequenceItem);

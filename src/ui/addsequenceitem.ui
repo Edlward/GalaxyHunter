@@ -72,7 +72,7 @@
        <item row="1" column="2">
         <widget class="QTimeEdit" name="auto_accept_timeout">
          <property name="displayFormat">
-          <string>HH:mm</string>
+          <string>HH:mm:ss</string>
          </property>
         </widget>
        </item>
