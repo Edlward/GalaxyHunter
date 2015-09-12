@@ -21,6 +21,8 @@ public:
     explicit DSLR_Shooter_Window(QWidget *parent = 0);
     ~DSLR_Shooter_Window();
     virtual void closeEvent(QCloseEvent*);
+protected:
+    virtual bool event(QEvent* event);
 public slots:
   void update_infos();
 

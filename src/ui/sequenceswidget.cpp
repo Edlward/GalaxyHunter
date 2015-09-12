@@ -32,6 +32,7 @@
 #include <QToolBar>
 #include <QComboBox>
 #include <Qt/functional.h>
+#include <Qt/qlambdaevent.h>
 
 using namespace std;
 
@@ -200,17 +201,30 @@ void SequencesWidget::Private::addSequenceItem()
     auto timeout_seconds = QTime{0,0,0}.secsTo(dialog_ui->auto_accept_timeout->time());
     auto name = dialog_ui->item_name->text();
     sequenceItem = make_shared<SequenceItem>(SequenceElement{{}, dialog_ui->item_name->text(), [=]{
-      QDialog *waitDialog = new QDialog;
-      if(timeout_enabled && timeout_seconds>0) {
-        QTimer::singleShot(timeout_seconds*1000, waitDialog, &QDialog::accept);
-      };
-      waitDialog->setLayout(new QVBoxLayout);
-      waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
-      auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-      waitDialog->layout()->addWidget(buttonBox);
-      connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
-      connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
-      waitDialog->exec();
+      bool dialog_finished = false;
+      QLambdaEvent *event = new QLambdaEvent([=,&dialog_finished]{
+          QDialog *waitDialog = new QDialog;
+          waitDialog->setLayout(new QVBoxLayout);
+          waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
+          auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+          waitDialog->layout()->addWidget(buttonBox);
+          if(timeout_enabled && timeout_seconds>0) {
+            QTimer *killTimer = new QTimer(waitDialog);
+            connect(killTimer, &QTimer::timeout, waitDialog, &QDialog::accept);
+            killTimer->start(timeout_seconds*1000);
+            QTimer *updateTimer = new QTimer(waitDialog);
+            connect(updateTimer, &QTimer::timeout, waitDialog, [=]{ 
+              buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok (%1)") % QTime(0,0,0).addMSecs(killTimer->remainingTime()).toString("HH:mm:ss"));
+            });
+            updateTimer->start(1000);
+          };
+          connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
+          connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
+          waitDialog->show();
+          connect(waitDialog, &QDialog::finished, [&dialog_finished]{ dialog_finished = true; });
+      });
+      qApp->postEvent(qApp, event);
+      while(!dialog_finished);
     }}, &model);
   };
   delete dialog_ui;

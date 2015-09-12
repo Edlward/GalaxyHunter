@@ -32,6 +32,7 @@
 #include <imaging/imagingsequence.h>
 #include "telescope/telescopecontrol.h"
 #include "GuLinux-Commons/Qt/zoomableimage.h"
+#include <Qt/qlambdaevent.h>
 #include "commons/version.h"
 
 using namespace std;
@@ -369,5 +370,16 @@ void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)
   if(logMessage.type == LogMessage::Error) {
     d->trayIcon.showMessage(QString("%1 error").arg(logMessage.source), logMessage.message);
   }
+}
+
+
+bool DSLR_Shooter_Window::event(QEvent* event)
+{
+  if(event->type() == QLambdaEvent::type) {
+    reinterpret_cast<QLambdaEvent*>(event)->run();
+    event->accept();
+    return true;
+  }
+    return QMainWindow::event(event);
 }
 
