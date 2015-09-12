@@ -34,13 +34,12 @@ using namespace std;
 class SequenceItem {
 public:
   SequenceItem(const QString &name, const ImagingSequence::ptr &sequence);
+  SequenceElement sequenceElement;
   operator QList<QStandardItem*>() const;
-  ImagingSequence::ptr sequence;
-  QString name;
   QList<shared_ptr<QStandardItem>> columns;
 };
 
-SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequence) : sequence{sequence}
+SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequence) : sequenceElement{sequence, name}
 {
   QString shots = "1";
   if(sequence->settings().mode == ShooterSettings::Continuous)
@@ -74,11 +73,11 @@ public:
   void clearSequence();
   QStandardItemModel model;
   QList<shared_ptr<SequenceItem>> sequences;
-    QAction* add_action;
-    QAction* remove_action;
-    QAction* move_up_action;
-    QAction* move_down_action;
-    QAction* clear_action;
+  QAction* add_action;
+  QAction* remove_action;
+  QAction* move_up_action;
+  QAction* move_down_action;
+  QAction* clear_action;
 private:
   SequencesWidget *q;
 };
@@ -116,6 +115,10 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
 
 Sequence SequencesWidget::sequence() const
 {
+  Sequence result;
+  for(auto element: d->sequences)
+    result.enqueue(element->sequenceElement);
+  return result;
 }
 
 void SequencesWidget::Private::addSequenceItem()
@@ -156,6 +159,7 @@ void SequencesWidget::setImager(const ImagerPtr& imager)
 void SequencesWidget::Private::clearSequence()
 {
   sequences.clear();
+  model.removeRows(0, model.rowCount());
 }
 
 #include "sequenceswidget.moc"

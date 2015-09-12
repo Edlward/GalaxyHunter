@@ -313,6 +313,8 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionShoot"/>
+   <addaction name="actionStart_Sequences"/>
+   <addaction name="actionPause_Shooting"/>
    <addaction name="actionStop_Shooting"/>
   </widget>
   <action name="actionConnect_LinGuider">
@@ -481,6 +483,24 @@
   <action name="actionAbout_Qt">
    <property name="text">
     <string>A&amp;bout Qt</string>
+   </property>
+  </action>
+  <action name="actionPause_Shooting">
+   <property name="icon">
+    <iconset theme="media-playback-pause">
+     <normaloff/>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Pause Shooting</string>
+   </property>
+  </action>
+  <action name="actionStart_Sequences">
+   <property name="icon">
+    <iconset theme="media-playback-start"/>
+   </property>
+   <property name="text">
+    <string>Start Sequences</string>
    </property>
   </action>
  </widget>

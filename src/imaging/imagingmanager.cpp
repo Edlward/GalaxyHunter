@@ -32,6 +32,7 @@ public:
   ImagerPtr imager;
   bool remove_on_camera;
   SequenceElement sequence;
+  bool stopped = true;
 private:
   ImagingManager *q;
 };
@@ -52,7 +53,9 @@ void ImagingManager::setImager(const ImagerPtr& imager)
 
 void ImagingManager::start(Sequence sequence)
 {
-  while(!sequence.isEmpty()) {
+  d->stopped = false;
+  emit started();
+  while(!sequence.isEmpty() && !d->stopped) {
     d->sequence = sequence.dequeue();
     auto imagingSequence = d->sequence.imagingSequence;
     if(imagingSequence) {
@@ -65,6 +68,8 @@ void ImagingManager::start(Sequence sequence)
     }
     d->sequence = {};
   }
+  emit finished();
+  d->stopped = true;
 }
 
 
@@ -72,6 +77,7 @@ void ImagingManager::abort()
 {
   if(d->sequence.imagingSequence)
     d->sequence.imagingSequence->abort();
+  d->stopped = true;
 }
 
 

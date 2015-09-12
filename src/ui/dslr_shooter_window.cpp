@@ -164,7 +164,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   d->ui->actionSet_Camera->setMenu(setCamera);
   connect(d->telescopeControl, &TelescopeControl::message, bind(&DSLR_Shooter_Window::got_message, this, _1));
   connect(d->ui->actionStop_Shooting, &QAction::triggered, bind(&QAction::setDisabled, d->ui->actionStop_Shooting, true));
-  connect(d->ui->actionStop_Shooting, &QAction::triggered, d->imagingManager.get(), bind(&ImagingManager::abort, d->imagingManager));
+  connect(d->ui->actionStop_Shooting, &QAction::triggered, [=]{d->imagingManager->abort();});
   connect(d->ui->action_Quit, &QAction::triggered, qApp, &QApplication::quit);
   d->guider = new LinGuider(this);
   QTimer *updateTimer = new QTimer();
@@ -191,6 +191,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   
   connect(d->ui->actionShoot, &QAction::triggered, d->imagingManager.get(), [=]{
     d->imagingManager->start({{d->cameraSetup->imagingSequence()}});
+  });
+  connect(d->ui->actionStart_Sequences, &QAction::triggered, d->imagingManager.get(), [=]{
+    d->imagingManager->start(d->sequencesEditor->sequence());
   });
   connect(d->ui->actionScan, &QAction::triggered, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
   connect(d->imagingDriver.get(), &ImagingDriver::scan_finished, this, [=]{
@@ -243,10 +246,12 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(d->imagingManager.get(), &ImagingManager::image, this, &DSLR_Shooter_Window::shoot_received);
   auto setWidgetsEnabled = [=](bool enable) {
     d->cameraSetup->shooting(!enable); // TODO add some kind of "busy" signal?
+    d->ui->actionStart_Sequences->setEnabled(enable);
     d->ui->actionShoot->setEnabled(enable);
+    d->ui->actionStop_Shooting->setEnabled(!enable);
+    d->ui->actionPause_Shooting->setEnabled(!enable);
   };
   connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
-  connect(d->imagingManager.get(), &ImagingManager::finished, bind(&QAction::setEnabled, d->ui->actionStop_Shooting, false));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
   connect(d->imagingManager.get(), &ImagingManager::finished, this, bind(&QStatusBar::clearMessage, d->ui->statusbar));
 }
