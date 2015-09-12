@@ -31,6 +31,8 @@
 #include <QPushButton>
 #include <QToolBar>
 #include <QComboBox>
+#include <Qt/functional.h>
+
 using namespace std;
 
 class SequenceItem {
@@ -179,7 +181,9 @@ void SequencesWidget::Private::addSequenceItem()
   
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager);
-  dialog_ui->item_settings_stack->addWidget(cameraSetup);
+  connect(dialog_ui->item_type, F_PTR(QComboBox, currentIndexChanged, int), dialog_ui->item_settings_stack, &QStackedWidget::setCurrentIndex);
+  dialog_ui->item_settings_stack->insertWidget(0, cameraSetup);
+  dialog_ui->item_settings_stack->setCurrentIndex(0);
   if(dialog->exec() != QDialog::Accepted)
     return;
   qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();

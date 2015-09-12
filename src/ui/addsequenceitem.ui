@@ -32,7 +32,18 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QComboBox" name="item_type"/>
+    <widget class="QComboBox" name="item_type">
+     <item>
+      <property name="text">
+       <string>Shooting sequence</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Wait for...</string>
+      </property>
+     </item>
+    </widget>
    </item>
    <item row="3" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -47,8 +58,46 @@
    <item row="2" column="0" colspan="2">
     <widget class="QStackedWidget" name="item_settings_stack">
      <property name="currentIndex">
-      <number>-1</number>
+      <number>0</number>
      </property>
+     <widget class="QWidget" name="wait_for_page">
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="auto_accept">
+         <property name="text">
+          <string>Automatically accept after timeout</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QTimeEdit" name="auto_accept_timeout">
+         <property name="displayFormat">
+          <string>HH:mm</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>109</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="0" colspan="3">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Shows a dialog, waiting for confirmation</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
