@@ -266,7 +266,7 @@ void DSLR_Shooter_Window::focus_received(double value)
     }
     d->ui->focusing_graph->graph()->setData(x, y);
     d->ui->focusing_graph->graph()->rescaleKeyAxis(false);
-    d->ui->focusing_graph->graph()->valueAxis()->setRange(0., *std::max_element(begin(y), end(y)) +1.);
+    d->ui->focusing_graph->graph()->valueAxis()->setRange(*std::min_element(begin(y), end(y))-.5, *std::max_element(begin(y), end(y)) +.5);
     d->ui->focusing_graph->replot();
 }
 
