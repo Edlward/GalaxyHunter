@@ -33,13 +33,15 @@ using namespace std;
 
 class SequenceItem {
 public:
-  SequenceItem(const QString &name, const ImagingSequence::ptr &sequence);
+  SequenceItem(const QString &name, const ImagingSequence::ptr &sequence, QStandardItemModel *model);
+  ~SequenceItem();
   SequenceElement sequenceElement;
+  QStandardItemModel *model;
   operator QList<QStandardItem*>() const;
   QList<shared_ptr<QStandardItem>> columns;
 };
 
-SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequence) : sequenceElement{sequence, name}
+SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequence, QStandardItemModel* model) : sequenceElement{sequence, name}, model{model}
 {
   QString shots = "1";
   if(sequence->settings().mode == ShooterSettings::Continuous)
@@ -54,6 +56,15 @@ SequenceItem::SequenceItem(const QString& name, const ImagingSequence::ptr& sequ
   columns.push_back(make_shared<QStandardItem>(shots));
   columns.push_back(make_shared<QStandardItem>(exposure));
 }
+
+SequenceItem::~SequenceItem()
+{
+  auto row = model->indexFromItem(columns[0].get()).row();
+  qDebug() << "removing row " << row;
+  columns.clear();
+  model->removeRow(row);
+}
+
 
  SequenceItem::operator QList<QStandardItem*>() const
 {
@@ -140,7 +151,7 @@ void SequencesWidget::Private::addSequenceItem()
   if(dialog->exec() != QDialog::Accepted)
     return;
   qDebug() << "sequence with name: " << lineedit->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
-  auto sequenceItem = make_shared<SequenceItem>(lineedit->text(), cameraSetup->imagingSequence());
+  auto sequenceItem = make_shared<SequenceItem>(lineedit->text(), cameraSetup->imagingSequence(), &model);
   sequences.push_back(sequenceItem);
   model.appendRow(*sequenceItem);
 }
@@ -159,7 +170,6 @@ void SequencesWidget::setImager(const ImagerPtr& imager)
 void SequencesWidget::Private::clearSequence()
 {
   sequences.clear();
-  model.removeRows(0, model.rowCount());
 }
 
 #include "sequenceswidget.moc"
