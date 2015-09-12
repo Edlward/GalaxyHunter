@@ -45,7 +45,7 @@ public:
   QList<shared_ptr<QStandardItem>> columns;
 };
 
-SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement{sequenceElement}, model{model}
+SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement(sequenceElement), model{model}
 {
   QString shots = "";
   QString exposure = "";
@@ -199,7 +199,7 @@ void SequencesWidget::Private::addSequenceItem()
     auto timeout_enabled = dialog_ui->auto_accept->isChecked();
     auto timeout_seconds = QTime{0,0,0}.secsTo(dialog_ui->auto_accept_timeout->time());
     auto name = dialog_ui->item_name->text();
-    sequenceItem = make_shared<SequenceItem>(SequenceElement{ImagingSequence::ptr{}, dialog_ui->item_name->text(), [=]{
+    sequenceItem = make_shared<SequenceItem>(SequenceElement{{}, dialog_ui->item_name->text(), [=]{
       QDialog *waitDialog = new QDialog;
       if(timeout_enabled && timeout_seconds>0) {
         QTimer::singleShot(timeout_seconds*1000, waitDialog, &QDialog::accept);
