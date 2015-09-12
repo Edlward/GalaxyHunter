@@ -65,6 +65,11 @@ SequenceItem::~SequenceItem()
   model->removeRow(row);
 }
 
+QDebug operator<<(QDebug dbg, const shared_ptr<SequenceItem> &item) {
+  dbg.nospace() << "{" << item->sequenceElement.displayName << ", " << item->sequenceElement.imagingSequence->settings().shots << "}";
+  return dbg.space();
+}
+
 
  SequenceItem::operator QList<QStandardItem*>() const
 {
@@ -117,10 +122,40 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
     d->clear_action = toolbar->addAction(QIcon::fromTheme("edit-clear-list"), "Clear all");
     connect(d->add_action, &QAction::triggered, bind(&Private::addSequenceItem, d.get()));
     connect(d->clear_action, &QAction::triggered, bind(&Private::clearSequence, d.get()));
+    
+    auto enable_selection_actions = [=]{
+      auto has_selection = d->ui->sequenceItems->selectionModel()->hasSelection();
+      for(auto action: QList<QAction*>{d->remove_action, d->move_down_action, d->move_up_action})
+	action->setEnabled(has_selection);
+    };
+    
+    connect(d->clear_action, &QAction::triggered, bind(&QAction::setEnabled, d->remove_action, false));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
     d->model.setHorizontalHeaderLabels({tr("Name"), tr("Shots"), tr("Exposure")});
     d->ui->sequenceItems->setModel(&d->model);
+    connect(d->ui->sequenceItems->selectionModel(), &QItemSelectionModel::selectionChanged, enable_selection_actions);
+    connect(d->remove_action, &QAction::triggered, [=]{
+      if(!d->ui->sequenceItems->selectionModel()->hasSelection())
+	return;
+      d->sequences.erase(remove_if(begin(d->sequences), end(d->sequences), [=](const shared_ptr<SequenceItem> &i){ return d->ui->sequenceItems->selectionModel()->isSelected(i->columns[0]->index()); }), d->sequences.end());
+      d->ui->sequenceItems->selectionModel()->clearSelection();
+      enable_selection_actions();
+    });
+    auto move_item = [=](int how){
+      if(!d->ui->sequenceItems->selectionModel()->hasSelection())
+	return;
+      auto row_index = d->ui->sequenceItems->selectionModel()->selectedRows().first().row();
+      auto next_index = row_index + how;
+      if(next_index < 0 || next_index >= d->model.rowCount())
+	return;
+      d->sequences.move(row_index, next_index);
+      auto row_items = d->model.takeRow(row_index);
+      d->model.insertRow(next_index, row_items);
+      d->ui->sequenceItems->selectionModel()->select(d->model.index(next_index, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+    };
+    connect(d->move_up_action, &QAction::triggered, bind(move_item, -1));
+    connect(d->move_down_action, &QAction::triggered, bind(move_item, +1));
     
 }
 
