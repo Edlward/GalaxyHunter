@@ -36,7 +36,7 @@ private slots:
   void camera_disconnected();
 private slots:
   void focus_received(double value);
-  void shoot_received(const Image::ptr& image, int remaining);
+  void shoot_received(const Image::ptr& image);
 private:
   D_PTR
 };

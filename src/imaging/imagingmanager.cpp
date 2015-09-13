@@ -21,6 +21,7 @@
 #include "imagingsequence.h"
 #include <QtConcurrent/QtConcurrent>
 #include "commons/shootersettings.h"
+#include "Qt/strings.h"
 
 using namespace std;
 using namespace std::placeholders;
@@ -59,6 +60,7 @@ void ImagingManager::start(Sequence sequence)
   auto total = sequence.size();
   while(!sequence.isEmpty() && !d->stopped) {
     d->sequence = sequence.dequeue();
+    emit message( d->sequence.displayName.isEmpty() ? tr("Started sequence") : tr("Started sequence %1").arg(d->sequence.displayName), 0);
     qDebug() << __PRETTY_FUNCTION__ << ": Running sequence item" << ++item << "out of" << total << "," << d->sequence.displayName;
     auto imagingSequence = d->sequence.imagingSequence;
     if(imagingSequence) {
@@ -67,7 +69,16 @@ void ImagingManager::start(Sequence sequence)
       connect(imagingSequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
       connect(imagingSequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
       connect(imagingSequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
-      connect(imagingSequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
+      connect(imagingSequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1));
+      auto total_images = imagingSequence->settings().shots;
+      int shots = 0;
+      connect(imagingSequence.get(), &ImagingSequence::image, [=, &shots]{
+        shots++;
+        emit message(imagingSequence->settings().mode == ShooterSettings::Continuous ?
+          tr("Image %1 for sequence %2") % shots % d->sequence.displayName :
+          tr("Image %1 of %2 for sequence %3") % shots % total_images % d->sequence.displayName,
+          0);
+      });
       imagingSequence->start();
     }
     if(d->sequence.run_after_sequence) {

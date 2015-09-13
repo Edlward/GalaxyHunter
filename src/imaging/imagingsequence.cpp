@@ -67,7 +67,8 @@ void ImagingSequence::start()
     auto image = d->imager->shoot(d->imagerSettings);
     if(d->sequenceSettings.saveToDisk)
       image->save(d->sequenceSettings.saveDirectory);
-    emit this->image(image, --d->sequenceSettings);
+    --d->sequenceSettings;
+    emit this->image(image);
     if(d->sequenceSettings) {
       if(d->sequenceSettings.ditherAfterShots)
         emit this->dither();

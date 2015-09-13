@@ -58,7 +58,7 @@ signals:
   void started();
   void finished();
   void aborted();
-  void image(const Image::ptr &image, int remaining);
+  void image(const Image::ptr &image);
   void dither();
 };
 #endif // IMAGINGSEQUENCE_H

@@ -112,6 +112,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   connect(qApp, &QApplication::aboutToQuit, d->imagingManager.get(), bind(&ImagingManager::abort, d->imagingManager), Qt::QueuedConnection);
   connect(qApp, &QApplication::aboutToQuit, bind(&QThread::quit, &d->focusThread));
   connect(qApp, &QApplication::aboutToQuit, bind(&QThread::quit, &d->imagingManagerThread));
+  connect(d->imagingManager.get(), &ImagingManager::message, d->ui->statusbar, &QStatusBar::showMessage, Qt::QueuedConnection);
   
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->camera_setup_dock);
   tabifyDockWidget(d->ui->camera_information_dock, d->ui->sequencesDock);
@@ -254,7 +255,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
   };
   connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
   connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
-  connect(d->imagingManager.get(), &ImagingManager::finished, this, bind(&QStatusBar::clearMessage, d->ui->statusbar));
+//   connect(d->imagingManager.get(), &ImagingManager::finished, this, bind(&QStatusBar::clearMessage, d->ui->statusbar)); // TODO: was it needed?
 }
 
 void DSLR_Shooter_Window::focus_received(double value)
@@ -320,7 +321,7 @@ void DSLR_Shooter_Window::camera_connected()
   d->sequencesEditor->setImager(d->imager);
 }
 
-void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
+void DSLR_Shooter_Window::shoot_received(const Image::ptr& image)
 {
   if(!image)
     return;
@@ -328,7 +329,6 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image, int remaining)
   QImage img = *image;
   d->imageView->setImage(img);
   
-  // d->ui->images_count->setValue(remaining); TODO readd a counter
   qDebug() << "Checking for dithering...";
   if(d->shooterSettings.ditherAfterEachShot() && d->guider->is_connected()) {
     got_message(LogMessage::info("main", "starting dithering"));
