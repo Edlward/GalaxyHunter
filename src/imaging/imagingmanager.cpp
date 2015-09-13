@@ -55,21 +55,28 @@ void ImagingManager::start(Sequence sequence)
 {
   d->stopped = false;
   emit started();
+  int item = 0;
+  auto total = sequence.size();
   while(!sequence.isEmpty() && !d->stopped) {
     d->sequence = sequence.dequeue();
+    qDebug() << __PRETTY_FUNCTION__ << ": Running sequence item" << ++item << "out of" << total << "," << d->sequence.displayName;
     auto imagingSequence = d->sequence.imagingSequence;
     if(imagingSequence) {
-      imagingSequence->moveToThread(QThread::currentThread());
+      qDebug() <<__PRETTY_FUNCTION__ << " running imagingSequence";
+//       imagingSequence->moveToThread(QThread::currentThread()); // TODO: not needed, also not working in pull mode
       connect(imagingSequence.get(), &ImagingSequence::started, this, &ImagingManager::started);
       connect(imagingSequence.get(), &ImagingSequence::finished, this, &ImagingManager::finished);
       connect(imagingSequence.get(), &ImagingSequence::aborted, this, &ImagingManager::finished); // todo
       connect(imagingSequence.get(), &ImagingSequence::image, bind(&ImagingManager::image, this, _1, _2));
       imagingSequence->start();
     }
-    if(d->sequence.run_after_sequence)
+    if(d->sequence.run_after_sequence) {
+      qDebug() << __PRETTY_FUNCTION__ << " running after_sequence";
       d->sequence.run_after_sequence();
+    }
     d->sequence = {};
   }
+  qDebug() << __PRETTY_FUNCTION__ << ": finished.";
   emit finished();
   d->stopped = true;
 }

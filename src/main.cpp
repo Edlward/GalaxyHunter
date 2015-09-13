@@ -13,6 +13,6 @@ int main(int argc, char **argv) {
   app.setApplicationDisplayName(PROJECT_NICE_NAME);
   app.setApplicationName(PROJECT_NAME);
   app.setApplicationVersion(VERSION_STRING);
-  (new DSLR_Shooter_Window())->show();
+  DSLR_Shooter_Window::instance()->show();
   return app.exec();
 }

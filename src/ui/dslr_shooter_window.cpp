@@ -376,10 +376,17 @@ void DSLR_Shooter_Window::got_message(const LogMessage &logMessage)
 bool DSLR_Shooter_Window::event(QEvent* event)
 {
   if(event->type() == QLambdaEvent::type) {
+    qDebug() << "Running lambda event...";
     reinterpret_cast<QLambdaEvent*>(event)->run();
-    event->accept();
     return true;
   }
-    return QMainWindow::event(event);
+  return QMainWindow::event(event);
 }
+
+DSLR_Shooter_Window* DSLR_Shooter_Window::instance()
+{
+  static DSLR_Shooter_Window *instance = new DSLR_Shooter_Window();
+  return instance;
+}
+
 

@@ -21,6 +21,7 @@
 #include "ui_sequenceswidget.h"
 #include "ui_addsequenceitem.h"
 #include "camerasetup.h"
+#include "dslr_shooter_window.h"
 #include <QDialog>
 #include "Qt/strings.h"
 #include <QLabel>
@@ -195,14 +196,17 @@ void SequencesWidget::Private::addSequenceItem()
   qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
   shared_ptr<SequenceItem> sequenceItem;
   if(dialog_ui->item_type->currentIndex() == 0) {
+    qDebug() <<__PRETTY_FUNCTION__ << ": thread_id: " << QThread::currentThreadId();
     sequenceItem = make_shared<SequenceItem>(SequenceElement{cameraSetup->imagingSequence(), dialog_ui->item_name->text()}, &model);
   } else if(dialog_ui->item_type->currentIndex() == 1) {
     auto timeout_enabled = dialog_ui->auto_accept->isChecked();
     auto timeout_seconds = QTime{0,0,0}.secsTo(dialog_ui->auto_accept_timeout->time());
     auto name = dialog_ui->item_name->text();
     sequenceItem = make_shared<SequenceItem>(SequenceElement{{}, dialog_ui->item_name->text(), [=]{
+      qDebug() << __PRETTY_FUNCTION__;
       bool dialog_finished = false;
       QLambdaEvent *event = new QLambdaEvent([=,&dialog_finished]{
+        qDebug() << __PRETTY_FUNCTION__;
           QDialog *waitDialog = new QDialog;
           waitDialog->setLayout(new QVBoxLayout);
           waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
@@ -223,7 +227,7 @@ void SequencesWidget::Private::addSequenceItem()
           waitDialog->show();
           connect(waitDialog, &QDialog::finished, [&dialog_finished]{ dialog_finished = true; });
       });
-      qApp->postEvent(qApp, event);
+      qApp->postEvent(DSLR_Shooter_Window::instance(), event);
       while(!dialog_finished);
     }}, &model);
   };
