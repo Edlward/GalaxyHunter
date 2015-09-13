@@ -32,7 +32,7 @@ class ImagingSequence : public QObject
 public:
   struct SequenceSettings {
     ShooterSettings::ShootMode mode;
-    std::size_t shots;
+    qint64 shots;
     QTime delayBetweenShots;
     bool clearPicturesFromCamera;
     bool saveToDisk;
@@ -40,8 +40,8 @@ public:
     bool ditherAfterShots;
     
     operator bool() const;
-    std::size_t operator--();
-    long long delayInMilliseconds() const;
+    qint64 operator--();
+    qint64 delayInMilliseconds() const;
   };
   ImagingSequence(const ImagerPtr& imager, const Imager::Settings& imagerSettings, const ImagingSequence::SequenceSettings& sequenceSettings, QObject* parent = 0);
   SequenceSettings settings() const;

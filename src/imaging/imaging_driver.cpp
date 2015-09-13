@@ -91,7 +91,6 @@ QList< ImagingDriverPtr > all_imaging_drivers(ShooterSettings &shooterSettings)
 ImagingDrivers::ImagingDrivers(ShooterSettings &shooterSettings, QObject* parent): ImagingDriver(parent), imagingDrivers(all_imaging_drivers(shooterSettings))
 {
   for(auto driver: imagingDrivers) {
-    qDebug() << "driver: " << typeid(*driver).name();
     connect(driver.get(), &ImagingDriver::camera_connected, this, &ImagingDriver::camera_connected);
     connect(driver.get(), &ImagingDriver::imager_message, bind(&ImagingDriver::imager_message, this, _1));
   }

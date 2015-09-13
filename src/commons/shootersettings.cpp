@@ -93,7 +93,7 @@ ShooterSettings::CameraPtr ShooterSettings::camera(const ImagerPtr& imager)
 setting_obj(delayBetweenShots, QTime, QTime(0,0,0))
 setting(ditherAfterEachShot, bool, false)
 setting(saveImage, bool, false)
-setting(sequenceLength, int, 0)
+setting(sequenceLength, qint64, 0)
 setting_obj(saveImageDirectory, QString, QStandardPaths::writableLocation(QStandardPaths::PicturesLocation))
 
 

@@ -36,7 +36,7 @@ ImagingSequence::Private::Private(const ImagerPtr& imager, const Imager::Setting
 {
 }
 
-long long int ImagingSequence::SequenceSettings::delayInMilliseconds() const
+qint64 ImagingSequence::SequenceSettings::delayInMilliseconds() const
 {
   return QTime{0,0,0}.secsTo(delayBetweenShots) * 1000;
 }
@@ -89,11 +89,11 @@ ImagingSequence::~ImagingSequence()
 {
 }
 
-std::size_t ImagingSequence::SequenceSettings::operator--()
+qint64 ImagingSequence::SequenceSettings::operator--()
 {
   if(mode == ShooterSettings::Sequence || mode == ShooterSettings::Single)
     shots--;
-  return mode != ShooterSettings::Continuous ? shots : std::numeric_limits<size_t>().max();
+  return mode != ShooterSettings::Continuous ? shots : std::numeric_limits<int64_t>().max();
 }
 
 ImagingSequence::SequenceSettings::operator bool() const

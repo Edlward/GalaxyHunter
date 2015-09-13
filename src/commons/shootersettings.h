@@ -51,8 +51,8 @@ public:
     ShootMode shootMode() const;
     void shootMode(ShootMode mode);
     
-    int sequenceLength() const;
-    void sequenceLength(int imagesCount);
+    qint64 sequenceLength() const;
+    void sequenceLength(qint64 imagesCount);
     
     QTime delayBetweenShots() const;
     void delayBetweenShots(const QTime &delay);
