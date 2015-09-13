@@ -45,6 +45,7 @@ public:
   QStandardItemModel *model;
   operator QList<QStandardItem*>() const;
   QList<shared_ptr<QStandardItem>> columns;
+  
 };
 
 SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement(sequenceElement), model{model}
@@ -105,6 +106,7 @@ public:
   QAction* move_up_action;
   QAction* move_down_action;
   QAction* clear_action;
+  void waitDialog(const QString& name, bool timeout_enabled, int timeout_seconds, bool& dialog_finished);
 private:
   SequencesWidget *q;
 };
@@ -189,6 +191,8 @@ void SequencesWidget::Private::addSequenceItem()
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager);
   connect(dialog_ui->item_type, F_PTR(QComboBox, currentIndexChanged, int), dialog_ui->item_settings_stack, &QStackedWidget::setCurrentIndex);
+  dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+  connect(dialog_ui->item_name, &QLineEdit::textChanged, [=](const QString &newtext) { dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!newtext.isEmpty()); });
   dialog_ui->item_settings_stack->insertWidget(0, cameraSetup);
   dialog_ui->item_settings_stack->setCurrentIndex(0);
   if(dialog->exec() != QDialog::Accepted)
@@ -206,26 +210,7 @@ void SequencesWidget::Private::addSequenceItem()
       qDebug() << __PRETTY_FUNCTION__;
       bool dialog_finished = false;
       QLambdaEvent *event = new QLambdaEvent([=,&dialog_finished]{
-        qDebug() << __PRETTY_FUNCTION__;
-          QDialog *waitDialog = new QDialog;
-          waitDialog->setLayout(new QVBoxLayout);
-          waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
-          auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-          waitDialog->layout()->addWidget(buttonBox);
-          if(timeout_enabled && timeout_seconds>0) {
-            QTimer *killTimer = new QTimer(waitDialog);
-            connect(killTimer, &QTimer::timeout, waitDialog, &QDialog::accept);
-            killTimer->start(timeout_seconds*1000);
-            QTimer *updateTimer = new QTimer(waitDialog);
-            connect(updateTimer, &QTimer::timeout, waitDialog, [=]{ 
-              buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok (%1)") % QTime(0,0,0).addMSecs(killTimer->remainingTime()).toString("HH:mm:ss"));
-            });
-            updateTimer->start(1000);
-          };
-          connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
-          connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
-          waitDialog->show();
-          connect(waitDialog, &QDialog::finished, [&dialog_finished]{ dialog_finished = true; });
+        waitDialog(name, timeout_enabled, timeout_seconds, dialog_finished);
       });
       qApp->postEvent(DSLR_Shooter_Window::instance(), event);
       while(!dialog_finished);
@@ -236,6 +221,32 @@ void SequencesWidget::Private::addSequenceItem()
   sequences.push_back(sequenceItem);
   model.appendRow(*sequenceItem);
 }
+
+
+void SequencesWidget::Private::waitDialog(const QString &name, bool timeout_enabled, int timeout_seconds, bool& dialog_finished)
+{
+  qDebug() << __PRETTY_FUNCTION__;
+    QDialog *waitDialog = new QDialog;
+    waitDialog->setLayout(new QVBoxLayout);
+    waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
+    auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+    waitDialog->layout()->addWidget(buttonBox);
+    if(timeout_enabled && timeout_seconds>0) {
+      QTimer *killTimer = new QTimer(waitDialog);
+      connect(killTimer, &QTimer::timeout, waitDialog, &QDialog::accept);
+      killTimer->start(timeout_seconds*1000);
+      QTimer *updateTimer = new QTimer(waitDialog);
+      connect(updateTimer, &QTimer::timeout, waitDialog, [=]{ 
+        buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok (%1)") % QTime(0,0,0).addMSecs(killTimer->remainingTime()).toString("HH:mm:ss"));
+      });
+      updateTimer->start(1000);
+    };
+    connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
+    connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
+    waitDialog->show();
+    connect(waitDialog, &QDialog::finished, [&dialog_finished]{ dialog_finished = true; });
+}
+
 
 void SequencesWidget::setImager(const ImagerPtr& imager)
 {
