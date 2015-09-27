@@ -11,8 +11,8 @@ set(dslr_ui_SOURCES
   sequenceswidget.ui
   addsequenceitem.ui
 )
-
+set(CMAKE_AUTOUIC ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(dslr_ui STATIC ${dslr_ui_FORMS_HEADERS} ${dslr_ui_SOURCES})
+add_library(dslr_ui STATIC ${dslr_ui_SOURCES})
 set(dslr_static_LIBS ${dslr_static_LIBS} dslr_ui PARENT_SCOPE)
