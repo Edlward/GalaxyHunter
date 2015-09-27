@@ -57,6 +57,7 @@ void GPhotoCamera::Private::GPhotoComboSetting::load()
       comboSetting.available.push_back(QString(choice));
   }
   gp_widget_free(settings);
+  qDebug() << __PRETTY_FUNCTION__ << ": Setting" << settingName << "value:" << comboSetting.current;
 }
 
 
@@ -68,11 +69,13 @@ void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::C
   
   CameraWidget *settings;
   CameraWidget *widget;
-  char *value;
   int error_code;
+  qDebug() << "setting widget " << settingName << " value to " << imagerSettings.current;
   GPHOTO_RUN( gp_camera_get_config(d->camera, &settings, d->context), d);
   GPHOTO_RUN(gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget), d)
   GPHOTO_RUN(gp_widget_set_value(widget, imagerSettings.current.toStdString().c_str() ), d)
+  GPHOTO_RUN(gp_widget_set_changed(widget, true ), d)
+  GPHOTO_RUN( gp_camera_set_config(d->camera, settings, d->context), d);
   gp_widget_free(settings);
   load();
 }
@@ -143,9 +146,10 @@ void GPhotoCamera::disconnect()
 
 Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 {
+  qDebug() << "setting camera: " << settings;
   Private::GPhotoComboSetting(d.get(), "imageformat").save(settings.imageFormat);
-  Private::GPhotoComboSetting(d.get(), "iso").save(settings.shutterSpeed);
-  Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.iso);
+  Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.shutterSpeed);
+  Private::GPhotoComboSetting(d.get(), "iso").save(settings.iso);
   if(settings.manualExposure ) {
     return d->shootTethered(settings);
   }

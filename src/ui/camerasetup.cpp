@@ -180,6 +180,7 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
 
 shared_ptr< ImagingSequence > CameraSetup::imagingSequence() const
 {
+  qDebug() << "creating imaging sequence: " << d->imagerSettings;
   return make_shared<ImagingSequence>(d->imager, d->imagerSettings, d->sequenceSettings);
 }
 
