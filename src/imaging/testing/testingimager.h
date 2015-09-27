@@ -15,6 +15,7 @@ public slots:
     virtual void disconnect();
     virtual Image::ptr shoot(const Settings &settings) const;
 private:
+    QByteArray imageData;
     ShooterSettings &shooterSettings;
 };
 class TestingImagerDriver : public ImagingDriver

@@ -16,10 +16,16 @@ using namespace std;
 
 TestingImagerDriver::TestingImagerDriver(ShooterSettings &shooterSettings, QObject *parent): ImagingDriver(parent), shooterSettings{shooterSettings}
 {
+  Q_INIT_RESOURCE(testing_imager_resources);
 }
 
 TestingImager::TestingImager(ShooterSettings &shooterSettings) : Imager(), shooterSettings{shooterSettings}
 {
+  QFile file(":imager/testing/1.jpg");
+  if(file.open(QIODevice::ReadOnly)) {
+    imageData = file.readAll();
+    qDebug() << "Reading all file data: " << imageData.size();
+  }
 }
 
 
@@ -92,6 +98,8 @@ Image::ptr TestingImager::shoot(const Settings &settings) const
     QThread::currentThread()->msleep(1000);
   }
   QImage image(imageFile);
+  if(image.isNull())
+    qDebug() << "Error loading image " << imageFile;
   return make_shared<TestingImage>(image);
 }
 
