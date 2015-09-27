@@ -15,6 +15,7 @@ public slots:
     virtual void disconnect();
     virtual Image::ptr shoot(const Settings &settings) const;
 private:
+  int rand(int a, int b) const;
     QByteArray imageData;
     ShooterSettings &shooterSettings;
 };
