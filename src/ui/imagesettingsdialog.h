@@ -24,10 +24,6 @@
 #include <memory>
 #include "c++/dptr.h"
 #include "imaging/imaging_driver.h"
-namespace Ui
-{
-class ImageSettingsDialog;
-}
 
 class Imager;
 class ImageSettingsDialog : public QDialog

@@ -18,7 +18,6 @@
  */
 
 #include "indidouble.h"
-#include <boost/format.hpp>
 #include <iostream>
 #include <sstream>
 #include <libindi/indicom.h>

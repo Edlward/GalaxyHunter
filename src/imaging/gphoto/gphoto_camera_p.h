@@ -11,8 +11,6 @@
 #include <QDebug>
 
 #include <Magick++.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem/path.hpp>
 #include "commons/shootersettings.h"
 
 using namespace std;
@@ -50,7 +48,7 @@ public:
   QString outputDirectory;
   Image::ptr shootTethered(const Imager::Settings &settings);
   Image::ptr shootPreset();
-  std::string fixedFilename(const std::string &fileName) const;
+  QString fixedFilename(QString fileName) const;
   QMutex &mutex;
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;

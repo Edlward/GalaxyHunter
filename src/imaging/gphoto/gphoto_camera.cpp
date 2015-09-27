@@ -157,9 +157,9 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 }
 
 
-string GPhotoCamera::Private::fixedFilename(const string& fileName) const
+QString GPhotoCamera::Private::fixedFilename(QString fileName) const
 {
-  return boost::replace_all_copy(fileName, "*", "");
+  return fileName.replace("*", "");
 }
 
 
@@ -170,10 +170,10 @@ Image::ptr GPhotoCamera::Private::shootPreset(  )
   QImage image;
   gp_api{{
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
-    sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), GP_FILE_TYPE_NORMAL, *camera_file, context); } ),
+    sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).toLatin1(), GP_FILE_TYPE_NORMAL, *camera_file, context); } ),
     sequence_run( [&]{ return camera_file->save();} ),
   }, make_shared<QMutexLocker>(&mutex)}.run_last([&]{
-    camera_file->originalName = QString::fromStdString(fixedFilename(camera_remote_file.name));
+    camera_file->originalName = fixedFilename(camera_remote_file.name);
 //     deletePicturesOnCamera(camera_remote_file); TODO: add again?
   }).on_error([=](int errorCode, const std::string &label) {
     GPHOTO_RETURN_ERROR(errorCode);
@@ -225,15 +225,15 @@ Image::ptr GPhotoCamera::Private::shootTethered( const Imager::Settings& setting
       GPHOTO_RETURN_ERROR(result, {})
     }
     CameraFilePath *newfile  = reinterpret_cast<CameraFilePath*>(data);
-    string filename = fixedFilename(newfile->name);
-    if( result = gp_camera_file_get(camera, newfile->folder, filename.c_str(), GP_FILE_TYPE_NORMAL, *camera_file, context) != GP_OK) {
+    QString filename = fixedFilename(newfile->name);
+    if( result = gp_camera_file_get(camera, newfile->folder, filename.toLatin1(), GP_FILE_TYPE_NORMAL, *camera_file, context) != GP_OK) {
       GPHOTO_RETURN_ERROR(result, {})
     }
     if( result = camera_file->save() != GP_OK) {
       GPHOTO_RETURN_ERROR(result, {})
     }
 
-    camera_file->originalName = QString::fromStdString(filename);
+    camera_file->originalName = filename;
     qDebug() << "Output directory: " << shooterSettings.saveImageDirectory();
 //     deletePicturesOnCamera(*newfile);TODO: add again?
     return camera_file;
