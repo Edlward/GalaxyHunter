@@ -130,6 +130,7 @@ void GPhotoCamera::connect()
   d->imagerSettings.imageFormat = Private::GPhotoComboSetting(d.get(), "imageformat");
   d->imagerSettings.iso = Private::GPhotoComboSetting(d.get(), "iso");
   d->imagerSettings.shutterSpeed = Private::GPhotoComboSetting(d.get(), "shutterspeed");
+//   d->imagerSettings.manualExposure = d->shooterSettings.
 }
 
 Imager::Settings GPhotoCamera::settings() const

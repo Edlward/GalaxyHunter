@@ -4,6 +4,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/GuLinux-Commons/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+add_definitions(-DSRC_DIR="${CMAKE_SOURCE_DIR}")
 include_directories(GuLinux-Commons/ GuLinux-Commons/c++)
 
 find_package(Qt5Widgets REQUIRED)
