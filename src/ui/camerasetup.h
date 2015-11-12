@@ -23,7 +23,7 @@
 #include <QWidget>
 #include "dptr.h"
 #include <imaging/imaging_driver.h>
-
+#include "imaging/imagingsequence.h"
 class ImagingSequence;
 class ShooterSettings;
 class CameraSetup : public QWidget
@@ -33,10 +33,11 @@ class CameraSetup : public QWidget
 public:
     ~CameraSetup();
     CameraSetup(ShooterSettings &shooterSettings, QWidget* parent = 0);
-    std::shared_ptr<ImagingSequence> imagingSequence() const;
+    ImagingSequence::ptr imagingSequence() const;
 public slots:
   void shooting(bool isShooting);
   void setCamera(const ImagerPtr &imager);
+  void values_from(ImagingSequence::ptr imagingSequence);
 private:
   D_PTR
 };

@@ -178,11 +178,20 @@ void CameraSetup::setCamera(const ImagerPtr& imager)
   d->load();
 }
 
-shared_ptr< ImagingSequence > CameraSetup::imagingSequence() const
+ImagingSequence::ptr CameraSetup::imagingSequence() const
 {
   qDebug() << "creating imaging sequence: " << d->imagerSettings;
   return make_shared<ImagingSequence>(d->imager, d->imagerSettings, d->sequenceSettings);
 }
+
+void CameraSetup::values_from(ImagingSequence::ptr imagingSequence)
+{
+  if(!imagingSequence)
+    return;
+  d->sequenceSettings = imagingSequence->settings();
+  d->load();
+}
+
 
 
 #include "camerasetup.moc"

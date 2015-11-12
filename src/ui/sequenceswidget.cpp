@@ -39,6 +39,7 @@ using namespace std;
 
 class SequenceItem {
 public:
+  typedef shared_ptr<SequenceItem> Ptr;
   SequenceItem(const SequenceElement& sequence, QStandardItemModel* model);
   ~SequenceItem();
   SequenceElement sequenceElement;
@@ -46,7 +47,15 @@ public:
   operator QList<QStandardItem*>() const;
   QList<shared_ptr<QStandardItem>> columns;
   
+  Ptr duplicate() const;
+  
 };
+
+SequenceItem::Ptr SequenceItem::duplicate() const
+{
+  return {};
+}
+
 
 SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement(sequenceElement), model{model}
 {
@@ -77,7 +86,7 @@ SequenceItem::~SequenceItem()
   model->removeRow(row);
 }
 
-QDebug operator<<(QDebug dbg, const shared_ptr<SequenceItem> &item) {
+QDebug operator<<(QDebug dbg, const SequenceItem::Ptr &item) {
   dbg.nospace() << "{" << item->sequenceElement.displayName << ", " << item->sequenceElement.imagingSequence->settings().shots << "}";
   return dbg.space();
 }
@@ -98,14 +107,18 @@ public:
   ShooterSettings &shooterSettings;
   shared_ptr<Ui::SequencesWidget> ui;
   void addSequenceItem();
+  void edit_sequence_element(const SequenceElement &sequence_element);
   void clearSequence();
   QStandardItemModel model;
-  QList<shared_ptr<SequenceItem>> sequences;
+  QList<SequenceItem::Ptr> sequences;
   QAction* add_action;
   QAction* remove_action;
   QAction* move_up_action;
   QAction* move_down_action;
   QAction* clear_action;
+  QAction* edit_action;
+  QAction* copy_action;
+  void enable_selection_actions();
   void waitDialog(const QString& name, bool timeout_enabled, int timeout_seconds, bool& dialog_finished);
 private:
   SequencesWidget *q;
@@ -122,6 +135,14 @@ SequencesWidget::~SequencesWidget()
 {
 }
 
+void SequencesWidget::Private::enable_selection_actions()
+{
+      auto has_selection = ui->sequenceItems->selectionModel()->hasSelection();
+      for(auto action: QList<QAction*>{remove_action, move_down_action, move_up_action, edit_action, copy_action})
+	action->setEnabled(has_selection);
+}
+
+
 SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* parent) : QWidget{parent}, dptr(shooterSettings, this)
 {
     d->ui->setupUi(this);
@@ -130,30 +151,41 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
     d->ui->toolbarContainer->layout()->addWidget(toolbar);
     d->add_action = toolbar->addAction(QIcon::fromTheme("list-add"), "New sequence");
     d->remove_action = toolbar->addAction(QIcon::fromTheme("list-remove"), "Remove sequence");
+    d->edit_action = toolbar->addAction(QIcon::fromTheme("edit-rename"), "Edit sequence");
+    d->copy_action = toolbar->addAction(QIcon::fromTheme("edit-copy"), "Copy sequence");
     d->move_up_action = toolbar->addAction(QIcon::fromTheme("arrow-up"), "Move up");
     d->move_down_action = toolbar->addAction(QIcon::fromTheme("arrow-down"), "Move down");
     d->clear_action = toolbar->addAction(QIcon::fromTheme("edit-clear-list"), "Clear all");
+    d->ui->sequenceItems->setModel(&d->model);
     connect(d->add_action, &QAction::triggered, bind(&Private::addSequenceItem, d.get()));
     connect(d->clear_action, &QAction::triggered, bind(&Private::clearSequence, d.get()));
-    
-    auto enable_selection_actions = [=]{
-      auto has_selection = d->ui->sequenceItems->selectionModel()->hasSelection();
-      for(auto action: QList<QAction*>{d->remove_action, d->move_down_action, d->move_up_action})
-	action->setEnabled(has_selection);
-    };
     
     connect(d->clear_action, &QAction::triggered, bind(&QAction::setEnabled, d->remove_action, false));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
     d->model.setHorizontalHeaderLabels({tr("Name"), tr("Shots"), tr("Exposure")});
-    d->ui->sequenceItems->setModel(&d->model);
-    connect(d->ui->sequenceItems->selectionModel(), &QItemSelectionModel::selectionChanged, enable_selection_actions);
+    connect(d->ui->sequenceItems->selectionModel(), &QItemSelectionModel::selectionChanged, bind(&Private::enable_selection_actions, d.get()));
     connect(d->remove_action, &QAction::triggered, [=]{
       if(!d->ui->sequenceItems->selectionModel()->hasSelection())
 	return;
-      d->sequences.erase(remove_if(begin(d->sequences), end(d->sequences), [=](const shared_ptr<SequenceItem> &i){ return d->ui->sequenceItems->selectionModel()->isSelected(i->columns[0]->index()); }), d->sequences.end());
+      d->sequences.erase(remove_if(begin(d->sequences), end(d->sequences), [=](const SequenceItem::Ptr &i){ return d->ui->sequenceItems->selectionModel()->isSelected(i->columns[0]->index()); }), d->sequences.end());
       d->ui->sequenceItems->selectionModel()->clearSelection();
-      enable_selection_actions();
+      d->enable_selection_actions();
+    });
+    connect(d->copy_action, &QAction::triggered, [=]{
+      if(!d->ui->sequenceItems->selectionModel()->hasSelection())
+	return;
+      auto sequence = *find_if(begin(d->sequences), end(d->sequences), [=](const SequenceItem::Ptr &i){ return d->ui->sequenceItems->selectionModel()->isSelected(i->columns[0]->index()); });
+      auto copy = sequence->duplicate();
+      d->sequences.push_back(copy);
+      d->model.appendRow(*copy);
+
+    });
+    connect(d->edit_action, &QAction::triggered, [=]{
+      if(!d->ui->sequenceItems->selectionModel()->hasSelection())
+	return;
+      auto sequence = *find_if(begin(d->sequences), end(d->sequences), [=](const SequenceItem::Ptr &i){ return d->ui->sequenceItems->selectionModel()->isSelected(i->columns[0]->index()); });
+      d->edit_sequence_element(sequence->sequenceElement);
     });
     auto move_item = [=](int how){
       if(!d->ui->sequenceItems->selectionModel()->hasSelection())
@@ -180,16 +212,17 @@ Sequence SequencesWidget::sequence() const
   return result;
 }
 
-void SequencesWidget::Private::addSequenceItem()
+void SequencesWidget::Private::edit_sequence_element(const SequenceElement& sequence_element)
 {
   QDialog *dialog = new QDialog(q);
   auto dialog_ui = new Ui::AddSequenceItemDialog;
   dialog_ui->setupUi(dialog);
   dialog->resize(500, 450);
   dialog->setModal(true);
-  
+  dialog_ui->item_name->setText(sequence_element.displayName);
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager);
+  cameraSetup->values_from(sequence_element.imagingSequence);
   connect(dialog_ui->item_type, F_PTR(QComboBox, currentIndexChanged, int), dialog_ui->item_settings_stack, &QStackedWidget::setCurrentIndex);
   dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
   connect(dialog_ui->item_name, &QLineEdit::textChanged, [=](const QString &newtext) { dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!newtext.isEmpty()); });
@@ -198,7 +231,7 @@ void SequencesWidget::Private::addSequenceItem()
   if(dialog->exec() != QDialog::Accepted)
     return;
   qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
-  shared_ptr<SequenceItem> sequenceItem;
+  SequenceItem::Ptr sequenceItem;
   if(dialog_ui->item_type->currentIndex() == 0) {
     qDebug() <<__PRETTY_FUNCTION__ << ": thread_id: " << QThread::currentThreadId();
     sequenceItem = make_shared<SequenceItem>(SequenceElement{cameraSetup->imagingSequence(), dialog_ui->item_name->text()}, &model);
@@ -220,6 +253,12 @@ void SequencesWidget::Private::addSequenceItem()
   delete dialog;
   sequences.push_back(sequenceItem);
   model.appendRow(*sequenceItem);
+}
+
+
+void SequencesWidget::Private::addSequenceItem()
+{
+  edit_sequence_element({});
 }
 
 
@@ -252,10 +291,9 @@ void SequencesWidget::setImager(const ImagerPtr& imager)
 {
   d->imager = imager;
   d->clearSequence();
+  d->enable_selection_actions();
   d->add_action->setEnabled(imager.operator bool());
-  d->move_down_action->setDisabled(true);
-  d->move_up_action->setDisabled(true);
-  d->remove_action->setDisabled(true);
+
   d->clear_action->setEnabled(imager.operator bool());
 }
 
