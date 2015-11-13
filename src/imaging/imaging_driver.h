@@ -45,6 +45,7 @@ public:
     QString serialShootPort;
     bool operator==(const Settings &other) const;
     operator bool() const;
+    QString toString(bool compact = false) const;
   };
   struct Info {
     QString summary;

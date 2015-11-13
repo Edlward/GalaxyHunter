@@ -46,6 +46,7 @@ public:
   QStandardItemModel *model;
   operator QList<QStandardItem*>() const;
   QList<shared_ptr<QStandardItem>> columns;
+  void update(const SequenceElement &element);
   
   Ptr duplicate() const;
   
@@ -53,30 +54,25 @@ public:
 
 SequenceItem::Ptr SequenceItem::duplicate() const
 {
-  return {};
+  auto sequenceElementCopy = sequenceElement;
+  sequenceElementCopy.displayName = "Copy of %1"_q % sequenceElement.displayName;
+  return make_shared<SequenceItem>(sequenceElementCopy, model);
 }
 
 
 SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement(sequenceElement), model{model}
 {
-  QString shots = "";
-  QString exposure = "";
-  if(sequenceElement.imagingSequence) {
-    auto sequence = sequenceElement.imagingSequence;
-    shots = "1";
-    if(sequence->settings().mode == ShooterSettings::Continuous)
-      shots = qApp->tr("infinite");
-    if(sequence->settings().mode == ShooterSettings::Sequence)
-      shots = QString::number(sequence->settings().shots);
-    exposure = sequence->imagerSettings().manualExposure ? 
-      QTime{0,0,0}.addSecs(sequence->imagerSettings().manualExposureSeconds).toString() :
-      sequence->imagerSettings().shutterSpeed.current + qApp->tr(" (preset)");
-    qDebug() << "shots: " << shots << ", exposure: " << exposure;
-  }
   columns.push_back(make_shared<QStandardItem>(sequenceElement.displayName));
-  columns.push_back(make_shared<QStandardItem>(shots));
-  columns.push_back(make_shared<QStandardItem>(exposure));
+  columns.push_back(make_shared<QStandardItem>(sequenceElement.imagingSequence ? sequenceElement.imagingSequence->toString() : ""));
 }
+
+void SequenceItem::update(const SequenceElement& element)
+{
+  this->sequenceElement = element;
+  columns[0]->setText(element.displayName);
+  columns[1]->setText(element.imagingSequence ? element.imagingSequence->toString() : "");
+}
+
 
 SequenceItem::~SequenceItem()
 {
@@ -107,7 +103,7 @@ public:
   ShooterSettings &shooterSettings;
   shared_ptr<Ui::SequencesWidget> ui;
   void addSequenceItem();
-  void edit_sequence_element(const SequenceElement &sequence_element);
+  SequenceItem::Ptr edit_sequence_element(const SequenceElement& sequence_element);
   void clearSequence();
   QStandardItemModel model;
   QList<SequenceItem::Ptr> sequences;
@@ -157,13 +153,16 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
     d->move_down_action = toolbar->addAction(QIcon::fromTheme("arrow-down"), "Move down");
     d->clear_action = toolbar->addAction(QIcon::fromTheme("edit-clear-list"), "Clear all");
     d->ui->sequenceItems->setModel(&d->model);
+    d->ui->sequenceItems->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    connect(&d->model, &QAbstractItemModel::dataChanged, [&]{ d->ui->sequenceItems->resizeColumnToContents(1); });
+    connect(&d->model, &QAbstractItemModel::rowsInserted, [&]{ d->ui->sequenceItems->resizeColumnToContents(1); });
     connect(d->add_action, &QAction::triggered, bind(&Private::addSequenceItem, d.get()));
     connect(d->clear_action, &QAction::triggered, bind(&Private::clearSequence, d.get()));
     
     connect(d->clear_action, &QAction::triggered, bind(&QAction::setEnabled, d->remove_action, false));
     d->ui->sequenceItems->setLayout(new QVBoxLayout);
     setImager({});
-    d->model.setHorizontalHeaderLabels({tr("Name"), tr("Shots"), tr("Exposure")});
+    d->model.setHorizontalHeaderLabels({tr("Name"), tr("Description")});
     connect(d->ui->sequenceItems->selectionModel(), &QItemSelectionModel::selectionChanged, bind(&Private::enable_selection_actions, d.get()));
     connect(d->remove_action, &QAction::triggered, [=]{
       if(!d->ui->sequenceItems->selectionModel()->hasSelection())
@@ -185,7 +184,10 @@ SequencesWidget::SequencesWidget(ShooterSettings &shooterSettings, QWidget* pare
       if(!d->ui->sequenceItems->selectionModel()->hasSelection())
 	return;
       auto sequence = *find_if(begin(d->sequences), end(d->sequences), [=](const SequenceItem::Ptr &i){ return d->ui->sequenceItems->selectionModel()->isSelected(i->columns[0]->index()); });
-      d->edit_sequence_element(sequence->sequenceElement);
+      auto item = d->edit_sequence_element(sequence->sequenceElement);
+      if(item) {
+	sequence->update(item->sequenceElement);
+      }
     });
     auto move_item = [=](int how){
       if(!d->ui->sequenceItems->selectionModel()->hasSelection())
@@ -212,7 +214,7 @@ Sequence SequencesWidget::sequence() const
   return result;
 }
 
-void SequencesWidget::Private::edit_sequence_element(const SequenceElement& sequence_element)
+SequenceItem::Ptr SequencesWidget::Private::edit_sequence_element(const SequenceElement& sequence_element)
 {
   QDialog *dialog = new QDialog(q);
   auto dialog_ui = new Ui::AddSequenceItemDialog;
@@ -221,15 +223,14 @@ void SequencesWidget::Private::edit_sequence_element(const SequenceElement& sequ
   dialog->setModal(true);
   dialog_ui->item_name->setText(sequence_element.displayName);
   auto cameraSetup = new CameraSetup(shooterSettings);
-  cameraSetup->setCamera(imager);
-  cameraSetup->values_from(sequence_element.imagingSequence);
+  cameraSetup->setCamera(imager, sequence_element.imagingSequence);
   connect(dialog_ui->item_type, F_PTR(QComboBox, currentIndexChanged, int), dialog_ui->item_settings_stack, &QStackedWidget::setCurrentIndex);
-  dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+  dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!sequence_element.displayName.isEmpty());
   connect(dialog_ui->item_name, &QLineEdit::textChanged, [=](const QString &newtext) { dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!newtext.isEmpty()); });
   dialog_ui->item_settings_stack->insertWidget(0, cameraSetup);
   dialog_ui->item_settings_stack->setCurrentIndex(0);
   if(dialog->exec() != QDialog::Accepted)
-    return;
+    return {};
   qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
   SequenceItem::Ptr sequenceItem;
   if(dialog_ui->item_type->currentIndex() == 0) {
@@ -251,14 +252,19 @@ void SequencesWidget::Private::edit_sequence_element(const SequenceElement& sequ
   };
   delete dialog_ui;
   delete dialog;
-  sequences.push_back(sequenceItem);
-  model.appendRow(*sequenceItem);
+  return sequenceItem;
+
 }
 
 
 void SequencesWidget::Private::addSequenceItem()
 {
-  edit_sequence_element({});
+  auto item = edit_sequence_element({});
+  if(item) {
+    sequences.push_back(item);
+    model.appendRow(*item);
+  }
+  
 }
 
 

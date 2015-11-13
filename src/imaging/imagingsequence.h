@@ -48,6 +48,8 @@ public:
   Imager::Settings imagerSettings() const;
   virtual ~ImagingSequence();
   typedef std::shared_ptr<ImagingSequence> ptr;
+  QString toString(bool compact = true) const;
+  operator QString() const;
 public slots:
   void start();
   void abort();
@@ -61,4 +63,7 @@ signals:
   void image(const Image::ptr &image);
   void dither();
 };
+
+QDebug operator<<(QDebug dbg, const ImagingSequence::ptr &sequence);
+
 #endif // IMAGINGSEQUENCE_H

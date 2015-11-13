@@ -19,6 +19,11 @@
 
 #include "imagingsequence.h"
 #include <QThread>
+#include "Qt/strings.h"
+#include <functional>
+#include <map>
+#include <QStringList>
+using namespace std;
 
 class ImagingSequence::Private {
 public:
@@ -101,6 +106,38 @@ ImagingSequence::SequenceSettings::operator bool() const
 {
   return mode == ShooterSettings::Continuous || shots > 0;
 }
+
+ImagingSequence::operator QString() const
+{
+  return toString();
+}
+
+QString ImagingSequence::toString(bool compact) const
+{
+  typedef std::function<QString()> ValueF;
+  map<ShooterSettings::ShootMode, ValueF> modes{
+    {ShooterSettings::Single, [&]{ return "single shoot"; }},
+    {ShooterSettings::Sequence, [&]{ return "%1 shoots"_q % settings().shots; }},
+    {ShooterSettings::Continuous, [&]{ return "continuous"; }},
+  };
+
+  QStringList values;
+  values << modes[d->sequenceSettings.mode]();
+  values << (d->sequenceSettings.delayInMilliseconds() == 0 ? (compact ? "" : "no delay") : "%1 delay"_q % d->sequenceSettings.delayBetweenShots.toString());
+  values << (d->sequenceSettings.saveToDisk ? (compact ? "saving" : "saving to %1"_q % d->sequenceSettings.saveDirectory) : (compact ? "" : "discarding"));
+  values << (d->sequenceSettings.ditherAfterShots ? "dithering" : (compact ? "" : "no dithering"));
+  values << d->imagerSettings.toString();
+  values.removeAll({});
+  return values.join(", ");
+}
+
+
+QDebug operator<<(QDebug dbg, const ImagingSequence::ptr& sequence)
+{
+  dbg.nospace() << "ImagingSequence{" << sequence->toString(false) << "}";
+  return dbg.space();
+}
+
 
 
 #include "imagingsequence.moc"

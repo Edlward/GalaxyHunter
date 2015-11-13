@@ -36,8 +36,7 @@ public:
     ImagingSequence::ptr imagingSequence() const;
 public slots:
   void shooting(bool isShooting);
-  void setCamera(const ImagerPtr &imager);
-  void values_from(ImagingSequence::ptr imagingSequence);
+  void setCamera(const ImagerPtr &imager, const ImagingSequence::ptr &imagingSequence = {});
 private:
   D_PTR
 };
