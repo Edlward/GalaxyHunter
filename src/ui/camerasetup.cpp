@@ -175,6 +175,7 @@ void CameraSetup::setCamera(const ImagerPtr& imager, const ImagingSequence::ptr 
             });
         }
         connect(d->ui->imageSettings, &QPushButton::clicked, [=] {
+	  qDebug() << d->imagerSettings;
             auto dialog = new ImageSettingsDialog{ d->imagerSettings, this};
             connect(dialog, &QDialog::accepted, [=]{
                 d->shooterSettings.camera(imager)->save(d->imagerSettings);

@@ -76,7 +76,7 @@ Imager::Info TestingImager::info() const
 Imager::Settings TestingImager::settings() const
 {
   return {
-    {"1", {"1", "2", "5"}},
+    {"1", {"Bulb", "1", "2", "5"}},
     {"PNG", {"PNG"}},
     {"100", {"100", "200", "500"}},
     false,
