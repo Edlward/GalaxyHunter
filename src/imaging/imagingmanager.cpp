@@ -75,15 +75,22 @@ void ImagingManager::start(Sequence sequence)
       connect(imagingSequence.get(), &ImagingSequence::image, [=, &shots]{
         shots++;
         emit message(imagingSequence->settings().mode == ShooterSettings::Continuous ?
-          tr("Image %1 for sequence %2") % shots % d->sequence.displayName :
+          tr("Image %1 for sequence %2") % shots % d->sequence :
           tr("Image %1 of %2 for sequence %3") % shots % total_images % d->sequence.displayName,
           0);
       });
       imagingSequence->start();
     }
-    if(d->sequence.run_after_sequence) {
-      qDebug() << __PRETTY_FUNCTION__ << " running after_sequence";
-      d->sequence.run_after_sequence();
+    if(d->sequence.wait) {
+      qDebug() << __PRETTY_FUNCTION__ << "waiting for" << d->sequence.wait.toString();
+      QElapsedTimer timer;
+      auto expiration = d->sequence.wait.seconds > 0 ? d->sequence.wait.seconds*1000 : numeric_limits<qint64>().max();
+      qDebug() << "expiration millis:" << expiration;
+      timer.start();
+      while(!timer.hasExpired(expiration)) {
+	QThread::currentThread()->msleep(100);
+	// TODO: add the wait dialog back
+      }
     }
     d->sequence = {};
   }

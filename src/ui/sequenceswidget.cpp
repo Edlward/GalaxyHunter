@@ -63,14 +63,15 @@ SequenceItem::Ptr SequenceItem::duplicate() const
 SequenceItem::SequenceItem(const SequenceElement& sequenceElement, QStandardItemModel* model) : sequenceElement(sequenceElement), model{model}
 {
   columns.push_back(make_shared<QStandardItem>(sequenceElement.displayName));
-  columns.push_back(make_shared<QStandardItem>(sequenceElement.imagingSequence ? sequenceElement.imagingSequence->toString() : ""));
+  columns.push_back(make_shared<QStandardItem>(sequenceElement.imagingSequence ? sequenceElement.imagingSequence->toString() : sequenceElement.wait.toString()));
 }
 
 void SequenceItem::update(const SequenceElement& element)
 {
+  qDebug() << element;
   this->sequenceElement = element;
   columns[0]->setText(element.displayName);
-  columns[1]->setText(element.imagingSequence ? element.imagingSequence->toString() : "");
+  columns[1]->setText(element.imagingSequence ? element.imagingSequence->toString() : sequenceElement.wait.toString());
 }
 
 
@@ -115,7 +116,6 @@ public:
   QAction* edit_action;
   QAction* copy_action;
   void enable_selection_actions();
-  void waitDialog(const QString& name, bool timeout_enabled, int timeout_seconds, bool& dialog_finished);
 private:
   SequencesWidget *q;
 };
@@ -222,6 +222,7 @@ SequenceItem::Ptr SequencesWidget::Private::edit_sequence_element(const Sequence
   dialog->resize(500, 450);
   dialog->setModal(true);
   dialog_ui->item_name->setText(sequence_element.displayName);
+
   auto cameraSetup = new CameraSetup(shooterSettings);
   cameraSetup->setCamera(imager, sequence_element.imagingSequence);
   connect(dialog_ui->item_type, F_PTR(QComboBox, currentIndexChanged, int), dialog_ui->item_settings_stack, &QStackedWidget::setCurrentIndex);
@@ -229,26 +230,30 @@ SequenceItem::Ptr SequencesWidget::Private::edit_sequence_element(const Sequence
   connect(dialog_ui->item_name, &QLineEdit::textChanged, [=](const QString &newtext) { dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!newtext.isEmpty()); });
   dialog_ui->item_settings_stack->insertWidget(0, cameraSetup);
   dialog_ui->item_settings_stack->setCurrentIndex(0);
+  if(! sequence_element.imagingSequence) {
+    if(sequence_element.wait) {
+      qDebug() << sequence_element.wait.toString();
+      dialog_ui->item_settings_stack->setCurrentWidget(dialog_ui->wait_for_page);
+      dialog_ui->item_type->setCurrentIndex(1);
+      dialog_ui->auto_accept->setChecked(sequence_element.wait.seconds > 0);
+      dialog_ui->auto_accept_timeout->setTime(QTime{0,0,0}.addSecs(sequence_element.wait.seconds));
+    }
+  }
   if(dialog->exec() != QDialog::Accepted)
     return {};
-  qDebug() << "sequence with name: " << dialog_ui->item_name->text() << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
+  auto sequence_element_name = dialog_ui->item_name->text();
+  qDebug() << "sequence with name: " << sequence_element_name << ", settings: " <<  cameraSetup->imagingSequence()->imagerSettings();
   SequenceItem::Ptr sequenceItem;
+  qDebug() << "current index: " << dialog_ui->item_type->currentIndex();
   if(dialog_ui->item_type->currentIndex() == 0) {
     qDebug() <<__PRETTY_FUNCTION__ << ": thread_id: " << QThread::currentThreadId();
-    sequenceItem = make_shared<SequenceItem>(SequenceElement{cameraSetup->imagingSequence(), dialog_ui->item_name->text()}, &model);
+    sequenceItem = make_shared<SequenceItem>(SequenceElement{cameraSetup->imagingSequence(), sequence_element_name}, &model);
   } else if(dialog_ui->item_type->currentIndex() == 1) {
     auto timeout_enabled = dialog_ui->auto_accept->isChecked();
-    auto timeout_seconds = QTime{0,0,0}.secsTo(dialog_ui->auto_accept_timeout->time());
-    auto name = dialog_ui->item_name->text();
-    sequenceItem = make_shared<SequenceItem>(SequenceElement{{}, dialog_ui->item_name->text(), [=]{
-      qDebug() << __PRETTY_FUNCTION__;
-      bool dialog_finished = false;
-      QLambdaEvent *event = new QLambdaEvent([=,&dialog_finished]{
-        waitDialog(name, timeout_enabled, timeout_seconds, dialog_finished);
-      });
-      qApp->postEvent(DSLR_Shooter_Window::instance(), event);
-      while(!dialog_finished);
-    }}, &model);
+    qint64 timeout_seconds = timeout_enabled ? QTime{0,0,0}.secsTo(dialog_ui->auto_accept_timeout->time()) : 0;
+    auto name = sequence_element_name;
+    qDebug() << "wait dialog: timeout_enabled=" << timeout_enabled << ", seconds=" << timeout_seconds << ", name=" << sequence_element_name;
+    sequenceItem = make_shared<SequenceItem>(SequenceElement{{}, sequence_element_name, {timeout_seconds} }, &model);
   };
   delete dialog_ui;
   delete dialog;
@@ -265,31 +270,6 @@ void SequencesWidget::Private::addSequenceItem()
     model.appendRow(*item);
   }
   
-}
-
-
-void SequencesWidget::Private::waitDialog(const QString &name, bool timeout_enabled, int timeout_seconds, bool& dialog_finished)
-{
-  qDebug() << __PRETTY_FUNCTION__;
-    QDialog *waitDialog = new QDialog;
-    waitDialog->setLayout(new QVBoxLayout);
-    waitDialog->layout()->addWidget(new QLabel("%1: waiting..."_q % name));
-    auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-    waitDialog->layout()->addWidget(buttonBox);
-    if(timeout_enabled && timeout_seconds>0) {
-      QTimer *killTimer = new QTimer(waitDialog);
-      connect(killTimer, &QTimer::timeout, waitDialog, &QDialog::accept);
-      killTimer->start(timeout_seconds*1000);
-      QTimer *updateTimer = new QTimer(waitDialog);
-      connect(updateTimer, &QTimer::timeout, waitDialog, [=]{ 
-        buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok (%1)") % QTime(0,0,0).addMSecs(killTimer->remainingTime()).toString("HH:mm:ss"));
-      });
-      updateTimer->start(1000);
-    };
-    connect(buttonBox, &QDialogButtonBox::accepted, waitDialog, &QDialog::accept);
-    connect(waitDialog, &QDialog::accepted, waitDialog, &QDialog::deleteLater);
-    waitDialog->show();
-    connect(waitDialog, &QDialog::finished, [&dialog_finished]{ dialog_finished = true; });
 }
 
 
