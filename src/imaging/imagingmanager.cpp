@@ -34,6 +34,7 @@ public:
   bool remove_on_camera;
   SequenceElement sequence;
   bool stopped = true;
+    bool continue_dialog_accepted;
 private:
   ImagingManager *q;
 };
@@ -87,7 +88,10 @@ void ImagingManager::start(Sequence sequence)
       auto expiration = d->sequence.wait.seconds > 0 ? d->sequence.wait.seconds*1000 : numeric_limits<qint64>().max();
       qDebug() << "expiration millis:" << expiration;
       timer.start();
-      while(!timer.hasExpired(expiration)) {
+      d->continue_dialog_accepted = false;
+      emit waitForUserAction(d->sequence.displayName, d->sequence.wait.seconds);
+      while(!timer.hasExpired(expiration) && ! d->continue_dialog_accepted) {
+	qApp->processEvents();
 	QThread::currentThread()->msleep(100);
 	// TODO: add the wait dialog back
       }
@@ -97,6 +101,20 @@ void ImagingManager::start(Sequence sequence)
   qDebug() << __PRETTY_FUNCTION__ << ": finished.";
   emit finished();
   d->stopped = true;
+}
+
+
+void ImagingManager::action(Action action)
+{
+  qDebug() << "Got action: " << action;
+  switch(action) {
+    case Abort:
+      abort();
+      break;
+    case ContinueDialogAccepted:
+      d->continue_dialog_accepted = true;
+      break;
+  }
 }
 
 

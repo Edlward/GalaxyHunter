@@ -37,19 +37,25 @@ public:
     ImagingManager(ShooterSettings &shooterSettings, QObject *parent = 0);
     ~ImagingManager();
     void setImager(const ImagerPtr &imager);
+    enum Action {
+        Abort, ContinueDialogAccepted,
+    };
 public slots:
-  void start(Sequence sequence);
-  void abort();
-  void setExposure(double milliseconds);
-  void setRemoveOnCameraEnabled(bool enabled);
+    void start(Sequence sequence);
+    void abort(); // Deprecated
+    void action(Action action);
+
+    void setExposure(double milliseconds);
+    void setRemoveOnCameraEnabled(bool enabled);
 signals:
-  void started();
-  void finished();
-  void saved(const QString &file);
-  void image(const Image::ptr &image);
-  void message(const QString &message, int timeout);
+    void started();
+    void finished();
+    void saved(const QString &file);
+    void image(const Image::ptr &image);
+    void message(const QString &message, int timeout);
+    void waitForUserAction(const QString &sequenceName, qint64 autoAcceptSeconds);
 private:
-  D_PTR
+    D_PTR
 };
 
 typedef std::shared_ptr<ImagingManager> ImagingManagerPtr;

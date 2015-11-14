@@ -139,6 +139,5 @@ QDebug operator<<(QDebug dbg, const ImagingSequence::ptr& sequence)
 }
 
 
-
 #include "imagingsequence.moc"
 
