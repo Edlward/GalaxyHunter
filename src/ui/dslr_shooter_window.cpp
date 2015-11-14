@@ -114,20 +114,24 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     connect(qApp, &QApplication::aboutToQuit, bind(&QThread::quit, &d->imagingManagerThread));
     connect(d->imagingManager.get(), &ImagingManager::message, d->ui->statusbar, &QStatusBar::showMessage, Qt::QueuedConnection);
     connect(d->imagingManager.get(), &ImagingManager::waitForUserAction, this, [=](const QString &sequenceName, qint64 autoAcceptSeconds) {
-        QMessageBox *waitDialog = new QMessageBox(
-            QMessageBox::Information,
-            tr("Wait for %1") % sequenceName,
-            tr("Step %1: click Ok to continue.\n%2") % sequenceName % (autoAcceptSeconds > 0 ? tr("Will automatically continue after %1") % QTime {0,0,0} .addSecs(autoAcceptSeconds).toString() : ""),
-            QMessageBox::Ok,
-	    this
-        );
-	connect(waitDialog, &QMessageBox::buttonClicked, waitDialog, &QMessageBox::accept);
-	connect(waitDialog, &QMessageBox::accepted, d->imagingManager.get(), bind(&ImagingManager::action, d->imagingManager.get(), ImagingManager::ContinueDialogAccepted), Qt::QueuedConnection);
-	if(autoAcceptSeconds > 0) {
-	  QTimer::singleShot(autoAcceptSeconds*1000, waitDialog, bind(&QMessageBox::accept, waitDialog));
-	}
-	connect(waitDialog, &QMessageBox::finished, bind(&QMessageBox::deleteLater, waitDialog));
-	waitDialog->show();
+        auto message = [=](int seconds) {
+            return tr("Step %1: click Ok to continue.\n%2") % sequenceName % (seconds > 0 ? tr("Will automatically continue after %1") % QTime {0,0,0} .addSecs(seconds).toString() : "");
+        };
+        QMessageBox *waitDialog = new QMessageBox(QMessageBox::Information, tr("Wait for %1") % sequenceName,message(autoAcceptSeconds),QMessageBox::Ok,this);
+	waitDialog->setProperty("remaining_seconds", autoAcceptSeconds);
+        connect(waitDialog, &QMessageBox::buttonClicked, waitDialog, &QMessageBox::accept);
+        connect(waitDialog, &QMessageBox::accepted, d->imagingManager.get(), bind(&ImagingManager::action, d->imagingManager.get(), ImagingManager::ContinueDialogAccepted), Qt::QueuedConnection);
+        if(autoAcceptSeconds > 0) {
+            QTimer::singleShot(autoAcceptSeconds*1000, waitDialog, bind(&QMessageBox::accept, waitDialog));
+	    QTimer *updateTimer = new QTimer(waitDialog);
+	    connect(updateTimer, &QTimer::timeout, [=]{
+	      waitDialog->setProperty("remaining_seconds", waitDialog->property("remaining_seconds").toLongLong()-1);
+	      waitDialog->setText(message(waitDialog->property("remaining_seconds").toLongLong()));
+	    } );
+	    updateTimer->start(1000);
+        }
+        connect(waitDialog, &QMessageBox::finished, bind(&QMessageBox::deleteLater, waitDialog));
+        waitDialog->show();
     }, Qt::QueuedConnection);
 
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->camera_setup_dock);

@@ -36,6 +36,7 @@
 #include <Qt/qlambdaevent.h>
 
 using namespace std;
+using namespace std::placeholders;
 
 class SequenceItem {
 public:
@@ -228,6 +229,7 @@ SequenceItem::Ptr SequencesWidget::Private::edit_sequence_element(const Sequence
   connect(dialog_ui->item_type, F_PTR(QComboBox, currentIndexChanged, int), dialog_ui->item_settings_stack, &QStackedWidget::setCurrentIndex);
   dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!sequence_element.displayName.isEmpty());
   connect(dialog_ui->item_name, &QLineEdit::textChanged, [=](const QString &newtext) { dialog_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!newtext.isEmpty()); });
+  connect(dialog_ui->auto_accept, &QCheckBox::toggled, bind(&QLineEdit::setEnabled, dialog_ui->auto_accept_timeout, _1));
   dialog_ui->item_settings_stack->insertWidget(0, cameraSetup);
   dialog_ui->item_settings_stack->setCurrentIndex(0);
   if(! sequence_element.imagingSequence) {
@@ -239,6 +241,7 @@ SequenceItem::Ptr SequencesWidget::Private::edit_sequence_element(const Sequence
       dialog_ui->auto_accept_timeout->setTime(QTime{0,0,0}.addSecs(sequence_element.wait.seconds));
     }
   }
+  dialog_ui->auto_accept_timeout->setEnabled(dialog_ui->auto_accept->isChecked());
   if(dialog->exec() != QDialog::Accepted)
     return {};
   auto sequence_element_name = dialog_ui->item_name->text();
