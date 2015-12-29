@@ -185,10 +185,12 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
 
     restoreState(d->settings.value("windows_settings").toByteArray());
 
-    d->telescopeControl = new TelescopeControl(this);
     QMenu *setCamera = new QMenu("Available Cameras", this);
     d->ui->actionSet_Camera->setMenu(setCamera);
+#ifdef ENABLE_INDI
+    d->telescopeControl = new TelescopeControl(this);
     connect(d->telescopeControl, &TelescopeControl::message, bind(&DSLR_Shooter_Window::got_message, this, _1));
+#endif
     connect(d->ui->actionStop_Shooting, &QAction::triggered, bind(&QAction::setDisabled, d->ui->actionStop_Shooting, true));
     connect(d->ui->actionStop_Shooting, &QAction::triggered, [=] {d->imagingManager->abort();});
     connect(d->ui->action_Quit, &QAction::triggered, qApp, &QApplication::quit);
@@ -240,7 +242,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
         d->imageView->clearROI();
         d->ui->focusing_clear_roi->setEnabled(false);
     });
-
+#ifdef ENABLE_INDI
     connect(d->ui->actionConnectTelescope, &QAction::triggered, [=] {
         QString server = QInputDialog::getText(this, tr("Telescope"), tr("Enter telescope address (example: localhost:7624)"), QLineEdit::Normal, "localhost:7624");
         if(server != "") {
@@ -251,6 +253,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     });
     connect(d->ui->action_Devices_Control_Panel, &QAction::triggered, bind(&TelescopeControl::showControlPanel, d->telescopeControl));
     connect(d->ui->actionRemote_Control, &QAction::triggered, bind(&TelescopeControl::showTelescopeRemoteControl, d->telescopeControl));
+#else
+    d->ui->menuTelescope->setEnabled(false);
+#endif
     QTimer *autoScan = new QTimer(this);
     autoScan->setSingleShot(true);
     connect(autoScan, &QTimer::timeout, d->imagingDriver.get(), bind(&ImagingDriver::scan, d->imagingDriver), Qt::QueuedConnection);
