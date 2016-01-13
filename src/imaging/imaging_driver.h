@@ -43,6 +43,7 @@ public:
     bool manualExposure;
     qulonglong manualExposureSeconds;
     QString serialShootPort;
+    bool mirrorLock;
     bool operator==(const Settings &other) const;
     operator bool() const;
     QString toString(bool compact = false) const;

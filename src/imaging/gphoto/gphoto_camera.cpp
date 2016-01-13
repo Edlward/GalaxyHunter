@@ -188,6 +188,11 @@ Image::ptr GPhotoCamera::Private::shootTethered( const Imager::Settings& setting
 {
   auto shoot_future = QtConcurrent::run([=]{
     auto shoot = make_shared<SerialShoot>(settings.serialShootPort.toStdString());
+    if(settings.mirrorLock) {
+      shoot.reset();
+      QThread::currentThread()->sleep(2);
+      shoot = make_shared<SerialShoot>(settings.serialShootPort.toStdString());
+    }
     QElapsedTimer elapsed;
     elapsed.start();
     int elapsed_secs = 0;

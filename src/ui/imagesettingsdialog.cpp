@@ -55,6 +55,8 @@ ImageSettingsDialog::ImageSettingsDialog( Imager::Settings& imagerSettings, QWid
   populateCombo(d->ui->imageFormat, d->imagerSettings.imageFormat);
   populateCombo(d->ui->iso, d->imagerSettings.iso);
   populateCombo(d->ui->shutterSpeedPresets, d->imagerSettings.shutterSpeed);
+  d->ui->mirror_lock->setChecked(d->imagerSettings.mirrorLock);
+  connect(d->ui->mirror_lock, &QCheckBox::toggled, [=](bool b) {d->imagerSettings.mirrorLock = b; });
   connect(d->ui->shutterSpeedPresets, &QComboBox::currentTextChanged, [=](const QString &t) { d->imagerSettings.shutterSpeed.current = t; });
   connect(d->ui->iso, &QComboBox::currentTextChanged, [=](const QString &t) { d->imagerSettings.iso.current = t; });
   connect(d->ui->imageFormat, &QComboBox::currentTextChanged, [=](const QString &t) { d->imagerSettings.imageFormat.current = t; });
