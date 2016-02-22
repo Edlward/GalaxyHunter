@@ -3,13 +3,14 @@
 
 #include "imaging/imaging_driver.h"
 #include "dptr.h"
+#include "libgphoto++/src/driver.h"
 
 class ShooterSettings;
 class GPhotoCameraInformation;
 class GPhotoCamera : public Imager {
   Q_OBJECT
 public:
-  GPhotoCamera(const std::shared_ptr<GPhotoCameraInformation> &gphotoCameraInformation, ShooterSettings &shooterSettings);
+  GPhotoCamera(const GPhotoCPP::Driver::CameraFactory::ptr &gphotoCameraInformation, ShooterSettings &shooterSettings);
   ~GPhotoCamera();
   virtual Info info() const;
   virtual Settings settings() const;

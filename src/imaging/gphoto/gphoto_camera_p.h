@@ -40,23 +40,15 @@ private:
 
 class GPhotoCamera::Private {
 public:
-  Private(const shared_ptr<GPhotoCameraInformation> &info, ShooterSettings &shooterSettings, GPhotoCamera *q);
-  string port;
-  Info info;
-  GPContext* context;
-  Camera *camera = nullptr;
+  Private(const GPhotoCPP::Driver::CameraFactory::ptr& info, ShooterSettings& shooterSettings, GPhotoCamera* q);
+  GPhotoCPP::Driver::CameraFactory::ptr factory;
+  GPhotoCPP::CameraPtr camera;
   QString outputDirectory;
   Image::ptr shootTethered(const Imager::Settings &settings);
   Image::ptr shootPreset();
   QString fixedFilename(QString fileName) const;
-  QMutex &mutex;
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
-  
-  void gphoto_error(int error_code, const QString &file, int line);
-#define GPHOTO_RETURN_ERROR(error_code, ...) gphoto_error(error_code, __FILE__, __LINE__); return __VA_ARGS__ ;
-#define GPHOTO_CHECK_ERROR(error_code, context, ...) if(error_code != GP_OK) { context->GPHOTO_RETURN_ERROR(error_code, __VA_ARGS__) }
-#define GPHOTO_RUN(expression, context, ...) if( (error_code = expression) != GP_OK) {context->GPHOTO_RETURN_ERROR(error_code, __VA_ARGS__) }
   
   class GPhotoComboSetting {
   public:
