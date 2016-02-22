@@ -9,3 +9,4 @@ set(dslr_imaging_HEADERS ${dslr_imaging_HEADERS}
   ${CMAKE_CURRENT_SOURCE_DIR}/gphoto.h
   ${CMAKE_CURRENT_SOURCE_DIR}/gphoto_camera.h
   PARENT_SCOPE)
+add_subdirectory(libgphoto++)

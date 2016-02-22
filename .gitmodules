@@ -1,3 +1,6 @@
 [submodule "src/GuLinux-Commons"]
 	path = src/GuLinux-Commons
 	url = https://github.com/GuLinux/GuLinux-Commons.git
+[submodule "src/imaging/gphoto/libgphoto++"]
+	path = src/imaging/gphoto/libgphoto++
+	url = https://github.com/GuLinux/libgphoto-cpp.git
