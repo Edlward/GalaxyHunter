@@ -82,8 +82,11 @@ GPhotoCamera::GPhotoCamera(const GPhotoCPP::Driver::CameraFactory::ptr &gphotoCa
 void GPhotoCamera::connect()
 {
   d->camera = *d->factory;
-  if(d->camera)
+  if(d->camera) {
     emit connected();
+    d->info.model = QString::fromStdString(d->factory->name());
+    d->info.summary = QString::fromStdString(d->camera->summary());
+  }
 }
 
 Imager::Settings GPhotoCamera::settings() const
@@ -101,7 +104,7 @@ void GPhotoCamera::disconnect()
 
 Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 {
-//   qDebug() << "setting camera: " << settings;
+  qDebug() << "setting camera: " << settings;
 //   Private::GPhotoComboSetting(d.get(), "imageformat").save(settings.imageFormat);
 //   Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.shutterSpeed);
 //   Private::GPhotoComboSetting(d.get(), "iso").save(settings.iso);
@@ -294,6 +297,6 @@ QString CameraTempFile::mimeType() const
 
 Imager::Info GPhotoCamera::info() const
 {
-//   return d->info;
+  return d->info;
 }
 

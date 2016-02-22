@@ -13,6 +13,10 @@
 #include <Magick++.h>
 #include "commons/shootersettings.h"
 
+#include "libgphoto++/src/camera.h"
+#include "libgphoto++/src/camera_filesystem.h"
+#include "libgphoto++/src/camerafile.h"
+
 using namespace std;
 
 
@@ -49,6 +53,7 @@ public:
   QString fixedFilename(QString fileName) const;
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
+  Info info;
   
   class GPhotoComboSetting {
   public:
