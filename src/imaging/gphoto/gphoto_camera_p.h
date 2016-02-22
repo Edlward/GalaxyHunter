@@ -16,6 +16,7 @@
 #include "libgphoto++/src/camera.h"
 #include "libgphoto++/src/camera_filesystem.h"
 #include "libgphoto++/src/camerafile.h"
+#include "libgphoto++/src/exposure.h"
 
 using namespace std;
 
@@ -53,6 +54,7 @@ public:
   QString fixedFilename(QString fileName) const;
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
+  GPhotoCPP::ExposurePtr exposureSetting;
   Info info;
   
   class GPhotoComboSetting {
