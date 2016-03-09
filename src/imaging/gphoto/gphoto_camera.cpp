@@ -71,6 +71,8 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
     exposure = (*exposure_v).duration();
   }
   auto shot = d->camera->control().shoot(exposure, settings.mirrorLock);
+  shot->camera_file().wait();
+  return make_shared<CameraTempFile>(shot->camera_file().get());
 //   Private::GPhotoComboSetting(d.get(), "imageformat").save(settings.imageFormat);
 //   Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.shutterSpeed);
 //   Private::GPhotoComboSetting(d.get(), "iso").save(settings.iso);
@@ -92,7 +94,7 @@ Image::ptr GPhotoCamera::Private::shootPreset(  )
   /*
   auto camera_file = make_shared<CameraTempFile>(q);
   CameraFilePath camera_remote_file;
-  QImage image;
+  QImage image;duration
   gp_api{{
     sequence_run( [&]{ return gp_camera_capture(camera, GP_CAPTURE_IMAGE, &camera_remote_file, context);} ),
     sequence_run( [&]{ return gp_camera_file_get(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).toLatin1(), GP_FILE_TYPE_NORMAL, *camera_file, context); } ),
@@ -176,27 +178,27 @@ Image::ptr GPhotoCamera::Private::shootTethered( const Imager::Settings& setting
 CameraTempFile::operator QImage() const {
   try {
     QImage image;
-    QFileInfo fileInfo(originalName);
     File2Image file2image(image);
-    file2image.load(*this, fileInfo.suffix().toLower());
+//     file2image.load(); TODO: restore
     return image;
   } catch(std::exception &e) {
-      imager->error(imager, QString("Error converting image: %1").arg(e.what()));
+    // TODO: error reporting
       return QImage();
   }
 }
 
 void CameraTempFile::save_to(const QString& path){
-  QFile file( temp_file.fileName() );
-  if(file.copy(path))
-    imager->message(imager, "Saved image to %1"_q % path);
-  else
-    imager->error(imager, "Error saving temporary image %1 to %2"_q % temp_file.fileName() % path);
+  camera_file->save(path.toStdString());
+  // TODO: error log
+//   if(file.copy(path))
+//     imager->message(imager, "Saved image to %1"_q % path);
+//   else
+//     imager->error(imager, "Error saving temporary image %1 to %2"_q % temp_file.fileName() % path);
 }
 
 QString CameraTempFile::originalFileName()
 {
-  return QFileInfo(originalName).fileName();
+  return QString::fromStdString( camera_file->file() );
 }
 
 
@@ -230,35 +232,25 @@ GPhotoCamera::~GPhotoCamera()
 
 
 
-CameraTempFile::CameraTempFile(GPhotoCamera *imager) : imager{imager}
+CameraTempFile::CameraTempFile(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
 {
-  int r = gp_file_new(&camera_file);
-  qDebug() << __PRETTY_FUNCTION__ << ": gp_file_new=" << r;
-  temp_file.open();
-  temp_file.close();
-  temp_file.setAutoRemove(true);
 }
 
-int CameraTempFile::save()
-{
-  qDebug() << __PRETTY_FUNCTION__;
-  return gp_file_save(camera_file, temp_file.fileName().toLocal8Bit());
-}
 
 CameraTempFile::~CameraTempFile()
 {
   qDebug() << __PRETTY_FUNCTION__ ;
-  gp_file_free(camera_file);
 }
 
 QString CameraTempFile::mimeType() const
 {
-  int r = gp_file_detect_mime_type(camera_file);
-  qDebug() << __PRETTY_FUNCTION__ << ": gp_file_detect_mime_type=" << r;
-  const char *mime;
-  r = gp_file_get_mime_type(camera_file, &mime);
-  qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
-  return QString(mime);
+//   int r = gp_file_detect_mime_type(camera_file);
+//   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_detect_mime_type=" << r;
+//   const char *mime;
+//   r = gp_file_get_mime_type(camera_file, &mime);
+//   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
+//   return QString(mime);
+  return QString{}; // TODO
 }
 
 Imager::Info GPhotoCamera::info() const

@@ -24,23 +24,17 @@ using namespace std;
 
 class CameraTempFile : public Image {
 public:
-  CameraTempFile(GPhotoCamera *imager);
+  CameraTempFile(const GPhotoCPP::CameraFilePtr &camera_file);
   ~CameraTempFile();
-  int save();
-  CameraFile *camera_file;
   QTemporaryFile temp_file;
-  QString originalName;
-  operator CameraFile *() const { return camera_file; }
-  operator QString() const { return path(); }
   QString mimeType() const;
-  QString path() const { return temp_file.fileName(); }
   
   virtual operator QImage() const;
 protected:
   virtual QString originalFileName();
   virtual void save_to(const QString &path);
 private:
-  GPhotoCamera *imager;
+  const GPhotoCPP::CameraFilePtr camera_file;
 };
 
 
