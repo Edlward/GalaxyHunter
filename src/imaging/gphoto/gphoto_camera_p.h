@@ -31,7 +31,7 @@ public:
   
   virtual operator QImage() const;
 protected:
-  virtual QString originalFileName();
+  virtual QString originalFileName() const;
   virtual void save_to(const QString &path);
 private:
   const GPhotoCPP::CameraFilePtr camera_file;

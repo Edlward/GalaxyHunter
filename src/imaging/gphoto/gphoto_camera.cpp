@@ -178,17 +178,20 @@ Image::ptr GPhotoCamera::Private::shootTethered( const Imager::Settings& setting
 CameraTempFile::operator QImage() const {
   try {
     QImage image;
+    QFileInfo fileInfo(originalFileName());
     File2Image file2image(image);
-//     file2image.load(); TODO: restore
+    file2image.load(temp_file.fileName(), fileInfo.suffix().toLower());
     return image;
   } catch(std::exception &e) {
-    // TODO: error reporting
+    // TODO: error report
+//       imager->error(imager, QString("Error converting image: %1").arg(e.what()));
       return QImage();
   }
 }
 
 void CameraTempFile::save_to(const QString& path){
-  camera_file->save(path.toStdString());
+  QFile file( temp_file.fileName() );
+  file.copy(path);
   // TODO: error log
 //   if(file.copy(path))
 //     imager->message(imager, "Saved image to %1"_q % path);
@@ -196,7 +199,7 @@ void CameraTempFile::save_to(const QString& path){
 //     imager->error(imager, "Error saving temporary image %1 to %2"_q % temp_file.fileName() % path);
 }
 
-QString CameraTempFile::originalFileName()
+QString CameraTempFile::originalFileName() const
 {
   return QString::fromStdString( camera_file->file() );
 }
@@ -234,6 +237,10 @@ GPhotoCamera::~GPhotoCamera()
 
 CameraTempFile::CameraTempFile(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
 {
+  temp_file.open();
+  temp_file.close();
+  temp_file.setAutoRemove(true);
+  camera_file->save(temp_file.fileName().toStdString());
 }
 
 

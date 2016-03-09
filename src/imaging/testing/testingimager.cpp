@@ -52,12 +52,12 @@ public:
   virtual operator QImage() const { return image; }
 protected:
   virtual void save_to(const QString &path);
-  virtual QString originalFileName();
+  virtual QString originalFileName() const;
 private:
   QImage image;
 };
 
-QString TestingImage::originalFileName()
+QString TestingImage::originalFileName() const
 {
   return "%1.png"_q % QDateTime::currentDateTime().toString(Qt::ISODate);
 }

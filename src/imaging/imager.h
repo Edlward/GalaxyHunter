@@ -11,7 +11,7 @@ public:
   void save(const QString &directory, const QString &filename = {});
 protected:
   virtual void save_to(const QString& path) = 0;
-  virtual QString originalFileName() = 0;
+  virtual QString originalFileName() const = 0;
 };
 Q_DECLARE_METATYPE(Image::ptr)
 
