@@ -60,6 +60,17 @@ void GPhotoCamera::disconnect()
 Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 {
   qDebug() << "setting camera: " << settings;
+  d->camera->settings().set_iso(settings.iso.current.toStdString());
+  d->camera->settings().set_format(settings.imageFormat.current.toStdString());
+  GPhotoCPP::milliseconds exposure;
+  if(settings.manualExposure) {
+    exposure = GPhotoCPP::seconds{settings.manualExposureSeconds};
+  } else {
+    auto exposures = d->camera->settings().exposure()->values();
+    auto exposure_v = find_if(begin(exposures), end(exposures), [&](const GPhotoCPP::Exposure::Value &v){ return v.text == settings.shutterSpeed.current.toStdString(); });
+    exposure = (*exposure_v).duration();
+  }
+  auto shot = d->camera->control().shoot(exposure, settings.mirrorLock);
 //   Private::GPhotoComboSetting(d.get(), "imageformat").save(settings.imageFormat);
 //   Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.shutterSpeed);
 //   Private::GPhotoComboSetting(d.get(), "iso").save(settings.iso);
