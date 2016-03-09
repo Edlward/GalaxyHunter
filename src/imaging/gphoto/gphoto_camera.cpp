@@ -1,6 +1,7 @@
 #include "gphoto_camera_p.h"
 #include "serialshoot.h"
 #include <file2image.h>
+#include "imager.h"
 #include <iostream>
 #include <QTimer>
 #include <QDir>
@@ -10,65 +11,12 @@
 #include <sstream>
 #include "Qt/strings.h"
 #include <QFuture>
+using namespace std;
+using namespace std::placeholders;
 
 GPhotoCamera::Private::Private ( const GPhotoCPP::Driver::CameraFactory::ptr& info, ShooterSettings& shooterSettings, GPhotoCamera* q )
   : factory{info}, shooterSettings{shooterSettings}, q(q)
 {
-}
-
-
-
-GPhotoCamera::Private::GPhotoComboSetting::GPhotoComboSetting ( GPhotoCamera::Private* d, const QString& settingName )
-  : d{d}, settingName{settingName}
-{
-  load();
-}
-
-
-void GPhotoCamera::Private::GPhotoComboSetting::load()
-{
-//   CameraWidget *settings;
-//   CameraWidget *widget;
-//   char *value;
-//   
-//   qDebug() << __PRETTY_FUNCTION__ << ": Loading setting:" << settingName;
-//   comboSetting.available.clear();
-//   
-//   int result = gp_camera_get_config(d->camera, &settings, d->context);
-//   GPHOTO_CHECK_ERROR(result, d)
-//   result = gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget);
-//   GPHOTO_CHECK_ERROR(result, d)
-//   result = gp_widget_get_value(widget, &value);
-//   GPHOTO_CHECK_ERROR(result, d)
-//   comboSetting.current = QString(value);
-//   int choices = gp_widget_count_choices(widget);
-//   for(int i=0; i<choices; i++) {
-//     const char *choice;
-//     if(gp_widget_get_choice(widget, i, &choice) == GP_OK)
-//       comboSetting.available.push_back(QString(choice));
-//   }
-//   gp_widget_free(settings);
-//   qDebug() << __PRETTY_FUNCTION__ << ": Setting" << settingName << "value:" << comboSetting.current;
-}
-
-
-
-void GPhotoCamera::Private::GPhotoComboSetting::save ( const Imager::Settings::ComboSetting& imagerSettings )
-{
-//   if( imagerSettings == this->comboSetting)
-//     return;
-//   
-//   CameraWidget *settings;
-//   CameraWidget *widget;
-//   int error_code;
-//   qDebug() << "setting widget " << settingName << " value to " << imagerSettings.current;
-//   GPHOTO_RUN( gp_camera_get_config(d->camera, &settings, d->context), d);
-//   GPHOTO_RUN(gp_widget_get_child_by_name(settings, settingName.toLatin1(), &widget), d)
-//   GPHOTO_RUN(gp_widget_set_value(widget, imagerSettings.current.toStdString().c_str() ), d)
-//   GPHOTO_RUN(gp_widget_set_changed(widget, true ), d)
-//   GPHOTO_RUN( gp_camera_set_config(d->camera, settings, d->context), d);
-//   gp_widget_free(settings);
-//   load();
 }
 
 
@@ -87,7 +35,12 @@ void GPhotoCamera::connect()
     emit connected();
     d->info.model = QString::fromStdString(d->factory->name());
     d->info.summary = QString::fromStdString(d->camera->summary());
-    //d->exposureSetting = make_shared<GPhotoCPP::Exposure>();
+    
+    function<QString(string)> transform_f = bind(&QString::fromStdString, _1);
+    d->init_combo_settings(d->camera->settings().iso(), d->camera->settings().iso_choices(), d->imagerSettings.iso, transform_f);
+    d->init_combo_settings(d->camera->settings().format(), d->camera->settings().format_choices(), d->imagerSettings.imageFormat, transform_f);
+    function<QString(GPhotoCPP::Exposure::Value)> transform_value = [](const GPhotoCPP::Exposure::Value &v){ return QString::fromStdString(v.text); };
+    d->init_combo_settings(d->camera->settings().exposure()->value(), d->camera->settings().exposure()->values(), d->imagerSettings.shutterSpeed, transform_value);
   }
 }
 

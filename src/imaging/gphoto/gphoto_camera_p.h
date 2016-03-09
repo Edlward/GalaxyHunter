@@ -17,6 +17,7 @@
 #include "libgphoto++/src/camera_filesystem.h"
 #include "libgphoto++/src/camerafile.h"
 #include "libgphoto++/src/exposure.h"
+#include "imager.h"
 
 using namespace std;
 
@@ -56,23 +57,18 @@ public:
   QString fixedFilename(QString fileName) const;
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
-  GPhotoCPP::ExposurePtr exposureSetting;
   Info info;
-  
-  class GPhotoComboSetting {
-  public:
-    GPhotoComboSetting(Private *d, const QString &settingName); // Loads value from camera
-    operator Imager::Settings::ComboSetting() const { return comboSetting; } // returns setting values
-    void save(const Imager::Settings::ComboSetting &settings); // Saves the value to camera, returns a gphoto error code?
-  private:
-    void load();
-    Private *d;
-    const QString settingName;
-    Imager::Settings::ComboSetting comboSetting;
-  };
+
+  template<typename T, typename V = typename T::value_type>
+  void init_combo_settings(const V &value, const T &avail, Imager::Settings::ComboSetting &combo, std::function<QString(V)> transform_f) {
+    combo.available.clear();
+    combo.current = transform_f(value);
+    transform(begin(avail), end(avail), back_inserter(combo.available), transform_f);
+  }
   
 private:
   GPhotoCamera *q;
 };
+
 
 #endif

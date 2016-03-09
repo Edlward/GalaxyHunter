@@ -45,7 +45,6 @@ struct Imager::Info {
 };
 
 struct Imager::Settings {
-public:
   struct ComboSetting {
     QString current;
     QStringList available;
