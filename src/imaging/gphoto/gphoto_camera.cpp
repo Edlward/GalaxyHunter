@@ -87,8 +87,6 @@ void GPhotoCamera::connect()
     emit connected();
     d->info.model = QString::fromStdString(d->factory->name());
     d->info.summary = QString::fromStdString(d->camera->summary());
-    d->camera_settings = make_shared<GPhotoCPP::Camera::Settings>(d->camera, {});
-    d->camera_control = make_shared<GPhotoCPP::Camera::Control>(d->camera, d->camera_settings, {});
     //d->exposureSetting = make_shared<GPhotoCPP::Exposure>();
   }
 }
