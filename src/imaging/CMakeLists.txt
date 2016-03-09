@@ -1,6 +1,7 @@
 set(dslr_imaging_HEADERS imaging_driver.h)
 set(dslr_imaging_SOURCES 
-  imaging_driver.cpp 
+  imaging_driver.cpp
+  imager.cpp
   file2image.cpp 
   focus.cpp
   focus/fitshistogram.cpp
