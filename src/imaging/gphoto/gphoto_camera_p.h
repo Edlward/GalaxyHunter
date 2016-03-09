@@ -48,6 +48,8 @@ public:
   Private(const GPhotoCPP::Driver::CameraFactory::ptr& info, ShooterSettings& shooterSettings, GPhotoCamera* q);
   GPhotoCPP::Driver::CameraFactory::ptr factory;
   GPhotoCPP::CameraPtr camera;
+  GPhotoCPP::Camera::ControlPtr camera_control;
+  GPhotoCPP::Camera::SettingsPtr camera_settings;
   QString outputDirectory;
   Image::ptr shootTethered(const Imager::Settings &settings);
   Image::ptr shootPreset();
