@@ -11,6 +11,7 @@
 #include <sstream>
 #include "Qt/strings.h"
 #include <QFuture>
+#include <QMimeDatabase>
 using namespace std;
 using namespace std::placeholders;
 
@@ -64,6 +65,8 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   d->camera->settings().set_iso(settings.iso.current.toStdString());
   d->camera->settings().set_format(settings.imageFormat.current.toStdString());
   GPhotoCPP::milliseconds exposure;
+  if(d->camera->settings().needs_serial_port() && !settings.serialShootPort.isEmpty())
+    d->camera->settings().set_serial_port(settings.serialShootPort.toStdString());
   if(settings.manualExposure) {
     exposure = GPhotoCPP::seconds{settings.manualExposureSeconds};
   } else {
@@ -74,13 +77,6 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   auto shot = d->camera->control().shoot(exposure, settings.mirrorLock);
   shot->camera_file().wait();
   return make_shared<CameraTempFile>(shot->camera_file().get());
-//   Private::GPhotoComboSetting(d.get(), "imageformat").save(settings.imageFormat);
-//   Private::GPhotoComboSetting(d.get(), "shutterspeed").save(settings.shutterSpeed);
-//   Private::GPhotoComboSetting(d.get(), "iso").save(settings.iso);
-//   if(settings.manualExposure ) {
-//     return d->shootTethered(settings);
-//   }
-//   return d->shootPreset();
 }
 
 
@@ -232,13 +228,9 @@ CameraTempFile::~CameraTempFile()
 
 QString CameraTempFile::mimeType() const
 {
-//   int r = gp_file_detect_mime_type(camera_file);
-//   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_detect_mime_type=" << r;
-//   const char *mime;
-//   r = gp_file_get_mime_type(camera_file, &mime);
-//   qDebug() << __PRETTY_FUNCTION__ << ": gp_file_get_mime_type=" << r;
-//   return QString(mime);
-  return QString{}; // TODO
+  static QMimeDatabase db;
+  auto mime = db.mimeTypeForFile(temp_file.fileName(), QMimeDatabase::MatchContent);
+  return mime.name();
 }
 
 Imager::Info GPhotoCamera::info() const
