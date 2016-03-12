@@ -46,8 +46,6 @@ public:
   GPhotoCPP::Camera::ControlPtr camera_control;
   GPhotoCPP::Camera::SettingsPtr camera_settings;
   QString outputDirectory;
-  Image::ptr shootTethered(const Imager::Settings &settings);
-  Image::ptr shootPreset();
   QString fixedFilename(QString fileName) const;
   ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
