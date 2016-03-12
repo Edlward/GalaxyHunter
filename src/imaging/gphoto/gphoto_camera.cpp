@@ -17,6 +17,7 @@ using namespace std::placeholders;
 GPhotoCamera::Private::Private ( const GPhotoCPP::Driver::CameraFactory::ptr& info, ShooterSettings& shooterSettings, GPhotoCamera* q )
   : factory{info}, shooterSettings{shooterSettings}, q(q)
 {
+  this->info.model = QString::fromStdString(info->name());
 }
 
 
@@ -32,7 +33,6 @@ void GPhotoCamera::connect()
   d->camera = *d->factory;
   if(d->camera) {
     // TODO: add logger
-    emit connected();
     d->info.model = QString::fromStdString(d->factory->name());
     d->info.summary = QString::fromStdString(d->camera->summary());
     
@@ -41,6 +41,7 @@ void GPhotoCamera::connect()
     d->init_combo_settings(d->camera->settings().format(), d->camera->settings().format_choices(), d->imagerSettings.imageFormat, transform_f);
     function<QString(GPhotoCPP::Exposure::Value)> transform_value = [](const GPhotoCPP::Exposure::Value &v){ return QString::fromStdString(v.text); };
     d->init_combo_settings(d->camera->settings().exposure()->value(), d->camera->settings().exposure()->values(), d->imagerSettings.shutterSpeed, transform_value);
+    emit connected();
   }
 }
 
@@ -205,27 +206,7 @@ QString CameraTempFile::originalFileName() const
 }
 
 
-/*TODO: add again?
-void GPhotoCamera::Private::deletePicturesOnCamera(const CameraFilePath &camera_remote_file)
-{
-  if(q->deletePicturesOnCamera) {
-    int retry = 3;
-    for(int i=1; i<=3; i++) {
-      int result = gp_camera_file_delete(camera, camera_remote_file.folder, fixedFilename(camera_remote_file.name).c_str(), context);
-      if(result == GP_OK)
-	break;
-      if(i<retry)
-	QThread::currentThread()->msleep(500);
-      else
-	q->error(q, QString("Error removing image on camera: %1/%2")
-	  .arg(camera_remote_file.folder)
-	  .arg(QString::fromStdString(fixedFilename(camera_remote_file.name))));
-    }
-  }
-}
-
-*/
-
+// TODO: add picture deletion from camera
 
 
 GPhotoCamera::~GPhotoCamera()

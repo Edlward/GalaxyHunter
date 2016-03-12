@@ -62,7 +62,9 @@ GPhoto::~GPhoto()
 void GPhoto::scan_imagers()
 {
   auto cameras = d->driver->cameras();
-  for(auto camera: cameras)
+  for(auto camera: cameras) {
+    qDebug() << "Found camera: " << QString::fromStdString( camera->name() );
     _imagers.push_back(make_shared<GPhotoCamera>(camera, d->shooterSettings));
+  }
 }
 
