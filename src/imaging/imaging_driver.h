@@ -7,8 +7,6 @@
 #include <QStringList>
 #include <memory>
 
-class ShooterSettings;
-class ShooterSettings;
 class LogMessage;
 
 class QImage;
@@ -39,7 +37,7 @@ signals:
 class ImagingDrivers : public ImagingDriver {
   Q_OBJECT
 public:
-  ImagingDrivers(ShooterSettings& shooterSettings, QObject* parent = 0);
+  ImagingDrivers(QObject* parent = 0);
 
 protected:
   virtual void scan_imagers();

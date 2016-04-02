@@ -36,20 +36,19 @@ using namespace std;
 
 class GPhoto::Private {
 public:
-  Private(ShooterSettings &shooterSettings, GPhoto *q);
+  Private(GPhoto* q);
   GPhotoCPP::DriverPtr driver;
-  ShooterSettings &shooterSettings;
 private:
   GPhoto *q;
 };
 
-GPhoto::Private::Private(ShooterSettings& shooterSettings, GPhoto* q) : driver{new GPhotoCPP::Driver /* TODO: logger */}, shooterSettings{shooterSettings}, q{q}
+GPhoto::Private::Private(GPhoto* q) : driver{new GPhotoCPP::Driver /* TODO: logger */}, q{q}
 {
 
 }
 
 
-GPhoto::GPhoto(ShooterSettings &shooterSettings, QObject *parent) : ImagingDriver(parent), dptr(shooterSettings, this)
+GPhoto::GPhoto(QObject* parent) : ImagingDriver(parent), dptr(this)
 {
 }
 
@@ -64,7 +63,7 @@ void GPhoto::scan_imagers()
   auto cameras = d->driver->cameras();
   for(auto camera: cameras) {
     qDebug() << "Found camera: " << QString::fromStdString( camera->name() );
-    _imagers.push_back(make_shared<GPhotoCamera>(camera, d->shooterSettings));
+    _imagers.push_back(make_shared<GPhotoCamera>(camera));
   }
 }
 

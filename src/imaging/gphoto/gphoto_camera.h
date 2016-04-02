@@ -10,7 +10,7 @@ class GPhotoCameraInformation;
 class GPhotoCamera : public Imager {
   Q_OBJECT
 public:
-  GPhotoCamera(const GPhotoCPP::Driver::CameraFactory::ptr &gphotoCameraInformation, ShooterSettings &shooterSettings);
+  GPhotoCamera(const GPhotoCPP::Driver::CameraFactory::ptr &gphotoCameraInformation);
   ~GPhotoCamera();
   virtual Info info() const;
   virtual Settings settings() const;

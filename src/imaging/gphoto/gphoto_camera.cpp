@@ -5,7 +5,6 @@
 #include <iostream>
 #include <QTimer>
 #include <QDir>
-#include "commons/shootersettings.h"
 
 #include "utils/qt.h"
 #include <sstream>
@@ -15,15 +14,15 @@
 using namespace std;
 using namespace std::placeholders;
 
-GPhotoCamera::Private::Private ( const GPhotoCPP::Driver::CameraFactory::ptr& info, ShooterSettings& shooterSettings, GPhotoCamera* q )
-  : factory{info}, shooterSettings{shooterSettings}, q(q)
+GPhotoCamera::Private::Private ( const GPhotoCPP::Driver::CameraFactory::ptr& info, GPhotoCamera* q )
+  : factory{info}, q(q)
 {
   this->info.model = QString::fromStdString(info->name());
 }
 
 
-GPhotoCamera::GPhotoCamera(const GPhotoCPP::Driver::CameraFactory::ptr &gphotoCameraInformation, ShooterSettings &shooterSettings)
-  : dptr(gphotoCameraInformation, shooterSettings, this)
+GPhotoCamera::GPhotoCamera(const GPhotoCPP::Driver::CameraFactory::ptr& gphotoCameraInformation)
+  : dptr(gphotoCameraInformation, this)
 {
 }
 

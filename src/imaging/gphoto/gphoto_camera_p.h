@@ -40,13 +40,12 @@ private:
 
 class GPhotoCamera::Private {
 public:
-  Private(const GPhotoCPP::Driver::CameraFactory::ptr& info, ShooterSettings& shooterSettings, GPhotoCamera* q);
+  Private(const GPhotoCPP::Driver::CameraFactory::ptr& info, GPhotoCamera* q);
   GPhotoCPP::Driver::CameraFactory::ptr factory;
   GPhotoCPP::CameraPtr camera;
   GPhotoCPP::Camera::ControlPtr camera_control;
   GPhotoCPP::Camera::SettingsPtr camera_settings;
   QString outputDirectory;
-  ShooterSettings &shooterSettings;
   Imager::Settings imagerSettings;
   Info info;
 

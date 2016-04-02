@@ -73,7 +73,7 @@ private:
 
 DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui)
     : q(q), ui(ui), settings("GuLinux", "DSLR-Shooter"), shooterSettings {settings},
-imagingDriver {std::make_shared<ImagingDrivers>(shooterSettings)}, imagingManager(make_shared<ImagingManager>(shooterSettings)), trayIcon {QIcon::fromTheme("dslr-qt-shooter")}
+imagingDriver {std::make_shared<ImagingDrivers>()}, imagingManager(make_shared<ImagingManager>(shooterSettings)), trayIcon {QIcon::fromTheme("dslr-qt-shooter")}
 {
 }
 

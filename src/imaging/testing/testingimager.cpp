@@ -15,12 +15,12 @@ using namespace std;
 
 
 
-TestingImagerDriver::TestingImagerDriver(ShooterSettings &shooterSettings, QObject *parent): ImagingDriver(parent), shooterSettings{shooterSettings}
+TestingImagerDriver::TestingImagerDriver(QObject* parent): ImagingDriver(parent)
 {
   Q_INIT_RESOURCE(testing_imager_resources);
 }
 
-TestingImager::TestingImager(ShooterSettings &shooterSettings) : Imager(), shooterSettings{shooterSettings}
+TestingImager::TestingImager() : Imager()
 {
   QFile file(":imager/testing/image.jpg");
   if(file.open(QIODevice::ReadOnly)) {
@@ -43,7 +43,7 @@ void TestingImager::disconnect()
 void TestingImagerDriver::scan_imagers()
 {
   qDebug() << __PRETTY_FUNCTION__;
-  _imagers = {make_shared<TestingImager>(shooterSettings)};
+  _imagers = {make_shared<TestingImager>()};
 }
 
 class TestingImage : public Image {

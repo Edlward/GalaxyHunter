@@ -7,7 +7,7 @@
 class TestingImager : public Imager {
     Q_OBJECT
 public:
-    TestingImager(ShooterSettings &settings);
+    TestingImager();
     virtual Settings settings() const;
     virtual Info info() const;
 public slots:
@@ -17,19 +17,16 @@ public slots:
 private:
   int rand(int a, int b) const;
     QByteArray imageData;
-    ShooterSettings &shooterSettings;
 };
 class TestingImagerDriver : public ImagingDriver
 {
     Q_OBJECT
 public:
-    explicit TestingImagerDriver(ShooterSettings &shooterSettings, QObject *parent = 0);
+    explicit TestingImagerDriver(QObject *parent = 0);
 protected:
     virtual void scan_imagers();
 signals:
 private:
-  ShooterSettings &shooterSettings;
-
 };
 
 #endif // TESTINGIMAGER_H

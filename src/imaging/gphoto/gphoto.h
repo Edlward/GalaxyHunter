@@ -32,7 +32,7 @@ class GPhoto : public ImagingDriver
 {
   Q_OBJECT
 public:
-    GPhoto(ShooterSettings &shooterSettings, QObject *parent = 0);
+    GPhoto(QObject *parent = 0);
     ~GPhoto();
 public slots:
 protected:

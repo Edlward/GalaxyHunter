@@ -10,7 +10,6 @@
 #endif
 
 #include <commons/logmessage.h>
-#include "commons/shootersettings.h"
 #include "utils/qt.h"
 #include <QDir>
 #include "Qt/strings.h"
@@ -45,20 +44,20 @@ void ImagingDriver::scan()
     emit scan_finished();
 }
 
-QList< ImagingDriverPtr > all_imaging_drivers(ShooterSettings &shooterSettings)
+QList< ImagingDriverPtr > all_imaging_drivers()
 {
     return {
 #ifdef IMAGING_gphoto2
-        make_shared<GPhoto>(shooterSettings),
+        make_shared<GPhoto>(),
 #endif
 #ifdef IMAGING_testing
-        make_shared<TestingImagerDriver>(shooterSettings),
+        make_shared<TestingImagerDriver>(),
 #endif
     };
 }
 
 
-ImagingDrivers::ImagingDrivers(ShooterSettings &shooterSettings, QObject* parent): ImagingDriver(parent), imagingDrivers(all_imaging_drivers(shooterSettings))
+ImagingDrivers::ImagingDrivers(QObject* parent): ImagingDriver(parent), imagingDrivers(all_imaging_drivers())
 {
     for(auto driver: imagingDrivers) {
         connect(driver.get(), &ImagingDriver::camera_connected, this, &ImagingDriver::camera_connected);
