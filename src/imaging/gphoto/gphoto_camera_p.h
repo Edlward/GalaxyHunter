@@ -22,10 +22,10 @@
 using namespace std;
 
 
-class CameraTempFile : public Image {
+class CameraImage : public Image {
 public:
-  CameraTempFile(const GPhotoCPP::CameraFilePtr &camera_file);
-  ~CameraTempFile();
+  CameraImage(const GPhotoCPP::CameraFilePtr &camera_file);
+  ~CameraImage();
   QTemporaryFile temp_file;
   QString mimeType() const;
   

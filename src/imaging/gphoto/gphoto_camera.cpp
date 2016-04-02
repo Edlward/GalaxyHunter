@@ -75,10 +75,10 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   }
   auto shot = d->camera->control().shoot(exposure, settings.mirrorLock);
   shot->camera_file().wait();
-  return make_shared<CameraTempFile>(shot->camera_file().get());
+  return make_shared<CameraImage>(shot->camera_file().get());
 }
 
-CameraTempFile::operator QImage() const {
+CameraImage::operator QImage() const {
   try {
     QImage image;
     QFileInfo fileInfo(originalFileName());
@@ -92,7 +92,7 @@ CameraTempFile::operator QImage() const {
   }
 }
 
-void CameraTempFile::save_to(const QString& path){
+void CameraImage::save_to(const QString& path){
   QFile file( temp_file.fileName() );
   file.copy(path);
   // TODO: error log
@@ -102,7 +102,7 @@ void CameraTempFile::save_to(const QString& path){
 //     imager->error(imager, "Error saving temporary image %1 to %2"_q % temp_file.fileName() % path);
 }
 
-QString CameraTempFile::originalFileName() const
+QString CameraImage::originalFileName() const
 {
   return QString::fromStdString( camera_file->file() );
 }
@@ -118,8 +118,10 @@ GPhotoCamera::~GPhotoCamera()
 
 
 
-CameraTempFile::CameraTempFile(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
+CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
 {
+  vector<uint8_t> data;
+  camera_file->copy(data);
   temp_file.open();
   temp_file.close();
   temp_file.setAutoRemove(true);
@@ -127,12 +129,12 @@ CameraTempFile::CameraTempFile(const GPhotoCPP::CameraFilePtr &camera_file) : ca
 }
 
 
-CameraTempFile::~CameraTempFile()
+CameraImage::~CameraImage()
 {
   qDebug() << __PRETTY_FUNCTION__ ;
 }
 
-QString CameraTempFile::mimeType() const
+QString CameraImage::mimeType() const
 {
   static QMimeDatabase db;
   auto mime = db.mimeTypeForFile(temp_file.fileName(), QMimeDatabase::MatchContent);
