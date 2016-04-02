@@ -79,13 +79,6 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   return make_shared<CameraTempFile>(shot->camera_file().get());
 }
 
-
-QString GPhotoCamera::Private::fixedFilename(QString fileName) const
-{
-  return fileName.replace("*", "");
-}
-
-
 CameraTempFile::operator QImage() const {
   try {
     QImage image;
