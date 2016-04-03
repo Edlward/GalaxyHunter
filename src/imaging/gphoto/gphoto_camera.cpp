@@ -89,10 +89,16 @@ CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_f
   if(!imageReader)
     return;
   auto image_decoded = imageReader->read(data, original_file_name);
-  cerr << "Decoded image: " << original_file_name << ", " << image_decoded.w << "x" << image_decoded.h << "x" << image_decoded.axis << "@" << image_decoded.bpp << ", " << image_decoded.data.size() << "B" << endl;
-  image = cimg_library::CImg<uint8_t>(image_decoded.w, image_decoded.h, image_decoded.bpp == 8 ? 1 : 2, image_decoded.axis == 3 ? 3 : 1);
-  move(begin(image_decoded.data), end(image_decoded.data), image.begin());
-//   image.save("/tmp/test.png");
+  cerr << "Decoded image: " << original_file_name << ", " << image_decoded.w << "x" << image_decoded.h << "x" << image_decoded.channels.size() << "@" << image_decoded.bpp << endl;
+//   image = cimg_library::CImg<uint8_t>(image_decoded.w, image_decoded.h, image_decoded.bpp == 8 ? 1 : 2, image_decoded.channels.size());
+  cimg_library::CImgList<uint8_t> images;
+  for(auto channel: image_decoded.channels) {
+    auto channel_image = cimg_library::CImg<uint8_t>(image_decoded.w, image_decoded.h, image_decoded.bpp == 8 ? 1 : 2, 1);
+    move(begin(channel.second), end(channel.second), channel_image.begin());
+    images.push_back(channel_image);
+  }
+  image = images.get_append('c');
+  image.save("/tmp/test.png");
   cerr << "Moved image data to cimg: " << image.width() << "x" << image.height() << "x" << image.spectrum() << "@" << image.depth() << ", size: " << image.size() << endl;
 }
 
