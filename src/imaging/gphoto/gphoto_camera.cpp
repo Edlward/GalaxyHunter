@@ -88,19 +88,33 @@ CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_f
   auto imageReader = GPhotoCPP::ReadImage::factory({original_file_name});
   if(!imageReader)
     return;
+  
   auto image_decoded = imageReader->read(data, original_file_name);
   cerr << "Decoded image: " << original_file_name << ", " << image_decoded.w << "x" << image_decoded.h << "x" << image_decoded.channels.size() << "@" << image_decoded.bpp << endl;
-//   image = cimg_library::CImg<uint8_t>(image_decoded.w, image_decoded.h, image_decoded.bpp == 8 ? 1 : 2, image_decoded.channels.size());
-  cimg_library::CImgList<uint8_t> images;
+  
+  cimg_library::CImgList<uint16_t> images;
   for(auto channel: image_decoded.channels) {
-    auto channel_image = cimg_library::CImg<uint8_t>(image_decoded.w, image_decoded.h, image_decoded.bpp == 8 ? 1 : 2, 1);
-    move(begin(channel.second), end(channel.second), channel_image.begin());
+    auto channel_image = cimg_library::CImg<uint16_t>(image_decoded.w, image_decoded.h);
+    copy_data(channel.second, channel_image);
+//     move(begin(channel.second), end(channel.second), channel_image.begin());
     images.push_back(channel_image);
   }
   image = images.get_append('c');
   image.save("/tmp/test.png");
   cerr << "Moved image data to cimg: " << image.width() << "x" << image.height() << "x" << image.spectrum() << "@" << image.depth() << ", size: " << image.size() << endl;
 }
+
+
+void CameraImage::copy_data(const vector< uint8_t >& data, CameraImage::CImgImage& dest) const
+{
+  if(data.size() == dest.width() * dest.height())
+    transform(data.begin(), data.end(), dest.begin(), [](uint8_t byte) { return byte * 256; });
+  else {
+    const uint16_t *data_ptr = reinterpret_cast<const uint16_t*>(data.data());
+    copy(data_ptr, data_ptr + data.size()/2, dest.begin());
+  }
+}
+
 
 CameraImage::operator QImage() const {
   QImage qimage(image.width(), image.height(), QImage::Format_RGB32);

@@ -33,9 +33,11 @@ protected:
 private:
   const GPhotoCPP::CameraFilePtr camera_file;
   vector<uint8_t> original_data;
-  cimg_library::CImg<uint8_t> image;
+  typedef cimg_library::CImg<uint16_t> CImgImage;
+  CImgImage image;
+  void copy_data(const vector<uint8_t> &data, CImgImage &dest) const;
+  int original_bpp;
 };
-
 
 class GPhotoCamera::Private {
 public:
