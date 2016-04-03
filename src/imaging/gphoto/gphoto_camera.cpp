@@ -103,11 +103,12 @@ CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_f
 }
 
 CameraImage::operator QImage() const {
-  QImage qimage(image.width(), image.height(), QImage::Format_ARGB32);
-  cimg_forXY(image, x, y) {
-    auto r = image(x, y, 0);
-    auto g = image.spectrum() == 3 ? image(x, y, 1) : r;
-    auto b = image.spectrum() == 3 ? image(x, y, 2) : r;
+  QImage qimage(image.width(), image.height(), QImage::Format_RGB32);
+  auto channels = image.get_split('c');
+  cimg_forXY(channels[0], x, y) {
+    auto r = channels[0](x, y);
+    auto g = channels.size() == 3 ? channels[1](x, y) : r;
+    auto b = channels.size() == 3 ? channels[2](x, y) : r;
     qimage.setPixel(x, y, qRgb(r, g, b));
   }
   return qimage;
