@@ -1,5 +1,6 @@
 #include "gphoto_camera_p.h"
 #include "serialshoot.h"
+#include "libgphoto++/src/utils/read_image.h"
 #include <file2image.h>
 #include "imager.h"
 #include <iostream>
@@ -78,28 +79,37 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   return make_shared<CameraImage>(shot->camera_file().get());
 }
 
+
+CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
+{
+  vector<uint8_t> data;
+  camera_file->copy(data);
+  auto original_file_name = originalFileName().toStdString();
+  auto imageReader = GPhotoCPP::ReadImage::factory({original_file_name});
+  if(!imageReader)
+    return;
+  auto image_decoded = imageReader->read(data, original_file_name);
+  cerr << "Decoded image: " << original_file_name << ", " << image_decoded.w << "x" << image_decoded.h << "x" << image_decoded.axis << "@" << image_decoded.bpp << ", " << image_decoded.data.size() << "B" << endl;
+  image = cimg_library::CImg<uint8_t>(image_decoded.w, image_decoded.h, image_decoded.bpp == 8 ? 1 : 2, image_decoded.axis == 3 ? 3 : 1);
+  move(begin(image_decoded.data), end(image_decoded.data), image.begin());
+//   image.save("/tmp/test.png");
+  cerr << "Moved image data to cimg: " << image.width() << "x" << image.height() << "x" << image.spectrum() << "@" << image.depth() << ", size: " << image.size() << endl;
+}
+
 CameraImage::operator QImage() const {
-  try {
-    QImage image;
-    QFileInfo fileInfo(originalFileName());
-    File2Image file2image(image);
-    file2image.load(temp_file.fileName(), fileInfo.suffix().toLower());
-    return image;
-  } catch(std::exception &e) {
-    // TODO: error report
-//       imager->error(imager, QString("Error converting image: %1").arg(e.what()));
-      return QImage();
+  QImage qimage(image.width(), image.height(), QImage::Format_ARGB32);
+  cimg_forXY(image, x, y) {
+    auto r = image(x, y, 0);
+    auto g = image.spectrum() == 3 ? image(x, y, 1) : r;
+    auto b = image.spectrum() == 3 ? image(x, y, 2) : r;
+    qimage.setPixel(x, y, qRgb(r, g, b));
   }
+  return qimage;
 }
 
 void CameraImage::save_to(const QString& path){
-  QFile file( temp_file.fileName() );
-  file.copy(path);
-  // TODO: error log
-//   if(file.copy(path))
-//     imager->message(imager, "Saved image to %1"_q % path);
-//   else
-//     imager->error(imager, "Error saving temporary image %1 to %2"_q % temp_file.fileName() % path);
+  QFile file{path};
+  file.write(reinterpret_cast<const char*>(original_data.data()), original_data.size());
 }
 
 QString CameraImage::originalFileName() const
@@ -118,27 +128,9 @@ GPhotoCamera::~GPhotoCamera()
 
 
 
-CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
-{
-  vector<uint8_t> data;
-  camera_file->copy(data);
-  temp_file.open();
-  temp_file.close();
-  temp_file.setAutoRemove(true);
-  camera_file->save(temp_file.fileName().toStdString());
-}
-
 
 CameraImage::~CameraImage()
 {
-  qDebug() << __PRETTY_FUNCTION__ ;
-}
-
-QString CameraImage::mimeType() const
-{
-  static QMimeDatabase db;
-  auto mime = db.mimeTypeForFile(temp_file.fileName(), QMimeDatabase::MatchContent);
-  return mime.name();
 }
 
 Imager::Info GPhotoCamera::info() const

@@ -4,11 +4,11 @@
 #include "gphoto_camera.h"
 #include "gphoto_commons.h"
 #include "gphoto.h"
-#include <QTemporaryFile>
 #include "utils/scope.h"
 #include <QThread>
 #include <QImage>
 #include <QDebug>
+#include <CImg.h>
 
 #include <Magick++.h>
 #include "commons/shootersettings.h"
@@ -26,15 +26,14 @@ class CameraImage : public Image {
 public:
   CameraImage(const GPhotoCPP::CameraFilePtr &camera_file);
   ~CameraImage();
-  QTemporaryFile temp_file;
-  QString mimeType() const;
-  
   virtual operator QImage() const;
 protected:
   virtual QString originalFileName() const;
   virtual void save_to(const QString &path);
 private:
   const GPhotoCPP::CameraFilePtr camera_file;
+  vector<uint8_t> original_data;
+  cimg_library::CImg<uint8_t> image;
 };
 
 
