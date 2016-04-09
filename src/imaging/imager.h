@@ -2,16 +2,22 @@
 #define GALAXYHUNTER_IMAGER_H
 
 #include "imaging_driver.h"
+#include <CImg.h>
 
 
 class Image {
 public:
+  Image(const QString &original_file_name, const std::vector<uint8_t> &original_data);
   typedef std::shared_ptr<Image> ptr;
-  virtual operator QImage() const = 0;
+  typedef cimg_library::CImg<uint16_t> CImgImage;
+  
+  operator QImage() const;
+  cimg_library::CImg<uint64_t> histogram(uint32_t bins) const;
   void save(const QString &directory, const QString &filename = {});
 protected:
-  virtual void save_to(const QString& path) = 0;
-  virtual QString originalFileName() const = 0;
+  CImgImage image;
+  const std::vector<uint8_t> original_data;
+  const QString original_file_name;
 };
 Q_DECLARE_METATYPE(Image::ptr)
 

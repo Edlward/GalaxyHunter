@@ -8,7 +8,6 @@
 #include <QThread>
 #include <QImage>
 #include <QDebug>
-#include <CImg.h>
 
 #include <Magick++.h>
 #include "commons/shootersettings.h"
@@ -26,17 +25,8 @@ class CameraImage : public Image {
 public:
   CameraImage(const GPhotoCPP::CameraFilePtr &camera_file);
   ~CameraImage();
-  virtual operator QImage() const;
-protected:
-  virtual QString originalFileName() const;
-  virtual void save_to(const QString &path);
 private:
-  const GPhotoCPP::CameraFilePtr camera_file;
-  vector<uint8_t> original_data;
-  typedef cimg_library::CImg<uint16_t> CImgImage;
-  CImgImage image;
   void copy_data(const vector<uint8_t> &data, CImgImage &dest) const;
-  int original_bpp;
 };
 
 class GPhotoCamera::Private {

@@ -1,3 +1,9 @@
+#define cimg_plugin "CImg/plugins/jpeg_buffer.h"
+#include <cstdio>
+#include <jpeglib.h>
+#include <jerror.h>
+#include "CImg.h"
+
 #include "testingimager.h"
 #include <QUrl>
 #include <QNetworkRequest>
@@ -10,6 +16,7 @@
 #include "utils/qt.h"
 #include "Qt/strings.h"
 #include "opencv2/opencv.hpp"
+#include <imager.h>
 
 using namespace std;
 
@@ -48,25 +55,14 @@ void TestingImagerDriver::scan_imagers()
 
 class TestingImage : public Image {
 public:
-  TestingImage(const QImage &image) : image(image) {}
-  virtual operator QImage() const { return image; }
-protected:
-  virtual void save_to(const QString &path);
-  virtual QString originalFileName() const;
-private:
-  QImage image;
+  TestingImage(const cimg_library::CImg< uint8_t >& image, const vector< uint8_t >& data);
 };
 
-QString TestingImage::originalFileName() const
+TestingImage::TestingImage(const cimg_library::CImg< uint8_t >& image, const vector<uint8_t> &data): Image{"%1.jpg"_q % QDateTime::currentDateTime().toString(Qt::ISODate), data}
 {
-  return "%1.png"_q % QDateTime::currentDateTime().toString(Qt::ISODate);
+  this->image = image.get_normalize(0, std::numeric_limits<uint16_t>::max());
 }
 
-
-void TestingImage::save_to(const QString& path)
-{
-  image.save(path);
-}
 
 Imager::Info TestingImager::info() const
 {
@@ -100,28 +96,22 @@ Image::ptr TestingImager::shoot(const Settings &settings) const
     emit exposure_remaining(exposure-i);
     QThread::currentThread()->msleep(1000);
   }
-  cv::Mat cv_image = cv::imdecode(cv::InputArray{imageData.data(), imageData.size()}, CV_LOAD_IMAGE_COLOR);
-  cv::Mat cropped, blurred, result;
-  int h = cv_image.rows;
-  int w = cv_image.cols;
+  cimg_library::CImg<uint8_t> image_cimg;
+  image_cimg.load_jpeg_buffer(reinterpret_cast<const uint8_t*>(imageData.data()), imageData.size());
   
   int pix_w = rand(0, 20);
   int pix_h = rand(0, 20);
-
-  cv::Rect crop_rect(0, 0, w, h);
-  crop_rect -= cv::Size{20, 20};
-  crop_rect += cv::Point{pix_w, pix_h};
-  cropped = cv_image(crop_rect);
-  if(rand(0, 5) > 2) {
-      auto ker_size = rand(1, 17);
-      cv::blur(cropped, blurred, {ker_size, ker_size});
-  } else {
-      cropped.copyTo(blurred);
-  }
   
-  auto image_copy = new cv::Mat;
-  blurred.copyTo(*image_copy);
-  QImage image{image_copy->data, image_copy->cols, image_copy->rows, image_copy->step, QImage::Format_RGB888, [](void *data){ delete reinterpret_cast<cv::Mat*>(data); }, image_copy};
-  return make_shared<TestingImage>(image);
+  image_cimg.crop(pix_w, pix_h, image_cimg.width()-20 + pix_w, image_cimg.height()-20 + pix_h);
+  image_cimg.blur(rand(0, 4), rand(0, 4));
+
+  unsigned int jpeg_buffer_size = imageData.size()*10;
+  vector<uint8_t> buffer(jpeg_buffer_size);
+  image_cimg.save_jpeg_buffer(buffer.data(), jpeg_buffer_size);
+  buffer.resize(jpeg_buffer_size);
+  for(int i=0; i<10; i++)
+    cerr << "b[" << i << "]=" << hex << static_cast<int>(buffer[i]) << " ";
+  cerr << endl;
+  return make_shared<TestingImage>(image_cimg, buffer);
 }
 

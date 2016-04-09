@@ -138,6 +138,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->sequencesDock);
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->focus_dock);
+    tabifyDockWidget(d->ui->camera_information_dock, d->ui->histogram);
     d->ui->camera_information_dock->raise();
 
     auto logsDockWidget = new QDockWidget("Logs");
@@ -150,6 +151,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     logsDockWidget->setFloating(true);
 
     d->ui->focusing_graph->addGraph();
+    d->ui->histogram_plot->addGraph();
 
     QMap<QDockWidget*, QAction*> dockWidgetsActions {
         {d->ui->camera_information_dock, d->ui->actionCamera_Information},
@@ -373,6 +375,18 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image)
         d->ui->focusing_graph->replot();
         d->ui->focus_analysis_value->clear();
     }
+    auto histogram = image->histogram(256);
+    //d->ui->histogram_plot->
+    QVector<double> x(256);
+    for(int i=0; i<256; i++)
+      x[i] = i+1;
+    QVector<double> y(histogram.size());
+    copy(begin(histogram), end(histogram), begin(y));
+    d->ui->histogram_plot->graph()->setLineStyle(QCPGraph::lsStepCenter);
+    d->ui->histogram_plot->graph()->setData(x, y);
+    d->ui->histogram_plot->graph()->rescaleKeyAxis(false);
+    d->ui->histogram_plot->graph()->valueAxis()->setRange(*std::min_element(begin(y), end(y))-.5, *std::max_element(begin(y), end(y)) +.5);
+    d->ui->histogram_plot->replot();
 }
 
 

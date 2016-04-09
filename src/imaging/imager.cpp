@@ -7,6 +7,13 @@
 
 using namespace std;
 using namespace std::placeholders;
+
+Image::Image(const QString& original_file_name, const vector<uint8_t> &original_data) : original_file_name{original_file_name}, original_data{original_data}
+{
+
+}
+
+
 bool Imager::Settings::ComboSetting::operator== ( const Imager::Settings::ComboSetting& other ) const
 {
     return other.available == available && other.current == current;
@@ -73,9 +80,27 @@ QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting& c)
 
 void Image::save(const QString& directory, const QString& filename)
 {
-    auto path = "%1%2%3"_q % directory % QDir::separator() % (filename.isEmpty() ? originalFileName() : filename);
-    save_to(path);
+    auto path = "%1%2%3"_q % directory % QDir::separator() % (filename.isEmpty() ? original_file_name : filename);
+    QFile file{path};
+    if(file.open(QIODevice::WriteOnly)) {
+      auto written = file.write(reinterpret_cast<const char*>(original_data.data()), original_data.size());
+      qDebug() << "written" << written << "bytes out of" << original_data.size() << "bytes to" << path;
+    }
 }
+
+Image::operator QImage() const
+{
+  QImage qimage(image.width(), image.height(), QImage::Format_RGB32);
+  auto channels = (image.get_normalize(0, 255)).get_split('c');
+  cimg_forXY(channels[0], x, y) {
+    auto r = channels[0](x, y);
+    auto g = channels.size() == 3 ? channels[1](x, y) : r;
+    auto b = channels.size() == 3 ? channels[2](x, y) : r;
+    qimage.setPixel(x, y, qRgb(r, g, b));
+  }
+  return qimage;
+}
+
 
 QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting combo) {
     QStringList avail;
@@ -84,6 +109,11 @@ QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting combo) {
     });
     auto debug = dbg.noquote().nospace() << "{ " << avail.join(", ") << " }";
     return debug.space().quote();
+}
+
+cimg_library::CImg< uint64_t > Image::histogram(uint32_t bins) const
+{
+  return image.get_histogram(bins);
 }
 
 
