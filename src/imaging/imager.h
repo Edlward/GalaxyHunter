@@ -64,6 +64,7 @@ struct Imager::Settings {
 };
 
 QDebug operator<<(QDebug dbg, const Imager::Settings &settings);
+QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting &c);
 
 
 #endif

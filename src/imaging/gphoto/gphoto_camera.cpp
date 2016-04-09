@@ -65,8 +65,9 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   d->camera->settings().set_iso(settings.iso.current.toStdString());
   d->camera->settings().set_format(settings.imageFormat.current.toStdString());
   GPhotoCPP::milliseconds exposure;
-  if(d->camera->settings().needs_serial_port() && !settings.serialShootPort.isEmpty())
+  if(d->camera->settings().needs_serial_port() && !settings.serialShootPort.isEmpty() && QFile::exists(settings.serialShootPort))
     d->camera->settings().set_serial_port(settings.serialShootPort.toStdString());
+
   if(settings.manualExposure) {
     exposure = GPhotoCPP::seconds{settings.manualExposureSeconds};
   } else {
@@ -79,6 +80,7 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
   return make_shared<CameraImage>(shot->camera_file().get());
 }
 
+#include "c++/stlutils.h"
 
 CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
 {
@@ -88,10 +90,12 @@ CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_f
   auto imageReader = GPhotoCPP::ReadImage::factory({original_file_name});
   if(!imageReader)
     return;
-  
+  benchmark_start(decode_image, 1);
   auto image_decoded = imageReader->read(data, original_file_name);
+  benchmark_end(decode_image);
   cerr << "Decoded image: " << original_file_name << ", " << image_decoded.w << "x" << image_decoded.h << "x" << image_decoded.channels.size() << "@" << image_decoded.bpp << endl;
   
+  benchmark_start(merge_channels, 1);
   cimg_library::CImgList<uint16_t> images;
   for(auto channel: image_decoded.channels) {
     auto channel_image = cimg_library::CImg<uint16_t>(image_decoded.w, image_decoded.h);
@@ -100,8 +104,10 @@ CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_f
     images.push_back(channel_image);
   }
   image = images.get_append('c');
-  image.save("/tmp/test.png");
-  cerr << "Moved image data to cimg: " << image.width() << "x" << image.height() << "x" << image.spectrum() << "@" << image.depth() << ", size: " << image.size() << endl;
+  benchmark_end(merge_channels);
+//   benchmark_scope(save_test_img, 1);
+//   image.save("/tmp/test.png");
+  cerr << "Saved image data to cimg: " << image.width() << "x" << image.height() << "x" << image.spectrum() << "@" << image.depth() << ", size: " << image.size() << endl;
 }
 
 
@@ -118,7 +124,9 @@ void CameraImage::copy_data(const vector< uint8_t >& data, CameraImage::CImgImag
 
 CameraImage::operator QImage() const {
   QImage qimage(image.width(), image.height(), QImage::Format_RGB32);
-  auto channels = image.get_split('c');
+
+  auto channels = (image.get_normalize(0, 255)).get_split('c');
+  cerr << "image channels: " << channels.size() << endl;
   cimg_forXY(channels[0], x, y) {
     auto r = channels[0](x, y);
     auto g = channels.size() == 3 ? channels[1](x, y) : r;
@@ -130,7 +138,8 @@ CameraImage::operator QImage() const {
 
 void CameraImage::save_to(const QString& path){
   QFile file{path};
-  file.write(reinterpret_cast<const char*>(original_data.data()), original_data.size());
+  if(file.open(QIODevice::ReadWrite))
+    file.write(reinterpret_cast<const char*>(original_data.data()), original_data.size());
 }
 
 QString CameraImage::originalFileName() const

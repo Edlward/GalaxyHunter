@@ -64,6 +64,12 @@ QDebug operator<<(QDebug dbg, const Imager::Settings &settings) {
     return dbg.space().quote();
 }
 
+QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting& c)
+{
+  return dbg << "[value=" << c.current << "; available=" << c.available.join(",") << "]";
+}
+
+
 
 void Image::save(const QString& directory, const QString& filename)
 {
