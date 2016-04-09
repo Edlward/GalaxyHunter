@@ -84,14 +84,13 @@ Image::ptr GPhotoCamera::shoot(const Imager::Settings &settings) const
 
 CameraImage::CameraImage(const GPhotoCPP::CameraFilePtr &camera_file) : camera_file(camera_file)
 {
-  vector<uint8_t> data;
-  camera_file->copy(data);
+  camera_file->copy(original_data);
   auto original_file_name = originalFileName().toStdString();
   auto imageReader = GPhotoCPP::ReadImage::factory({original_file_name});
   if(!imageReader)
     return;
   benchmark_start(decode_image, 1);
-  auto image_decoded = imageReader->read(data, original_file_name);
+  auto image_decoded = imageReader->read(original_data, original_file_name);
   benchmark_end(decode_image);
   cerr << "Decoded image: " << original_file_name << ", " << image_decoded.w << "x" << image_decoded.h << "x" << image_decoded.channels.size() << "@" << image_decoded.bpp << endl;
   
@@ -138,8 +137,10 @@ CameraImage::operator QImage() const {
 
 void CameraImage::save_to(const QString& path){
   QFile file{path};
-  if(file.open(QIODevice::ReadWrite))
-    file.write(reinterpret_cast<const char*>(original_data.data()), original_data.size());
+  if(file.open(QIODevice::WriteOnly)) {
+    auto written = file.write(reinterpret_cast<const char*>(original_data.data()), original_data.size());
+    qDebug() << "written" << written << "bytes out of" << original_data.size() << "bytes to" << path;
+  }
 }
 
 QString CameraImage::originalFileName() const
