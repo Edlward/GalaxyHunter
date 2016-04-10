@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "dptr.h"
+#include <imaging/imager.h>
 
 class Histogram : public QWidget
 {
@@ -10,6 +11,7 @@ class Histogram : public QWidget
 public:
     Histogram(QWidget* parent = nullptr);
     ~Histogram();
+    void set_image(const Image::ptr &image);
 
 private:
   D_PTR;

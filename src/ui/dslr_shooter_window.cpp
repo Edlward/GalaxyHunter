@@ -67,7 +67,6 @@ public:
     ZoomableImage *imageView;
     QThread imagingManagerThread;
     SequencesWidget* sequencesEditor;
-    std::unique_ptr<QCPBars> histogram;
 private:
     DSLR_Shooter_Window *q;
 };
@@ -139,7 +138,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->sequencesDock);
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->guider_dock);
     tabifyDockWidget(d->ui->camera_information_dock, d->ui->focus_dock);
-    tabifyDockWidget(d->ui->camera_information_dock, d->ui->histogram);
+    tabifyDockWidget(d->ui->camera_information_dock, d->ui->histogram_dock);
     d->ui->camera_information_dock->raise();
 
     auto logsDockWidget = new QDockWidget("Logs");
@@ -152,7 +151,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     logsDockWidget->setFloating(true);
 
     d->ui->focusing_graph->addGraph();
-    d->ui->histogram_plot->addGraph();
 
     QMap<QDockWidget*, QAction*> dockWidgetsActions {
         {d->ui->camera_information_dock, d->ui->actionCamera_Information},
@@ -160,7 +158,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
         {d->ui->sequencesDock, d->ui->actionSequences_Editor},
         {d->ui->guider_dock, d->ui->actionGuider},
         {d->ui->focus_dock, d->ui->actionFocusing},
-        {d->ui->histogram, d->ui->actionHistogram},
+        {d->ui->histogram_dock, d->ui->actionHistogram},
         {logsDockWidget, d->ui->actionLogs_Messages},
     };
 
@@ -289,9 +287,6 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
     connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
 //   connect(d->imagingManager.get(), &ImagingManager::finished, this, bind(&QStatusBar::clearMessage, d->ui->statusbar)); // TODO: was it needed?
-    
-    d->histogram.reset(new QCPBars(d->ui->histogram_plot->xAxis, d->ui->histogram_plot->yAxis));
-    d->ui->histogram_plot->addPlottable(d->histogram.get());
 }
 
 void DSLR_Shooter_Window::focus_received(double value)
@@ -364,6 +359,7 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image)
 
     QImage img = image->qimage(d->ui->actionDebayer->isChecked());
     d->imageView->setImage(img);
+    d->ui->histogram->set_image(image);
 
     qDebug() << "Checking for dithering...";
     if(d->shooterSettings.ditherAfterEachShot() && d->guider->is_connected()) {
@@ -380,19 +376,6 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image)
         d->ui->focusing_graph->replot();
         d->ui->focus_analysis_value->clear();
     }
-    auto histogram = image->histogram(256);
-    //d->ui->histogram_plot->
-    QVector<double> x(histogram.size());
-    for(int i=0; i<x.size(); i++)
-      x[i] = i*x.size();
-    QVector<double> y(histogram.size());
-    copy(begin(histogram), end(histogram), begin(y));
-    d->histogram->setWidthType(QCPBars::wtAxisRectRatio);
-    d->histogram->setWidth(1./x.size());
-    d->histogram->setData(x, y);
-    d->ui->histogram_plot->xAxis->setRange(0, *max_element(x.begin(), x.end()));
-    d->ui->histogram_plot->yAxis->setRange(0, *max_element(y.begin(), y.end()));
-    d->ui->histogram_plot->replot();
 }
 
 
