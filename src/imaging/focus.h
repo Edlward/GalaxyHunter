@@ -22,6 +22,7 @@
 
 #include <QObject>
 #include <QVector>
+#include "imager.h"
 
 class Focus : public QObject
 {
@@ -32,7 +33,7 @@ public:
     QVector<double> history() const { return _history; }
     void clear_history() { _history.clear(); }
 public slots:
-  void analyze(const QImage &image);
+  void analyze(const Image &image);
 
 signals:
   void focus_rate(double);

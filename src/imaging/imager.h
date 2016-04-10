@@ -14,6 +14,7 @@ public:
   QImage qimage(bool debayer = false) const;
   cimg_library::CImg<uint64_t> histogram(uint32_t bins) const;
   void save(const QString &directory, const QString &filename = {});
+  CImgImage cimg() const;
 protected:
   CImgImage image;
   const std::vector<uint8_t> original_data;

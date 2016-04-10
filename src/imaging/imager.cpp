@@ -118,6 +118,12 @@ QImage Image::qimage(bool debayer) const
   return qimage;
 }
 
+Image::CImgImage Image::cimg() const
+{
+  return image;
+}
+
+
 
 QDebug operator<<(QDebug dbg, const Imager::Settings::ComboSetting combo) {
     QStringList avail;
