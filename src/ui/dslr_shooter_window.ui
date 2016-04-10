@@ -69,6 +69,7 @@
     <addaction name="actionGuider"/>
     <addaction name="actionFocusing"/>
     <addaction name="actionLogs_Messages"/>
+    <addaction name="actionHistogram"/>
     <addaction name="actionHide_All"/>
     <addaction name="actionShow_All"/>
    </widget>
@@ -514,6 +515,14 @@
    </property>
    <property name="text">
     <string>Start Sequences</string>
+   </property>
+  </action>
+  <action name="actionHistogram">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Histogram</string>
    </property>
   </action>
  </widget>

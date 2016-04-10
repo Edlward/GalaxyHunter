@@ -67,6 +67,7 @@ public:
     ZoomableImage *imageView;
     QThread imagingManagerThread;
     SequencesWidget* sequencesEditor;
+    std::unique_ptr<QCPBars> histogram;
 private:
     DSLR_Shooter_Window *q;
 };
@@ -159,6 +160,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
         {d->ui->sequencesDock, d->ui->actionSequences_Editor},
         {d->ui->guider_dock, d->ui->actionGuider},
         {d->ui->focus_dock, d->ui->actionFocusing},
+        {d->ui->histogram, d->ui->actionHistogram},
         {logsDockWidget, d->ui->actionLogs_Messages},
     };
 
@@ -287,6 +289,9 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     connect(d->imagingManager.get(), &ImagingManager::started, bind(setWidgetsEnabled, false));
     connect(d->imagingManager.get(), &ImagingManager::finished, bind(setWidgetsEnabled, true));
 //   connect(d->imagingManager.get(), &ImagingManager::finished, this, bind(&QStatusBar::clearMessage, d->ui->statusbar)); // TODO: was it needed?
+    
+    d->histogram.reset(new QCPBars(d->ui->histogram_plot->xAxis, d->ui->histogram_plot->yAxis));
+    d->ui->histogram_plot->addPlottable(d->histogram.get());
 }
 
 void DSLR_Shooter_Window::focus_received(double value)
@@ -377,15 +382,16 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image)
     }
     auto histogram = image->histogram(256);
     //d->ui->histogram_plot->
-    QVector<double> x(256);
-    for(int i=0; i<256; i++)
-      x[i] = i+1;
+    QVector<double> x(histogram.size());
+    for(int i=0; i<x.size(); i++)
+      x[i] = i*x.size();
     QVector<double> y(histogram.size());
     copy(begin(histogram), end(histogram), begin(y));
-    d->ui->histogram_plot->graph()->setLineStyle(QCPGraph::lsStepCenter);
-    d->ui->histogram_plot->graph()->setData(x, y);
-    d->ui->histogram_plot->graph()->rescaleKeyAxis(false);
-    d->ui->histogram_plot->graph()->valueAxis()->setRange(*std::min_element(begin(y), end(y))-.5, *std::max_element(begin(y), end(y)) +.5);
+    d->histogram->setWidthType(QCPBars::wtAxisRectRatio);
+    d->histogram->setWidth(1./x.size());
+    d->histogram->setData(x, y);
+    d->ui->histogram_plot->xAxis->setRange(0, *max_element(x.begin(), x.end()));
+    d->ui->histogram_plot->yAxis->setRange(0, *max_element(y.begin(), y.end()));
     d->ui->histogram_plot->replot();
 }
 
