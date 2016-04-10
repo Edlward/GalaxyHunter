@@ -29,9 +29,9 @@ void Settings::setValue(const QString& key, const QVariant& value)
   d->qsettings.setValue(key, value);
 }
 
-QVariant Settings::value(const QString& key) const
+QVariant Settings::value(const QString& key, const QVariant default_value) const
 {
-  return d->qsettings.value(key);
+  return d->qsettings.value(key, default_value);
 }
 
 

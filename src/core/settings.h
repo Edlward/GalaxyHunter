@@ -11,7 +11,7 @@ class Settings
 public:
     Settings();
     ~Settings();
-    QVariant value(const QString &key) const;
+    QVariant value(const QString &key, const QVariant default_value = {}) const;
     void setValue(const QString &key, const QVariant &value);
     typedef std::shared_ptr<Settings> ptr;
     static ptr instance();

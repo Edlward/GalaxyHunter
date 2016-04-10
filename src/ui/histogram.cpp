@@ -1,5 +1,8 @@
 #include "histogram.h"
 #include "ui_histogram.h"
+#include "Qt/functional.h"
+#include <core/settings.h>
+
 using namespace std;
 
 class Histogram::Private {
@@ -26,6 +29,12 @@ Histogram::Histogram(QWidget* parent) : QWidget(parent), dptr(this)
   d->ui->setupUi(this);
   d->bars.reset(new QCPBars{d->ui->histogram->xAxis, d->ui->histogram->yAxis});
   d->ui->histogram->addPlottable(d->bars.get());
+  auto redraw_histogram = [&] {
+    Settings::instance()->setValue("histogram-bins", d->ui->bins->value());
+    d->draw_histogram();
+  };
+  d->ui->bins->setValue(Settings::instance()->value("histogram-bins", 50).toInt() );
+  connect(d->ui->bins, F_PTR(QSpinBox, valueChanged, int), redraw_histogram);
   // d->ui->histogram->addGraph();
 }
 
