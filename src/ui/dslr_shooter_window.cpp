@@ -34,6 +34,7 @@
 #include "GuLinux-Commons/Qt/zoomableimage.h"
 #include <Qt/qlambdaevent.h>
 #include "commons/version.h"
+#include "core/settings.h"
 
 using namespace std;
 using namespace std::placeholders;
@@ -55,7 +56,7 @@ public:
     ImagingDriverPtr imagingDriver;
     ImagerPtr imager;
     ImagingManagerPtr imagingManager;
-    QSettings settings;
+    Settings::ptr settings;
 
     Focus *focus;
     TelescopeControl *telescopeControl;
@@ -72,7 +73,7 @@ private:
 };
 
 DSLR_Shooter_Window::Private::Private(DSLR_Shooter_Window* q, Ui::DSLR_Shooter_Window* ui)
-    : q(q), ui(ui), settings("GuLinux", "DSLR-Shooter"), shooterSettings {settings},
+    : q(q), ui(ui), settings(Settings::instance()),
 imagingDriver {std::make_shared<ImagingDrivers>()}, imagingManager(make_shared<ImagingManager>(shooterSettings)), trayIcon {QIcon::fromTheme("dslr-qt-shooter")}
 {
 }
@@ -86,7 +87,7 @@ void DSLR_Shooter_Window::closeEvent(QCloseEvent* e)
 
 void DSLR_Shooter_Window::Private::saveState()
 {
-    settings.setValue("windows_settings", q->saveState());
+    settings->setValue("windows_settings", q->saveState());
 }
 
 
@@ -185,7 +186,7 @@ DSLR_Shooter_Window::DSLR_Shooter_Window(QWidget *parent) :
     connect(d->ui->actionHide_All, &QAction::triggered, bind(toggleWidgetsVisibility, false));
     connect(d->ui->actionShow_All, &QAction::triggered, bind(toggleWidgetsVisibility, true));
 
-    restoreState(d->settings.value("windows_settings").toByteArray());
+    restoreState(d->settings->value("windows_settings").toByteArray());
 
     QMenu *setCamera = new QMenu("Available Cameras", this);
     d->ui->actionSet_Camera->setMenu(setCamera);

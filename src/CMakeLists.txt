@@ -33,6 +33,7 @@ include_directories(${Qt5PrintSupport_INCLUDE_DIRS})
 include_directories(${ImageMagick_INCLUDE_DIRS})
 include_directories(${QCustomPlot_INCLUDE_DIRS})
 
+add_subdirectory(core)
 add_subdirectory(ui)
 add_subdirectory(guider)
 add_subdirectory(imaging)
@@ -46,9 +47,7 @@ add_subdirectory(commons)
 add_subdirectory(GuLinux-Commons/Qt)
 
 ADD_EXECUTABLE(${PROJECT_NAME} main.cpp resources.qrc )
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}  ${dslr_static_LIBS} GuLinux_Qt_Commons dsl_shooter_commons Qt5::Widgets Qt5::Network Qt5::Concurrent Qt5::Sql Qt5::PrintSupport ${MAGICK_LDFLAGS} 
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}  ${dslr_static_LIBS} core GuLinux_Qt_Commons dsl_shooter_commons Qt5::Widgets Qt5::Network Qt5::Concurrent Qt5::Sql Qt5::PrintSupport ${MAGICK_LDFLAGS} 
   ${dslr_dependencies} ${CFITSIO_LDFLAGS} ${Boost_LIBRARIES} ${QCustomPlot_LIBRARIES} ${OpenCV_LIBRARIES} )
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 add_subdirectory(tests)
-
-

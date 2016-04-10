@@ -24,17 +24,18 @@
 #include "utils/qt.h"
 
 #include "Qt/strings.h"
+#include <core/settings.h>
 using namespace std;
 
 class ShooterSettings::Private {
 public:
-  Private(QSettings &settings, ShooterSettings *q);
-  QSettings &settings;
+  Private(ShooterSettings *q);
+  Settings::ptr settings;
 private:
   ShooterSettings *q;
 };
 
-ShooterSettings::Private::Private(QSettings& settings, ShooterSettings* q) : settings{settings}, q{q}
+ShooterSettings::Private::Private(ShooterSettings* q) : settings{Settings::instance()}, q{q}
 {
 }
 
@@ -51,7 +52,7 @@ T ShooterSettings_get(QSettings &settings, const QString& key, const T& defaultV
 }
 
 
-ShooterSettings::ShooterSettings(QSettings& settings) : dptr(settings, this)
+ShooterSettings::ShooterSettings() : dptr(this)
 {
 }
 
@@ -60,31 +61,31 @@ ShooterSettings::~ShooterSettings()
 }
 
 #define setting(Name, Type, Default, ...) \
-Type ShooterSettings:: __VA_ARGS__ Name () const { return ShooterSettings_get<Type>(d->settings, #Name, Default); } \
-void ShooterSettings:: __VA_ARGS__ Name (Type value) { ShooterSettings_set<Type>(d->settings, #Name, value); }
+Type ShooterSettings:: __VA_ARGS__ Name () const { return ShooterSettings_get<Type>(*d->settings, #Name, Default); } \
+void ShooterSettings:: __VA_ARGS__ Name (Type value) { ShooterSettings_set<Type>(*d->settings, #Name, value); }
 
 #define setting_obj(Name, Type, Default, ...) \
-Type ShooterSettings:: __VA_ARGS__ Name () const { return ShooterSettings_get<Type>(d->settings, #Name, Default); } \
-void ShooterSettings:: __VA_ARGS__ Name (const Type &value) { ShooterSettings_set<Type>(d->settings, #Name, value); }
+Type ShooterSettings:: __VA_ARGS__ Name () const { return ShooterSettings_get<Type>(*d->settings, #Name, Default); } \
+void ShooterSettings:: __VA_ARGS__ Name (const Type &value) { ShooterSettings_set<Type>(*d->settings, #Name, value); }
 
 void ShooterSettings::shootMode(ShooterSettings::ShootMode mode)
 {
-  ShooterSettings_set<int>(d->settings, "shootMode", mode);
+  ShooterSettings_set<int>(*d->settings, "shootMode", mode);
 }
 
 ShooterSettings::ShootMode ShooterSettings::shootMode() const
 {
-  return static_cast<ShootMode>(ShooterSettings_get<int>(d->settings, "shootMode", ShootMode::Single));
+  return static_cast<ShootMode>(ShooterSettings_get<int>(*d->settings, "shootMode", ShootMode::Single));
 }
 
 shared_ptr<ShooterSettings::Camera> ShooterSettings::camera(const ImagerPtr& imager, const Imager::Settings &settings)
 {
-  return CameraPtr{new Camera(imager->info().model, d->settings, settings)};
+  return CameraPtr{new Camera(imager->info().model, *d->settings, settings)};
 }
 
 ShooterSettings::CameraPtr ShooterSettings::camera(const ImagerPtr& imager)
 {
-  return CameraPtr{new Camera(imager->info().model, d->settings)};
+  return CameraPtr{new Camera(imager->info().model, *d->settings)};
 }
 
 

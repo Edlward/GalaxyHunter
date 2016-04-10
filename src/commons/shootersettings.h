@@ -28,7 +28,7 @@ class QSettings;
 class ShooterSettings
 {
 public:
-    ShooterSettings(QSettings &settings);
+    ShooterSettings();
     ~ShooterSettings();
     
     class Camera {
