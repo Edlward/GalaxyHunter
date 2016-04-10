@@ -10,6 +10,8 @@ set(dslr_ui_SOURCES
   sequenceswidget.ui
   sequenceswidget.cpp
   addsequenceitem.ui
+  histogram.cpp
+  histogram.ui
 )
 set(CMAKE_AUTOUIC ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
