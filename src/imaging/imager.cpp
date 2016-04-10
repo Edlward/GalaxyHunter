@@ -1,9 +1,11 @@
+#define cimg_plugin1 "CImg/plugins/bayer.h"
 #include "imager.h"
 #include <commons/logmessage.h>
 #include "commons/shootersettings.h"
 #include "utils/qt.h"
 #include <QDir>
 #include "Qt/strings.h"
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 using namespace std::placeholders;
@@ -88,10 +90,25 @@ void Image::save(const QString& directory, const QString& filename)
     }
 }
 
-Image::operator QImage() const
+QImage Image::qimage(bool debayer) const
 {
   QImage qimage(image.width(), image.height(), QImage::Format_RGB32);
-  auto channels = (image.get_normalize(0, 255)).get_split('c');
+  auto image = this->image;
+  if(debayer && image.spectrum() == 1) {
+    image.BayertoRGB();
+//     cv::Mat bayer(image.height(), image.width(), CV_16UC1, reinterpret_cast<uint8_t*>(image.data()));
+//     cv::Mat debayer;
+//     cv::cvtColor(bayer, debayer, CV_BayerGR2RGB);
+//     image = cimg_library::CImg<uint16_t>(image.width(), image.height(), image.depth(), 3);
+//     
+//     cimg_forXY(image, x, y) {
+//       auto pixel = debayer.at<cv::Vec3w>(y, x);
+//       image(x, y, 0) = pixel[0];
+//       image(x, y, 1) = pixel[1];
+//       image(x, y, 2) = pixel[2];
+//     }
+  }
+  auto channels = image.normalize(0, 255).get_split('c');
   cimg_forXY(channels[0], x, y) {
     auto r = channels[0](x, y);
     auto g = channels.size() == 3 ? channels[1](x, y) : r;

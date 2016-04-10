@@ -362,7 +362,7 @@ void DSLR_Shooter_Window::shoot_received(const Image::ptr& image)
     if(!image)
         return;
 
-    QImage img = *image;
+    QImage img = image->qimage(d->ui->actionDebayer->isChecked());
     d->imageView->setImage(img);
 
     qDebug() << "Checking for dithering...";

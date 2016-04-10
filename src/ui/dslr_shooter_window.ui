@@ -73,9 +73,16 @@
     <addaction name="actionHide_All"/>
     <addaction name="actionShow_All"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionDebayer"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCamera"/>
    <addaction name="menuTelescope"/>
+   <addaction name="menuView"/>
    <addaction name="menuWindows"/>
   </widget>
   <widget class="QDockWidget" name="camera_information_dock">
@@ -522,7 +529,15 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Histogram</string>
+    <string>H&amp;istogram</string>
+   </property>
+  </action>
+  <action name="actionDebayer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Debayer</string>
    </property>
   </action>
  </widget>

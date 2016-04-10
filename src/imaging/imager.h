@@ -11,7 +11,7 @@ public:
   typedef std::shared_ptr<Image> ptr;
   typedef cimg_library::CImg<uint16_t> CImgImage;
   
-  operator QImage() const;
+  QImage qimage(bool debayer = false) const;
   cimg_library::CImg<uint64_t> histogram(uint32_t bins) const;
   void save(const QString &directory, const QString &filename = {});
 protected:
