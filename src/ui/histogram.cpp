@@ -51,8 +51,7 @@ void Histogram::Private::draw_histogram()
   auto histogram = image->histogram(ui->bins->value());
   //ui->histogram_plot->
   QVector<double> x(histogram.size());
-  for(int i=0; i<x.size(); i++)
-    x[i] = i*x.size();
+  iota(x.begin(), x.end(), 0);
   QVector<double> y(histogram.size());
   copy(begin(histogram), end(histogram), begin(y));
   bars->setWidthType(QCPBars::wtAxisRectRatio);
