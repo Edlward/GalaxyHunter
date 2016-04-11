@@ -2,6 +2,7 @@
 #include "ui_histogram.h"
 #include "Qt/functional.h"
 #include <core/settings.h>
+#include "CImg/cimg_histogram.h"
 
 using namespace std;
 
@@ -44,16 +45,22 @@ void Histogram::set_image(const Image::ptr& image)
   d->draw_histogram();
 }
 
+#include <iostream>
+
 void Histogram::Private::draw_histogram()
 {
   if(!image)
     return;
-  auto histogram = image->histogram(ui->bins->value());
+  GuLinux::Histogram<uint16_t> h_histogram{image->cimg()};
+  auto bins = h_histogram.bins(ui->bins->value());
+
   //ui->histogram_plot->
-  QVector<double> x(histogram.size());
-  iota(x.begin(), x.end(), 0);
-  QVector<double> y(histogram.size());
-  copy(begin(histogram), end(histogram), begin(y));
+  QVector<double> x(bins.size());
+  QVector<double> y(bins.size());
+  for(int i=0; i<bins.size(); i++) {
+    x[i] = bins[i].middle;
+    y[i] = bins[i].count;
+  }
   bars->setWidthType(QCPBars::wtAxisRectRatio);
   bars->setWidth(1./x.size());
   bars->setData(x, y);
