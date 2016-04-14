@@ -1,4 +1,4 @@
-#define cimg_plugin "CImg/plugins/jpeg_buffer.h"
+#define cimg_plugin "plugins/jpeg_buffer.h"
 #include <cstdio>
 #include <jpeglib.h>
 #include <jerror.h>

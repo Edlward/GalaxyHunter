@@ -1,4 +1,4 @@
-#define cimg_plugin1 "CImg/plugins/bayer.h"
+#define cimg_plugin1 "plugins/bayer.h"
 #include "imager.h"
 #include <commons/logmessage.h>
 #include "commons/shootersettings.h"
