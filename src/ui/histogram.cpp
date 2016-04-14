@@ -12,7 +12,7 @@ public:
   void draw_histogram();
   unique_ptr<Ui::Histogram> ui;
   unique_ptr<QCPBars> bars;
-  Image::ptr image;
+  GuLinux::Histogram<uint16_t>::ptr histogram;
 };
 
 Histogram::Private::Private(Histogram* q) : ui{new Ui::Histogram}
@@ -41,7 +41,7 @@ Histogram::Histogram(QWidget* parent) : QWidget(parent), dptr(this)
 
 void Histogram::set_image(const Image::ptr& image)
 {
-  d->image = image;
+  d->histogram = make_shared<GuLinux::Histogram<uint16_t>>(image->cimg());
   d->draw_histogram();
 }
 
@@ -49,12 +49,10 @@ void Histogram::set_image(const Image::ptr& image)
 
 void Histogram::Private::draw_histogram()
 {
-  if(!image)
+  if(!histogram)
     return;
-  GuLinux::Histogram<uint16_t> h_histogram{image->cimg()};
-  auto bins = h_histogram.bins(ui->bins->value());
+  auto bins = histogram->bins(ui->bins->value());
 
-  //ui->histogram_plot->
   QVector<double> x(bins.size());
   QVector<double> y(bins.size());
   for(int i=0; i<bins.size(); i++) {
