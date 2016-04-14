@@ -1,5 +1,4 @@
 #include "gphoto_camera_p.h"
-#include "serialshoot.h"
 #include "libgphoto++/src/utils/read_image.h"
 #include <file2image.h>
 #include "imager.h"
