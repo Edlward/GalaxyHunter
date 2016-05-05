@@ -46,7 +46,7 @@ private:
 };
 
 CameraSetup::Private::Private(ShooterSettings& shooterSettings, CameraSetup* q)
-    : shooterSettings {shooterSettings},
+    : shooterSettings(shooterSettings),
 ui {new Ui::CameraSetup()}, q {q}
 {
 }

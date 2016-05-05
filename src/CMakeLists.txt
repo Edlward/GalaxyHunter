@@ -33,6 +33,12 @@ include_directories(${Qt5PrintSupport_INCLUDE_DIRS})
 include_directories(${ImageMagick_INCLUDE_DIRS})
 include_directories(${QCustomPlot_INCLUDE_DIRS})
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+
+
 add_subdirectory(core)
 add_subdirectory(ui)
 add_subdirectory(guider)

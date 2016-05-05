@@ -122,7 +122,7 @@ private:
 };
 
 SequencesWidget::Private::Private(ShooterSettings& shooterSettings, SequencesWidget* q)
-  : shooterSettings{shooterSettings}, ui{make_shared<Ui::SequencesWidget>()}, q{q}
+  : shooterSettings(shooterSettings), ui{make_shared<Ui::SequencesWidget>()}, q{q}
 {
 
 }

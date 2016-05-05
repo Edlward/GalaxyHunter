@@ -1,8 +1,8 @@
 set(dslr_ui_SOURCES
+  dslr_shooter_window.ui
   dslr_shooter_window.cpp
   imagesettingsdialog.cpp
   messageswindow.cpp
-  dslr_shooter_window.ui
   imagesettingsdialog.ui
   messageswindow.ui
   camera_setup.ui

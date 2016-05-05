@@ -7,7 +7,7 @@ target_link_libraries(test_sequence Qt5::Test)
 add_test(NAME sequence COMMAND test_sequence)
 
 
-pkg_check_modules(LIBINDI libindi REQUIRED)
+#pkg_check_modules(LIBINDI libindi REQUIRED)
 include_directories(${LIBINDI_INCLUDE_DIRS})
 include_directories(/usr/include/libnova) # TODO: find_package?
 
