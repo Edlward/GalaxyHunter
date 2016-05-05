@@ -28,7 +28,7 @@ using namespace std::placeholders;
 
 class ImagingManager::Private {
 public:
-  Private(ShooterSettings &shooterSettings, ImagingManager *q) : shooterSettings{shooterSettings}, q{q} {}
+  Private(ShooterSettings &shooterSettings, ImagingManager *q) : shooterSettings(shooterSettings), q(q) {}
   ShooterSettings &shooterSettings;
   ImagerPtr imager;
   bool remove_on_camera;
