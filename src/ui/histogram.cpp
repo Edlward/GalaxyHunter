@@ -64,6 +64,8 @@ void Histogram::Private::draw_histogram()
   bars->setData(x, y);
   ui->histogram->xAxis->setRange(0, *max_element(x.begin(), x.end()));
   ui->histogram->yAxis->setRange(0, *max_element(y.begin(), y.end()));
+//   ui->histogram->yAxis->setScaleType(QCPAxis::stLogarithmic);
+  ui->histogram->rescaleAxes();
   ui->histogram->replot();
 }
 
