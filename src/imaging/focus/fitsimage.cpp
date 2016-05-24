@@ -32,7 +32,8 @@
 #include "fitshistogram.h"
 
 #include <Magick++.h>
-
+#include <cmath>
+#include <cstdlib>
 #ifdef HAVE_WCSLIB
 #include <wcshdr.h>
 #include <wcsfix.h>
@@ -336,7 +337,7 @@ bool FITSImage::checkCollision(Edge* s1, Edge*s2)
     int diff_x=s1->x - s2->x;
     int diff_y=s1->y - s2->y;
 
-    dis = abs( sqrt( diff_x*diff_x + diff_y*diff_y));
+    dis = std::abs( static_cast<double>(sqrt( diff_x*diff_x + diff_y*diff_y)) );
     dis -= s1->width/2;
     dis -= s2->width/2;
 

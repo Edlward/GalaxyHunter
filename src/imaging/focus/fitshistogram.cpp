@@ -33,6 +33,7 @@
 
 #include "fitshistogram.h"
 #include "fitsimage.h"
+#include <cmath>
 
 void FITSHistogram::constructHistogram(int hist_width, int hist_height)
 {
