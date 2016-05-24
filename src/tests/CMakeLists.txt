@@ -11,9 +11,11 @@ add_test(NAME sequence COMMAND test_sequence)
 include_directories(${LIBINDI_INCLUDE_DIRS})
 include_directories(/usr/include/libnova) # TODO: find_package?
 
+if(ENABLE_INDI)
 add_executable(testindidouble testindidouble.cpp ${CMAKE_SOURCE_DIR}/src/telescope/indidouble.cpp)
-target_link_libraries(testindidouble Qt5::Test ${INDI_CLIENT_LIBRARIES} ${LIBINDI_LIBRARIES} z pthread )
-add_test(NAME indidouble COMMAND testindidouble)
+  target_link_libraries(testindidouble Qt5::Test ${INDI_CLIENT_LIBRARIES} ${LIBINDI_LIBRARIES} z pthread )
+  add_test(NAME indidouble COMMAND testindidouble)
+endif(ENABLE_INDI)
 
 add_executable(test_raw_conversion testrawconversion.cpp ${CMAKE_SOURCE_DIR}/src/imaging/file2image.cpp)
 target_link_libraries(test_raw_conversion Qt5::Widgets Qt5::Test ${MAGICK_LDFLAGS})

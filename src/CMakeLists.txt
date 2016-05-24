@@ -21,6 +21,7 @@ find_package(CImg REQUIRED)
 
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(CImg REQUIRED)
 pkg_check_modules(CFITSIO cfitsio REQUIRED)
 include_directories(${CFITSIO_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${CImg_INCLUDE_DIRS})
 
